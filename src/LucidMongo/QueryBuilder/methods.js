@@ -417,9 +417,9 @@ methods.withCount = function (target) {
      */
     const countsQuery = relationInstance.counts(callback).toSQL()
     target
-    .modelQueryBuilder
-    .column(
-      target.queryBuilder.raw(countsQuery.sql, countsQuery.bindings).wrap('(', `) as ${relation}_count`)
+      .modelQueryBuilder
+      .column(
+        target.queryBuilder.raw(countsQuery.sql, countsQuery.bindings).wrap('(', `) as ${relation}_count`)
     )
     return this
   }
@@ -569,10 +569,11 @@ methods.whereIn = function (target) {
 methods.select = function (target) {
   return function () {
     let arg = null
-    if(arguments.length > 1)
+    if (arguments.length > 1) {
       arg = _.values(arguments).join(' ')
-    else
+    } else {
       arg = arguments[0]
+    }
     target.modelQueryBuilder.select(arg)
     return this
   }
@@ -592,7 +593,6 @@ methods.find = function (target) {
     return yield this.where('_id', ObjectID(id)).first()
   }
 }
-
 
 /**
  * Convert count query
@@ -622,10 +622,11 @@ methods.count = function (target) {
 methods.orderBy = function (target) {
   return function () {
     let arg = null
-    if(arguments.length > 1)
+    if (arguments.length > 1) {
       arg = _.set({}, arguments[0], arguments[1])
-    else
+    } else {
       arg = arguments[0]
+    }
     target.modelQueryBuilder.sort(arg)
     return this
   }

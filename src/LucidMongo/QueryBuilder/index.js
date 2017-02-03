@@ -23,7 +23,7 @@ const mquery = require('mquery')
  * @class
  */
 class QueryBuilder {
-  constructor(HostModel) {
+  constructor (HostModel) {
     this.HostModel = HostModel
     this.queryBuilder = mquery()
     this.modelQueryBuilder = mquery()
@@ -32,7 +32,7 @@ class QueryBuilder {
     return new Proxy(this, proxyHandler)
   }
 
-  * connect() {
+  * connect () {
     const Database = Ioc.use('Adonis/Src/Database')
     const connection = yield Database.connection(this.HostModel.connection)
     const collection = connection.collection(this.HostModel.table)

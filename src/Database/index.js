@@ -63,15 +63,15 @@ let ConfigProvider = {}
  *
  * @private
  */
-const _emitSql = function (builder) {
-  const hrstart = process.hrtime()
-  builder.once('query', (query) => {
-    const sql = this.client._formatQuery(query.sql, query.bindings, query.tz)
-    builder.once('end', () => {
-      this.emit('sql', `+ ${util.timeDiff(hrstart)} : ${sql}`)
-    })
-  })
-}
+// const _emitSql = function (builder) {
+//   const hrstart = process.hrtime()
+//   builder.once('query', (query) => {
+//     const sql = this.client._formatQuery(query.sql, query.bindings, query.tz)
+//     builder.once('end', () => {
+//       this.emit('sql', `+ ${util.timeDiff(hrstart)} : ${sql}`)
+//     })
+//   })
+// }
 
 /**
  * Following attributes should be removed from the
@@ -134,7 +134,7 @@ Database._resolveConnectionKey = function (connection) {
  * Database.connection('mysql')
  * Database.connection('sqlite')
  */
-Database.connection = function* (connection) {
+Database.connection = function * (connection) {
   connection = Database._resolveConnectionKey(connection)
 
   if (!connectionPools[connection]) {
@@ -145,10 +145,9 @@ Database.connection = function* (connection) {
     const security = (config.connection.user !== '' || config.connection.password !== '') ? `${config.connection.user}:${config.connection.password}@` : ''
     const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
     const dbConnection = yield MongoClient.connect(connectionString)
-    return connectionPools[connection] = dbConnection
-  } else {
-    return connectionPools[connection];
+    connectionPools[connection] = dbConnection
   }
+  return connectionPools[connection]
 }
 
 /**
@@ -241,7 +240,7 @@ Database.beginTransaction = function (clientTransaction) {
 Database.transaction = function (clientTransaction) {
   return function (cb) {
     return clientTransaction(function (trx) {
-      co(function* () {
+      co(function * () {
         return yield cb(trx)
       })
         .then(trx.commit)
@@ -290,7 +289,7 @@ Database.forPage = function (page, perPage) {
  *
  * @public
  */
-Database.paginate = function* (page, perPage, countByQuery) {
+Database.paginate = function * (page, perPage, countByQuery) {
   const parsedPerPage = _.toSafeInteger(perPage) || 20
   const parsedPage = _.toSafeInteger(page)
   util.validatePage(parsedPage)
@@ -306,7 +305,7 @@ Database.paginate = function* (page, perPage, countByQuery) {
   countByQuery._statements = _.filter(countByQuery._statements, (statement) => excludeAttrFromCount.indexOf(statement.grouping) < 0)
 
   const count = yield countByQuery
-  console.log(count);
+  console.log(count)
   if (!count || parseInt(count, 10) === 0) {
     return util.makePaginateMeta(0, parsedPage, parsedPerPage)
   }
@@ -338,7 +337,7 @@ Database.paginate = function* (page, perPage, countByQuery) {
  *
  * @public
  */
-Database.chunk = function* (limit, cb, page) {
+Database.chunk = function * (limit, cb, page) {
   page = page || 1
   const result = yield this.forPage(page, limit)
   if (result.length) {

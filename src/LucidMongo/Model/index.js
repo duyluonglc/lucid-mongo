@@ -25,7 +25,7 @@ const BaseSerializer = require('../QueryBuilder/Serializers/Base')
 const Ioc = require('adonis-fold').Ioc
 const Resolver = require('adonis-binding-resolver')
 const resolver = new Resolver(Ioc)
-const ObjectID = require('mongodb').ObjectID;
+const ObjectID = require('mongodb').ObjectID
 
 const hookNameSpace = 'Model/Hooks'
 

@@ -78,7 +78,6 @@ Peristance.update = function * () {
     if (this.transaction) {
       query.transacting(this.transaction)
     }
-    console.log(query.where(this.constructor.primaryKey, this.$primaryKeyValue));
     const affected = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirtyValues)
     if (affected > 0) {
       _.merge(this.attributes, dirtyValues)
