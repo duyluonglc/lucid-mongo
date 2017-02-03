@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * adonis-lucid
+ * adonis-LucidMongo
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -14,7 +14,7 @@
 | CRUD APPLICATION
 |--------------------------------------------------------------------------
 |
-| Crud related tests for Adonis Lucid
+| Crud related tests for Adonis LucidMongo
 |
 */
 
@@ -34,7 +34,7 @@ describe('Crud', function () {
     /**
      * REQUIREMENTS
      */
-    const Lucid = Ioc.use('Adonis/Src/Lucid')
+    const LucidMongo = Ioc.use('Adonis/Src/LucidMongo')
     const Schema = Ioc.use('Adonis/Src/Schema')
     const Factory = Ioc.use('Adonis/Src/Factory')
     this.Factory = Factory
@@ -42,7 +42,7 @@ describe('Crud', function () {
     /**
      * SETUP
      */
-    class User extends Lucid {
+    class User extends LucidMongo {
       static get computed () {
         return ['fullName']
       }

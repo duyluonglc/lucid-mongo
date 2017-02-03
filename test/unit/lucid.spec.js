@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * adonis-lucid
+ * adonis-LucidMongo
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -10,7 +10,7 @@
 */
 
 /* global describe, it, after, before, context, afterEach */
-const Model = require('../../src/Lucid/Model')
+const Model = require('../../src/LucidMongo/Model')
 const Database = require('../../src/Database')
 const chai = require('chai')
 const uuid = require('uuid')
@@ -21,13 +21,13 @@ const expect = chai.expect
 const co = require('co')
 const filesFixtures = require('./fixtures/files')
 const modelFixtures = require('./fixtures/model')
-const QueryBuilder = require('../../src/Lucid/QueryBuilder')
+const QueryBuilder = require('../../src/LucidMongo/QueryBuilder')
 const config = require('./helpers/config')
 const queryHelpers = require('./helpers/query')
 const _ = require('lodash')
 require('co-mocha')
 
-describe('Lucid', function () {
+describe('LucidMongo', function () {
   before(function * () {
     Database._setConfigProvider(config)
     Ioc.bind('Adonis/Src/Database', function () {

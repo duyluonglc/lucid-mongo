@@ -41,13 +41,13 @@ describe('Relationships', function () {
       /**
        * definations
        */
-      const Lucid = Ioc.use('Adonis/Src/Lucid')
-      class User extends Lucid {
+      const LucidMongo = Ioc.use('Adonis/Src/LucidMongo')
+      class User extends LucidMongo {
         profile () {
           return this.hasOne('App/Model/Profile')
         }
       }
-      class Profile extends Lucid {}
+      class Profile extends LucidMongo {}
       Ioc.bind('App/Model/User', function () {
         return User
       })

@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * adonis-lucid
+ * adonis-LucidMongo
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -10,7 +10,7 @@
 */
 
 /* global describe, it, after, before, context */
-const Model = require('../../src/Lucid/Model')
+const Model = require('../../src/LucidMongo/Model')
 const Database = require('../../src/Database')
 const chai = require('chai')
 const Ioc = require('adonis-fold').Ioc
@@ -19,11 +19,11 @@ const moment = require('moment')
 const filesFixtures = require('./fixtures/files')
 const relationFixtures = require('./fixtures/relations')
 const config = require('./helpers/config')
-const HasOne = require('../../src/Lucid/Relations/HasOne')
-const HasMany = require('../../src/Lucid/Relations/HasMany')
-const BelongsTo = require('../../src/Lucid/Relations/BelongsTo')
-const BelongsToMany = require('../../src/Lucid/Relations/BelongsToMany')
-const HasManyThrough = require('../../src/Lucid/Relations/HasManyThrough')
+const HasOne = require('../../src/LucidMongo/Relations/HasOne')
+const HasMany = require('../../src/LucidMongo/Relations/HasMany')
+const BelongsTo = require('../../src/LucidMongo/Relations/BelongsTo')
+const BelongsToMany = require('../../src/LucidMongo/Relations/BelongsToMany')
+const HasManyThrough = require('../../src/LucidMongo/Relations/HasManyThrough')
 const queryHelpers = require('./helpers/query')
 require('co-mocha')
 

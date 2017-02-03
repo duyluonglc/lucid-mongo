@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * adonis-lucid
+ * adonis-LucidMongo
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -31,8 +31,8 @@ describe('Commands', function () {
   before(function * () {
     yield setup.loadProviders()
     setup.registerCommands()
-    const Lucid = Ioc.use('Adonis/Src/Lucid')
-    class User extends Lucid {}
+    const LucidMongo = Ioc.use('Adonis/Src/LucidMongo')
+    class User extends LucidMongo {}
     Ioc.bind('App/Model/User', function () {
       return User
     })

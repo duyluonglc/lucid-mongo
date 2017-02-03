@@ -41,7 +41,7 @@ const commands = [
 const providers = [
   path.join(__dirname, '../../providers/DatabaseProvider'),
   path.join(__dirname, '../../providers/FactoryProvider'),
-  path.join(__dirname, '../../providers/LucidProvider'),
+  path.join(__dirname, '../../providers/LucidMongoProvider'),
   path.join(__dirname, '../../providers/MigrationsProvider'),
   path.join(__dirname, '../../providers/SchemaProvider'),
   path.join(__dirname, '../../providers/SeederProvider'),

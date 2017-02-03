@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * adonis-lucid
+ * adonis-LucidMongo
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -12,7 +12,7 @@
 /* global describe, it, after, before */
 const chai = require('chai')
 const expect = chai.expect
-const Model = require('../../src/Lucid/Model')
+const Model = require('../../src/LucidMongo/Model')
 const Database = require('../../src/Database')
 const Factory = require('../../src/Factory')
 const filesFixtures = require('./fixtures/files')
