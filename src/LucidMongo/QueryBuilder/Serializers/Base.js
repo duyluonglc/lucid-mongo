@@ -100,6 +100,7 @@ class BaseSerializer {
    */
   * fetch () {
     this._decorateQuery()
+    yield this.queryBuilder.connect()
     const values = yield this.queryBuilder.modelQueryBuilder
     const eagerlyFetched = yield this._fetchEager(values)
     return this._toCollection(values, eagerlyFetched)
@@ -119,6 +120,7 @@ class BaseSerializer {
    */
   * paginate (page, perPage, countByQuery) {
     this._decorateQuery()
+    yield this.queryBuilder.connect()
     const values = yield this.queryBuilder.modelQueryBuilder.paginate(page, perPage, countByQuery)
     const eagerlyFetched = yield this._fetchEager(values.data)
     const collection = this._toCollection(values.data, eagerlyFetched)

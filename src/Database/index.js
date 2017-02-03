@@ -15,8 +15,8 @@
  */
 require('harmony-reflect')
 
-const knex = require('knex')
-const QueryBuilder = require('knex/lib/query/builder')
+const MongoClient = require('mongodb').MongoClient
+const mquery = require('mquery')
 const util = require('../../lib/util')
 const co = require('co')
 const CE = require('../Exceptions')
@@ -122,7 +122,7 @@ Database._resolveConnectionKey = function (connection) {
 }
 
 /**
- * returns knex instance for a given connection if it
+ * returns MongoClient instance for a given connection if it
  * does not exists, a pool is created and returned.
  *
  * @method connection
@@ -134,7 +134,7 @@ Database._resolveConnectionKey = function (connection) {
  * Database.connection('mysql')
  * Database.connection('sqlite')
  */
-Database.connection = function (connection) {
+Database.connection = function* (connection) {
   connection = Database._resolveConnectionKey(connection)
 
   if (!connectionPools[connection]) {
@@ -142,32 +142,13 @@ Database.connection = function (connection) {
     if (!config) {
       throw CE.InvalidArgumentException.missingConfig(`Unable to get database client configuration for ${connection}`)
     }
-    const client = knex(config)
-    const rawTransaction = client.transaction
-    /**
-     * adding custom methods to the query builder
-     */
-    if (!QueryBuilder.prototype.transaction) {
-      QueryBuilder.prototype.transaction = Database.transaction(rawTransaction)
-    }
-    client.on('start', _emitSql)
-
-    /**
-     * Adding methods on the client if withoutPrefix or withPrefix
-     * is called directly it will return the query builder.
-     */
-    client.withoutPrefix = function () {
-      return new QueryBuilder(this.client).withoutPrefix()
-    }
-    client.withPrefix = function (prefix) {
-      return new QueryBuilder(this.client).withPrefix(prefix)
-    }
-    client.transaction = Database.transaction(rawTransaction)
-    client.beginTransaction = Database.beginTransaction(rawTransaction)
-    connectionPools[connection] = client
+    const security = (config.connection.user !== '' || config.connection.password !== '') ? `${config.connection.user}:${config.connection.password}@` : ''
+    const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
+    const dbConnection = yield MongoClient.connect(connectionString)
+    return connectionPools[connection] = dbConnection
+  } else {
+    return connectionPools[connection];
   }
-
-  return connectionPools[connection]
 }
 
 /**
@@ -215,7 +196,7 @@ Database.close = function (connection) {
  *
  * @method beginTransaction
  *
- * @param  {Function}    clientTransaction original transaction method from knex instance
+ * @param  {Function}    clientTransaction original transaction method from MongoClient instance
  * @return {Function}
  *
  * @example
@@ -232,22 +213,22 @@ Database.beginTransaction = function (clientTransaction) {
       clientTransaction(function (trx) {
         resolve(trx)
       })
-      .catch(function () {
-        /**
-         * adding a dummy handler to avoid exceptions from getting thrown
-         * as this method does not need a handler
-         */
-      })
+        .catch(function () {
+          /**
+           * adding a dummy handler to avoid exceptions from getting thrown
+           * as this method does not need a handler
+           */
+        })
     })
   }
 }
 
 /**
- * overrides the actual transaction method on knex
+ * overrides the actual transaction method on MongoClient
  * to have a transaction method with support for
  * generator methods
  * @method transaction
- * @param  {Function}    clientTransaction original transaction method from knex instance
+ * @param  {Function}    clientTransaction original transaction method from MongoClient instance
  * @return {Function}
  *
  * @example
@@ -260,11 +241,11 @@ Database.beginTransaction = function (clientTransaction) {
 Database.transaction = function (clientTransaction) {
   return function (cb) {
     return clientTransaction(function (trx) {
-      co(function * () {
+      co(function* () {
         return yield cb(trx)
       })
-      .then(trx.commit)
-      .catch(trx.rollback)
+        .then(trx.commit)
+        .catch(trx.rollback)
     })
   }
 }
@@ -289,7 +270,7 @@ Database.forPage = function (page, perPage) {
   util.validatePage(page)
   perPage = perPage || 20
   const offset = util.returnOffset(page, perPage)
-  return this.offset(offset).limit(perPage)
+  return this.skip(offset).limit(perPage)
 }
 
 /**
@@ -309,7 +290,7 @@ Database.forPage = function (page, perPage) {
  *
  * @public
  */
-Database.paginate = function * (page, perPage, countByQuery) {
+Database.paginate = function* (page, perPage, countByQuery) {
   const parsedPerPage = _.toSafeInteger(perPage) || 20
   const parsedPage = _.toSafeInteger(page)
   util.validatePage(parsedPage)
@@ -317,7 +298,7 @@ Database.paginate = function * (page, perPage, countByQuery) {
    * first we count the total rows before making the actual
    * query for getting results
    */
-  countByQuery = countByQuery || this.clone().count('* as total')
+  countByQuery = countByQuery || _.clone(this).count()
 
   /**
    * Filter unnecessary statements from the cloned query
@@ -325,7 +306,8 @@ Database.paginate = function * (page, perPage, countByQuery) {
   countByQuery._statements = _.filter(countByQuery._statements, (statement) => excludeAttrFromCount.indexOf(statement.grouping) < 0)
 
   const count = yield countByQuery
-  if (!count[0] || parseInt(count[0].total, 10) === 0) {
+  console.log(count);
+  if (!count || parseInt(count, 10) === 0) {
     return util.makePaginateMeta(0, parsedPage, parsedPerPage)
   }
 
@@ -334,7 +316,7 @@ Database.paginate = function * (page, perPage, countByQuery) {
    * results
    */
   const results = yield this.forPage(parsedPage, parsedPerPage)
-  const resultSet = util.makePaginateMeta(parseInt(count[0].total, 10), parsedPage, parsedPerPage)
+  const resultSet = util.makePaginateMeta(parseInt(count, 10), parsedPage, parsedPerPage)
   resultSet.data = results
   return resultSet
 }
@@ -356,7 +338,7 @@ Database.paginate = function * (page, perPage, countByQuery) {
  *
  * @public
  */
-Database.chunk = function * (limit, cb, page) {
+Database.chunk = function* (limit, cb, page) {
   page = page || 1
   const result = yield this.forPage(page, limit)
   if (result.length) {
@@ -367,7 +349,7 @@ Database.chunk = function * (limit, cb, page) {
 }
 
 /**
- * Overriding the orginal knex.table method to prefix
+ * Overriding the orginal MongoClient.table method to prefix
  * the table name based upon the prefix option
  * defined in the config
  *
@@ -419,20 +401,20 @@ Database.pluckAll = function (fields) {
  */
 const customImplementations = ['_resolveConnectionKey', '_setConfigProvider', 'getConnectionPools', 'connection', 'close']
 
-QueryBuilder.prototype.forPage = Database.forPage
-QueryBuilder.prototype.paginate = Database.paginate
-QueryBuilder.prototype.chunk = Database.chunk
-QueryBuilder.prototype._originalTable = QueryBuilder.prototype.table
-QueryBuilder.prototype.table = Database.table
-QueryBuilder.prototype.from = Database.table
-QueryBuilder.prototype.into = Database.table
-QueryBuilder.prototype.withPrefix = Database.withPrefix
-QueryBuilder.prototype.withoutPrefix = Database.withoutPrefix
-QueryBuilder.prototype.pluckAll = Database.pluckAll
+mquery.prototype.forPage = Database.forPage
+mquery.prototype.paginate = Database.paginate
+mquery.prototype.chunk = Database.chunk
+mquery.prototype._originalTable = mquery.prototype.table
+mquery.prototype.table = Database.table
+mquery.prototype.from = Database.table
+mquery.prototype.into = Database.table
+mquery.prototype.withPrefix = Database.withPrefix
+mquery.prototype.withoutPrefix = Database.withoutPrefix
+mquery.prototype.pluckAll = Database.pluckAll
 
 /**
  * Proxy handler to proxy methods and send
- * them to knex directly.
+ * them to MongoClient directly.
  *
  * @type {Object}
  *

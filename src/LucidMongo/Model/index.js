@@ -25,6 +25,7 @@ const BaseSerializer = require('../QueryBuilder/Serializers/Base')
 const Ioc = require('adonis-fold').Ioc
 const Resolver = require('adonis-binding-resolver')
 const resolver = new Resolver(Ioc)
+const ObjectID = require('mongodb').ObjectID;
 
 const hookNameSpace = 'Model/Hooks'
 
@@ -397,7 +398,7 @@ class Model {
    * @public
    */
   static get primaryKey () {
-    return 'id'
+    return '_id'
   }
 
   /**
@@ -550,11 +551,7 @@ class Model {
    * @public
    */
   static query () {
-    return new QueryBuilder(this).on('query', (query) => {
-      _.each(this.$queryListeners, function (listener) {
-        listener(query)
-      })
-    })
+    return new QueryBuilder(this).where({})
   }
 
   /**
@@ -594,7 +591,7 @@ class Model {
    * @public
    */
   static * findBy (key, value) {
-    return yield this.query().where(key, value).first()
+    return yield this.query().where(key, ObjectID(value)).first()
   }
 
   /**
@@ -673,7 +670,7 @@ class Model {
    * @public
    */
   static * all () {
-    return yield this.query().fetch()
+    return yield this.query().where({}).fetch()
   }
 
   /**
@@ -742,6 +739,42 @@ class Model {
   static with () {
     const args = _.toArray(arguments)
     return this.query().with(args)
+  }
+
+  /**
+   * shorthand to get access to the where method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+  static where () {
+    return this.query().where(...arguments)
+  }
+
+  /**
+   * shorthand to get access to the select method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+  static select () {
+    return this.query().select(...arguments)
+  }
+
+  /**
+   * shorthand to get access to the select method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+  static * count () {
+    return yield this.query().count()
   }
 
   /**

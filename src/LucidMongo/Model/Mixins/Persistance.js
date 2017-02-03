@@ -34,10 +34,11 @@ Peristance.insert = function * () {
       throw CE.ModelException.invalidState(`Cannot save empty ${this.constructor.name} model`)
     }
     const query = this.constructor.query()
+    yield query.connect()
     if (this.transaction) {
       query.transacting(this.transaction)
     }
-    const save = yield query.insertAttributes(values).returning(this.constructor.primaryKey)
+    const save = yield query.insertAttributes(values)
     if (save[0]) {
       /**
        * Since {returning} statement does not work for Sqlite3, we need to
@@ -69,6 +70,7 @@ Peristance.update = function * () {
    */
   const updateHandler = function * () {
     const query = this.constructor.query()
+    yield query.connect()
     const dirtyValues = this.$dirty
     if (!_.size(dirtyValues)) {
       return 0
@@ -76,6 +78,7 @@ Peristance.update = function * () {
     if (this.transaction) {
       query.transacting(this.transaction)
     }
+    console.log(query.where(this.constructor.primaryKey, this.$primaryKeyValue));
     const affected = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirtyValues)
     if (affected > 0) {
       _.merge(this.attributes, dirtyValues)
@@ -99,6 +102,7 @@ Peristance.update = function * () {
 Peristance.delete = function * () {
   const deleteHandler = function * () {
     const query = this.constructor.query().where(this.constructor.primaryKey, this.$primaryKeyValue)
+    yield query.connect()
     if (this.transaction) {
       query.transacting(this.transaction)
     }

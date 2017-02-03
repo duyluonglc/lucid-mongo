@@ -1,7 +1,7 @@
 'use strict'
 
 /**
- * adonis-lucid
+ * adonis-lucidMongo
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -11,12 +11,12 @@
 
 const ServiceProvider = require('adonis-fold').ServiceProvider
 
-class LucidProvider extends ServiceProvider {
+class LucidMongoProvider extends ServiceProvider {
   * register () {
-    this.app.bind('Adonis/Src/Lucid', function () {
-      return require('../src/Lucid/Model')
+    this.app.bind('Adonis/Src/LucidMongo', function () {
+      return require('../src/LucidMongo/Model')
     })
   }
 }
 
-module.exports = LucidProvider
+module.exports = LucidMongoProvider

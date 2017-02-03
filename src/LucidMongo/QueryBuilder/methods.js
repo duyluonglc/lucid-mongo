@@ -12,6 +12,7 @@
 const _ = require('lodash')
 const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
+const ObjectID = require('mongodb').ObjectID
 const methods = exports = module.exports = {}
 
 /**
@@ -43,7 +44,7 @@ methods.fetch = function (target) {
  */
 methods.clone = function (target) {
   return function () {
-    return target.modelQueryBuilder.clone()
+    return _.clone(target)
   }
 }
 
@@ -81,7 +82,7 @@ methods.insertAttributes = function (target) {
   return function (values) {
     values = target.HostModel.prototype.setCreateTimestamp(values)
     values = target.HostModel.prototype.setUpdateTimestamp(values)
-    return target.modelQueryBuilder.insert(values)
+    return target.modelQueryBuilder._collection.collection.insert(values)
   }
 }
 
@@ -121,7 +122,7 @@ methods.deleteAttributes = function (target) {
       values = target.HostModel.prototype.setDeleteTimestamp(values)
       return this.updateAttributes(values)
     }
-    return target.modelQueryBuilder.delete()
+    return target.modelQueryBuilder.remove()
   }
 }
 methods.delete = methods.deleteAttributes
@@ -483,7 +484,8 @@ methods.pair = function (target) {
  */
 methods.pluckFirst = function (target) {
   return function * (field) {
-    const firstRow = yield target.modelQueryBuilder.select(field).first()
+    yield target.connect()
+    const firstRow = yield target.modelQueryBuilder.select(field).findOne()
     return firstRow ? firstRow[field] : null
   }
 }
@@ -536,5 +538,95 @@ methods.pickInverse = function (target) {
     limit = limit || 1
     target.modelQueryBuilder.limit(limit).orderBy(target.HostModel.primaryKey, 'desc')
     return this.fetch()
+  }
+}
+
+/**
+ * Convert whereIn query
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ *
+ * @public
+ */
+methods.whereIn = function (target) {
+  return function (key, values) {
+    target.modelQueryBuilder.where(key).in(values)
+    return this
+  }
+}
+
+/**
+ * Convert select query
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ *
+ * @public
+ */
+methods.select = function (target) {
+  return function () {
+    let arg = null
+    if(arguments.length > 1)
+      arg = _.values(arguments).join(' ')
+    else
+      arg = arguments[0]
+    target.modelQueryBuilder.select(arg)
+    return this
+  }
+}
+
+/**
+ * Convert find query
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ *
+ * @public
+ */
+methods.find = function (target) {
+  return function * (id) {
+    return yield this.where('_id', ObjectID(id)).first()
+  }
+}
+
+
+/**
+ * Convert count query
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ *
+ * @public
+ */
+methods.count = function (target) {
+  return function * () {
+    yield target.connect()
+    return yield target.modelQueryBuilder.count()
+  }
+}
+
+/**
+ * Convert orderBy query
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ *
+ * @public
+ */
+methods.orderBy = function (target) {
+  return function () {
+    let arg = null
+    if(arguments.length > 1)
+      arg = _.set({}, arguments[0], arguments[1])
+    else
+      arg = arguments[0]
+    target.modelQueryBuilder.sort(arg)
+    return this
   }
 }

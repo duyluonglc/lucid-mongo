@@ -13,6 +13,7 @@ require('harmony-reflect')
 const Ioc = require('adonis-fold').Ioc
 const EagerLoad = require('../Relations').EagerLoad
 const proxyHandler = require('./proxyHandler')
+const mquery = require('mquery')
 
 /**
  * Query builder instance will be used for creating fluent queries.
@@ -22,24 +23,23 @@ const proxyHandler = require('./proxyHandler')
  * @class
  */
 class QueryBuilder {
-  constructor (HostModel) {
-    const Database = Ioc.use('Adonis/Src/Database')
+  constructor(HostModel) {
     this.HostModel = HostModel
-    this.queryBuilder = Database.connection(this.HostModel.connection)
-    this.modelQueryBuilder = null
-
-    if (HostModel.prefix && !HostModel.skipPrefix) {
-      this.modelQueryBuilder = this.queryBuilder.withPrefix(HostModel.prefix).table(this.HostModel.table)
-    } else if (HostModel.skipPrefix) {
-      this.modelQueryBuilder = this.queryBuilder.withoutPrefix().table(this.HostModel.table)
-    } else {
-      this.modelQueryBuilder = this.queryBuilder.table(this.HostModel.table)
-    }
-
+    this.queryBuilder = mquery()
+    this.modelQueryBuilder = mquery()
     this.avoidTrashed = false
     this.eagerLoad = new EagerLoad()
     return new Proxy(this, proxyHandler)
   }
+
+  * connect() {
+    const Database = Ioc.use('Adonis/Src/Database')
+    const connection = yield Database.connection(this.HostModel.connection)
+    const collection = connection.collection(this.HostModel.table)
+    this.modelQueryBuilder.collection(collection)
+    return connection
+  }
+
 }
 
 module.exports = QueryBuilder

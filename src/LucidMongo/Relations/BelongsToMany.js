@@ -16,10 +16,11 @@ const helpers = require('../QueryBuilder/helpers')
 const CatLog = require('cat-log')
 const util = require('../../../lib/util')
 const logger = new CatLog('adonis:lucid')
+const ObjectID = require('mongodb').ObjectID
 
 class BelongsToMany extends Relation {
 
-  constructor (parent, related, pivotTable, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
+  constructor(parent, related, pivotTable, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
     super(parent, related)
     this.pivotPrefix = '_pivot_'
     this.pivotItems = []
@@ -36,7 +37,7 @@ class BelongsToMany extends Relation {
    *
    * @private
    */
-  _decorateQueryBuilder () {
+  _decorateQueryBuilder() {
     const self = this
     this.relatedQuery.wherePivot = function () {
       const args = _.toArray(arguments)
@@ -53,7 +54,7 @@ class BelongsToMany extends Relation {
    *
    * @private
    */
-  _setUpPivotTable (pivotTable) {
+  _setUpPivotTable(pivotTable) {
     this.pivotTable = pivotTable || util.makePivotTableName(this.parent.constructor, this.related)
   }
 
@@ -67,7 +68,7 @@ class BelongsToMany extends Relation {
    *
    * @private
    */
-  _setUpKeys (primaryKey, relatedPrimaryKey, pivotLocalKey, pivotOtherKey) {
+  _setUpKeys(primaryKey, relatedPrimaryKey, pivotLocalKey, pivotOtherKey) {
     this.toKey = relatedPrimaryKey || this.related.primaryKey // comments -> id
     this.fromKey = primaryKey || this.parent.constructor.primaryKey // post -> id
     this.pivotLocalKey = pivotLocalKey || util.makePivotModelKey(this.parent.constructor) // post_id
@@ -82,7 +83,7 @@ class BelongsToMany extends Relation {
    *
    * @public
    */
-  _makeJoinQuery (ignoreSelect) {
+  _makeJoinQuery(ignoreSelect) {
     const self = this
     const selectionKeys = [
       `${this.related.table}.*`,
@@ -105,7 +106,7 @@ class BelongsToMany extends Relation {
   /**
    * decorates the current query chain before execution
    */
-  _decorateRead () {
+  _decorateRead() {
     this._makeJoinQuery()
     this.relatedQuery.where(`${this.pivotTable}.${this.pivotLocalKey}`, this.parent[this.fromKey])
   }
@@ -120,7 +121,7 @@ class BelongsToMany extends Relation {
    * @return  {Object}
    * @private
    */
-  _getTimestampsForPivotTable () {
+  _getTimestampsForPivotTable() {
     const timestamps = {}
     if (this.pivotTimestamps) {
       this.parent.setCreateTimestamp(timestamps)
@@ -139,7 +140,7 @@ class BelongsToMany extends Relation {
    *
    * @private
    */
-  _getAlternateQuery (expression) {
+  _getAlternateQuery(expression) {
     const self = this
     const countByQuery = this.relatedQuery.clone()
 
@@ -161,7 +162,7 @@ class BelongsToMany extends Relation {
    *
    * @return {Array}
    */
-  paginate (page, perPage) {
+  paginate(page, perPage) {
     this._validateRead()
     /**
      * creating the query clone to be used as countByQuery,
@@ -192,7 +193,7 @@ class BelongsToMany extends Relation {
    * @param  {Function} [callback]
    * @return {Object}
    */
-  exists (callback) {
+  exists(callback) {
     this._makeJoinQuery(true)
     this.relatedQuery.whereRaw(`${this.pivotTable}.${this.pivotLocalKey} = ${this.parent.constructor.table}.${this.fromKey}`)
     if (typeof (callback) === 'function') {
@@ -208,7 +209,7 @@ class BelongsToMany extends Relation {
    * @param  {Function} [callback]
    * @return {Object}
    */
-  counts (callback) {
+  counts(callback) {
     this._makeJoinQuery(true)
     this.relatedQuery.count('*').whereRaw(`${this.pivotTable}.${this.pivotLocalKey} = ${this.parent.constructor.table}.${this.fromKey}`)
     if (typeof (callback) === 'function') {
@@ -224,7 +225,7 @@ class BelongsToMany extends Relation {
    *
    * @return {Array}
    */
-  count (expression) {
+  count(expression) {
     this._validateRead()
     return this._getAlternateQuery().count(expression)
   }
@@ -236,7 +237,7 @@ class BelongsToMany extends Relation {
    *
    * @return {Array}
    */
-  avg (column) {
+  avg(column) {
     this._validateRead()
     return this._getAlternateQuery().avg(column)
   }
@@ -248,7 +249,7 @@ class BelongsToMany extends Relation {
    *
    * @return {Array}
    */
-  min (column) {
+  min(column) {
     this._validateRead()
     return this._getAlternateQuery().min(column)
   }
@@ -260,7 +261,7 @@ class BelongsToMany extends Relation {
    *
    * @return {Array}
    */
-  max (column) {
+  max(column) {
     this._validateRead()
     return this._getAlternateQuery().max(column)
   }
@@ -269,7 +270,7 @@ class BelongsToMany extends Relation {
    * Throws exception since update should be
    * done after getting the instance.
    */
-  increment () {
+  increment() {
     throw CE.ModelRelationException.unSupportedMethod('increment', 'BelongsToMany')
   }
 
@@ -277,7 +278,7 @@ class BelongsToMany extends Relation {
    * Throws exception since update should be
    * done after getting the instance.
    */
-  decrement () {
+  decrement() {
     throw CE.ModelRelationException.unSupportedMethod('decrement', 'BelongsToMany')
   }
 
@@ -292,18 +293,25 @@ class BelongsToMany extends Relation {
    * @public
    *
    */
-  * eagerLoad (values, scopeMethod) {
+  * eagerLoad(values, scopeMethod) {
     if (typeof (scopeMethod) === 'function') {
       scopeMethod(this.relatedQuery)
     }
-    this._makeJoinQuery()
-    const results = yield this.relatedQuery.whereIn(`${this.pivotTable}.${this.pivotLocalKey}`, values).fetch()
-    return results.groupBy((item) => {
-      return item[`${this.pivotPrefix}${this.pivotLocalKey}`]
+    // this._makeJoinQuery()
+    const query = this.relatedQuery.clone()
+    const connection = yield query.connect()
+    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotTable))
+    const pivots = yield pivotQuery.where(this.pivotLocalKey).in(values).find()
+    const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
+    const results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
+    return results.groupBy((result) => {
+      return _.find(pivots, pivot => {
+        return String(pivot[this.pivotOtherKey]) == String(result._id)
+      })[this.pivotLocalKey]
     }).mapValues(function (value) {
       return helpers.toCollection(value)
-    })
-    .value()
+    }).value()
+
   }
 
   /**
@@ -318,14 +326,20 @@ class BelongsToMany extends Relation {
    * @public
    *
    */
-  * eagerLoadSingle (value, scopeMethod) {
+  * eagerLoadSingle(value, scopeMethod) {
     if (typeof (scopeMethod) === 'function') {
       scopeMethod(this.relatedQuery)
     }
-    this._makeJoinQuery()
-    const results = yield this.relatedQuery.where(`${this.pivotTable}.${this.pivotLocalKey}`, value).fetch()
+    // this._makeJoinQuery()
+    const query = this.relatedQuery.clone()
+    const connection = yield query.connect()
+    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotTable))
+    const pivots = yield pivotQuery.where(this.pivotLocalKey, ObjectID(value)).find()
+    const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
+    const results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
     const response = {}
     response[value] = results
+    console.log(response);
     return response
   }
 
@@ -344,7 +358,7 @@ class BelongsToMany extends Relation {
    *
    * @public
    */
-  * attach (references, pivotValues) {
+  * attach(references, pivotValues) {
     pivotValues = pivotValues || {}
 
     if (!_.isArray(references) && !_.isObject(references)) {
@@ -367,13 +381,16 @@ class BelongsToMany extends Relation {
 
     const values = _.map(references, (reference, value) => {
       let result = {}
-      result[this.pivotOtherKey] = value
-      result[this.pivotLocalKey] = this.parent[this.fromKey]
+      result[this.pivotOtherKey] = ObjectID(value)
+      result[this.pivotLocalKey] = ObjectID(this.parent[this.fromKey])
       result = _.merge(result, reference)
       return result
     })
 
-    yield this.relatedQuery.queryBuilder.table(this.pivotTable).insert(values)
+    const query = this.relatedQuery.clone()
+    const connection = yield query.connect()
+    const pivotQuery = connection.collection(this.pivotTable)
+    yield pivotQuery.insert(values)
   }
 
   /**
@@ -386,22 +403,23 @@ class BelongsToMany extends Relation {
    *
    * @public
    */
-  * detach (references) {
+  * detach(references) {
     if (this.parent.isNew()) {
       throw CE.ModelRelationException.unSavedTarget('detach', this.parent.constructor.name, this.related.name)
     }
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to attach values with ${this.fromKey} as primaryKey, whose value is falsy`)
     }
-    const query = this.relatedQuery.queryBuilder.table(this.pivotTable).where(`${this.pivotLocalKey}`, this.parent[this.fromKey])
 
-    /**
-     * if references have been passed, then only remove them
-     */
+    const query = this.relatedQuery.clone()
+    const connection = yield query.connect()
+    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotTable))
+    pivotQuery.where(this.pivotLocalKey, this.parent[this.fromKey])
     if (_.isArray(references)) {
-      query.whereIn(`${this.pivotOtherKey}`, references)
+      pivotQuery.where(this.pivotOtherKey).in(references)
     }
-    return yield query.delete()
+    return yield pivotQuery.remove()
+
   }
 
   /**
@@ -413,7 +431,7 @@ class BelongsToMany extends Relation {
    *
    * @public
    */
-  * sync (references, pivotValues) {
+  * sync(references, pivotValues) {
     yield this.detach()
     return yield this.attach(references, pivotValues)
   }
@@ -428,7 +446,7 @@ class BelongsToMany extends Relation {
    *
    * @public
    */
-  * save (relatedInstance, pivotValues) {
+  * save(relatedInstance, pivotValues) {
     if (relatedInstance instanceof this.related === false) {
       throw CE.ModelRelationException.relationMisMatch('save expects an instance of related model')
     }
@@ -461,7 +479,7 @@ class BelongsToMany extends Relation {
    *
    * @public
    */
-  * create (values, pivotValues) {
+  * create(values, pivotValues) {
     const RelatedModel = this.related
     const relatedInstance = new RelatedModel(values)
     yield this.save(relatedInstance, pivotValues)
@@ -473,7 +491,7 @@ class BelongsToMany extends Relation {
    * should be done via relation and detach should be
    * used instead.
    */
-  * delete () {
+  * delete() {
     throw new CE.ModelRelationException('delete is not supported by BelongsToMany, use detach instead')
   }
 
@@ -482,7 +500,7 @@ class BelongsToMany extends Relation {
    *
    * @return {Object} this for chaining
    */
-  withPivot () {
+  withPivot() {
     this.pivotItems = _.concat(this.pivotItems, _.toArray(arguments))
     return this
   }
@@ -495,7 +513,7 @@ class BelongsToMany extends Relation {
    * @param  {Array} otherKeyValue
    * @return {Promise}
    */
-  updatePivot (values, otherKeyValue) {
+  updatePivot(values, otherKeyValue) {
     if (otherKeyValue && !_.isArray(otherKeyValue)) {
       otherKeyValue = [otherKeyValue]
     }
@@ -516,7 +534,7 @@ class BelongsToMany extends Relation {
    * and values are derived by the parent model. Disabling timestamps on parent
    * model results in no impact even after using pivotTimestamps.
    */
-  withTimestamps () {
+  withTimestamps() {
     this.pivotTimestamps = true
     this.withPivot(this.parent.constructor.createTimestamp, this.parent.constructor.updateTimestamp)
     return this
