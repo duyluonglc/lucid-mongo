@@ -751,7 +751,7 @@ class Model {
    * @public
    */
   static where () {
-    return this.query().where(...arguments)
+    return this.query().where(_.toArray(arguments))
   }
 
   /**
@@ -763,7 +763,7 @@ class Model {
    * @public
    */
   static select () {
-    return this.query().select(...arguments)
+    return this.query().select(_.toArray(arguments))
   }
 
   /**
