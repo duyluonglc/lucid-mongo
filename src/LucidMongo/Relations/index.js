@@ -18,5 +18,6 @@ module.exports = {
   MorphMany: require('./MorphMany'),
   EmbedsOne: require('./EmbedsOne'),
   EmbedsMany: require('./EmbedsMany'),
+  ReferMany: require('./ReferMany'),
   EagerLoad: require('./EagerLoad')
 }

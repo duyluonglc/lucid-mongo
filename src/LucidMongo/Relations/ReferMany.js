@@ -10,18 +10,17 @@
 */
 
 const Relation = require('./Relation')
-const uuid = use('uuid')
-const _ = use('lodash')
+const _ = require('lodash')
 const CE = require('../../Exceptions')
 const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')
 
-class EmbedOne extends Relation {
+class ReferMany extends Relation {
 
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.parent.related.foreignKey
+    this.toKey = foreignKey || this.related.constructor.foreignKey
   }
 
   /**
@@ -39,15 +38,22 @@ class EmbedOne extends Relation {
     if (typeof (scopeMethod) === 'function') {
       scopeMethod(this.relatedQuery)
     }
+    const referValues = _(results).map(result => result[this.toKey]).flatten().value()
+    const relatedResults = yield this.relatedQuery.whereIn(this.fromKey, referValues).fetch()
 
-    return _(results).keyBy(this.fromKey).mapValues((value) => {
-      const RelatedModel = this.related
-      const modelInstance = new RelatedModel()
-      modelInstance.attributes = value[this.toKey]
-      modelInstance.exists = true
-      modelInstance.original = _.clone(modelInstance.attributes)
-      return _(modelInstance)
-    }).value()
+    const response = {}
+    relatedResults.forEach(item => {
+      const matchParents = _(results).filter(result => {
+        return _(result[this.toKey]).map(String).includes(String(item[this.fromKey]))
+      })
+
+      matchParents.forEach(matchParent => {
+        const parentId = matchParent[this.fromKey]
+        response[parentId] = (response[parentId] || _([])).concat(item)
+      })
+    })
+    console.log(response)
+    return response
   }
 
   /**
@@ -66,13 +72,9 @@ class EmbedOne extends Relation {
     if (typeof (scopeMethod) === 'function') {
       scopeMethod(this.relatedQuery)
     }
+    const results = yield this.relatedQuery.whereIn(this.fromKey, result[this.toKey]).fetch()
     const response = {}
-    const RelatedModel = this.related
-    const modelInstance = new RelatedModel()
-    modelInstance.attributes = result[this.toKey]
-    modelInstance.exists = true
-    modelInstance.original = _.clone(modelInstance.attributes)
-    response[value] = _(modelInstance)
+    response[value] = results
     return response
   }
 
@@ -82,7 +84,7 @@ class EmbedOne extends Relation {
    * @param {any} relatedInstance
    * @returns
    *
-   * @memberOf EmbedOne
+   * @memberOf referMany
    */
   * save (relatedInstance) {
     if (relatedInstance instanceof this.related === false) {
@@ -94,13 +96,23 @@ class EmbedOne extends Relation {
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
     }
-    if (!relatedInstance[this.fromKey]) {
-      relatedInstance[this.fromKey] = uuid.v4()
+
+    if (relatedInstance.isNew()) {
+      yield relatedInstance.save()
+      console.log(relatedInstance)
+      let referKeys = _.clone(this.parent.attributes[this.toKey])
+      if (!referKeys || !_.isArray(referKeys)) {
+        referKeys = []
+      }
+      referKeys.push(relatedInstance[this.fromKey])
+      this.parent.set(this.toKey, referKeys)
+      yield this.parent.save()
+    } else {
+      yield relatedInstance.save()
     }
-    this.parent.set(this.toKey, relatedInstance.toJSON())
-    yield this.parent.save()
+
     return relatedInstance
   }
 }
 
-module.exports = EmbedOne
+module.exports = ReferMany

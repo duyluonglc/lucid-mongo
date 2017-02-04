@@ -1074,15 +1074,15 @@ class Model {
    * resolving relations
    *
    * @param  {Object}  related
-   * @param  {String}  embedField
+   * @param  {String}  discriminator
    * @param  {String}  [primaryKey]
    * @param  {String}  [foreignKey]
    * @return {Object}
    *
    * @public
    */
-  morphMany (related, embedField, primaryKey, foreignKey) {
-    return new Relations.MorphMany(this, related, embedField, primaryKey, foreignKey)
+  morphMany (related, discriminator, primaryKey, foreignKey) {
+    return new Relations.MorphMany(this, related, discriminator, primaryKey, foreignKey)
   }
 
   /**
@@ -1091,15 +1091,14 @@ class Model {
    * resolving relations
    *
    * @param  {Object}  related
-   * @param  {String}  [embedField]
    * @param  {String}  [primaryKey]
    * @param  {String}  [foreignKey]
    * @return {Object}
    *
    * @public
    */
-  embedsOne (related, embedField, primaryKey, foreignKey) {
-    return new Relations.EmbedsOne(this, related, embedField, primaryKey, foreignKey)
+  embedsOne (related, primaryKey, foreignKey) {
+    return new Relations.EmbedsOne(this, related, primaryKey, foreignKey)
   }
 
   /**
@@ -1108,15 +1107,30 @@ class Model {
    * resolving relations
    *
    * @param  {Object}  related
-   * @param  {String}  [embedField]
    * @param  {String}  [primaryKey]
    * @param  {String}  [foreignKey]
    * @return {Object}
    *
    * @public
    */
-  embedsMany (related, embedField, primaryKey, foreignKey) {
-    return new Relations.EmbedsMany(this, related, embedField, primaryKey, foreignKey)
+  embedsMany (related, primaryKey, foreignKey) {
+    return new Relations.EmbedsMany(this, related, primaryKey, foreignKey)
+  }
+
+  /**
+   * returns referMany instance for a given model. Later
+   * returned instance will be responsible for
+   * resolving relations
+   *
+   * @param  {Object}  related
+   * @param  {String}  [primaryKey]
+   * @param  {String}  [foreignKey]
+   * @return {Object}
+   *
+   * @public
+   */
+  referMany (related, primaryKey, foreignKey) {
+    return new Relations.ReferMany(this, related, primaryKey, foreignKey)
   }
 
   /**

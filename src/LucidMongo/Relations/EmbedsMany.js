@@ -19,11 +19,10 @@ const logger = new CatLog('adonis:lucid')
 
 class EmbedMany extends Relation {
 
-  constructor (parent, related, embedField, primaryKey, foreignKey) {
+  constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.parent.constructor.foreignKey
-    this.embedField = embedField || 'embedItems'
+    this.toKey = foreignKey || this.parent.related.foreignKey
   }
 
   /**
@@ -42,8 +41,8 @@ class EmbedMany extends Relation {
       scopeMethod(this.relatedQuery)
     }
 
-    return _(results).keyBy('_id').mapValues((value) => {
-      return helpers.toCollection(_.map(value[this.embedField], embed => {
+    return _(results).keyBy(this.fromKey).mapValues((value) => {
+      return helpers.toCollection(_.map(value[this.toKey], embed => {
         const RelatedModel = this.related
         const modelInstance = new RelatedModel()
         modelInstance.attributes = embed
@@ -71,7 +70,7 @@ class EmbedMany extends Relation {
       scopeMethod(this.relatedQuery)
     }
     const response = {}
-    response[value] = helpers.toCollection(_.map(result[this.embedField], embed => {
+    response[value] = helpers.toCollection(_.map(result[this.toKey], embed => {
       const RelatedModel = this.related
       const modelInstance = new RelatedModel()
       modelInstance.attributes = embed
@@ -100,16 +99,19 @@ class EmbedMany extends Relation {
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
     }
-    let embedItems = _.isArray(this.parent.attributes[this.embedField]) ? _.clone(this.parent.attributes[this.embedField]) : []
-    if (!relatedInstance._id) {
-      relatedInstance._id = uuid.v4()
+    let embedItems = _.clone(this.parent.attributes[this.toKey])
+    if (!embedItems || !_.isArray(embedItems)) {
+      embedItems = []
+    }
+    if (!relatedInstance[this.fromKey]) {
+      relatedInstance[this.fromKey] = uuid.v4()
       embedItems.push(relatedInstance.toJSON())
     } else {
       embedItems = embedItems.map(item => {
-        return item._id === relatedInstance._id ? relatedInstance.toJSON() : item
+        return item[this.fromKey] === relatedInstance[this.fromKey] ? relatedInstance.toJSON() : item
       })
     }
-    this.parent.set(this.embedField, embedItems)
+    this.parent.set(this.toKey, embedItems)
     yield this.parent.save()
     return relatedInstance
   }
