@@ -52,8 +52,8 @@ describe('LucidMongo', function () {
   afterEach(function * () {
     Database.close()
     Database._setConfigProvider(config)
-    yield Database.table('users').truncate()
-    yield Database.table('zombies').truncate()
+    yield Database.collection('users').truncate()
+    yield Database.collection('zombies').truncate()
   })
 
   context('Model', function () {
@@ -134,7 +134,7 @@ describe('LucidMongo', function () {
       expect(Post.globalScope.length).to.equal(1)
     })
 
-    it('should make use of the prefix when selecting the table @prefix', function () {
+    it('should make use of the prefix when selecting the collection @prefix', function () {
       Database._setConfigProvider(config.withPrefix)
       class User extends Model {
       }
@@ -364,7 +364,7 @@ describe('LucidMongo', function () {
       expect(user.isDeleted()).to.equal(false)
     })
 
-    it('should persist values to the table when save is called for the first time', function * () {
+    it('should persist values to the collection when save is called for the first time', function * () {
       Ioc.bind('Adonis/Src/Helpers', function () {
         return {
           makeNameSpace: function (base, hook) {
@@ -812,7 +812,7 @@ describe('LucidMongo', function () {
       }
     })
 
-    it('should be able to truncate database table using static truncate method', function * () {
+    it('should be able to truncate database collection using static truncate method', function * () {
       class User extends Model {}
       User.bootIfNotBooted()
       yield User.create({username: 'foo', lastname: 'bar'})

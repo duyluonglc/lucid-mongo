@@ -69,7 +69,7 @@ Migrate._callSchemaActions = function (defination, connection) {
   /**
    * co.wrap returns a function which returns a promise, so we
    * need to wrap schema method inside a function to keep
-   * the API stable.
+   * the API scollection.
    */
   return (function () {
     return builder[defination.action](defination.key, this._wrapSchemaCallback(defination.callback))
@@ -78,7 +78,7 @@ Migrate._callSchemaActions = function (defination, connection) {
 
 /**
  * calls the schema methods callback, while executing the callback
- * it will decorate the table object passed to the callback.
+ * it will decorate the collection object passed to the callback.
  *
  * @method _wrapSchemaCallback
  *
@@ -91,9 +91,9 @@ Migrate._wrapSchemaCallback = function (callback) {
     return callback
   }
   const self = this
-  return function (table) {
-    self._decorateTable(table)
-    callback(table)
+  return function (collection) {
+    self._decorateCollection(collection)
+    callback(collection)
   }
 }
 
@@ -112,44 +112,44 @@ Migrate._decorateSchema = function (schemaInstance) {
 }
 
 /**
- * decorates schema callback table object by adding
+ * decorates schema callback collection object by adding
  * new methods on it.
  *
- * @method _decorateTable
+ * @method _decorateCollection
  *
- * @param  {Object}       table
+ * @param  {Object}       collection
  *
  * @private
  */
-Migrate._decorateTable = function (table) {
-  table.softDeletes = function () {
-    table.dateTime('deleted_at').nullable()
+Migrate._decorateCollection = function (collection) {
+  collection.softDeletes = function () {
+    collection.dateTime('deleted_at').nullable()
   }
-  table.nullableTimestamps = function () {
-    table.dateTime('created_at').nullable()
-    table.dateTime('updated_at').nullable()
+  collection.nullableTimestamps = function () {
+    collection.dateTime('created_at').nullable()
+    collection.dateTime('updated_at').nullable()
   }
 }
 
 /**
- * creates migrations table if it does not exists.
- * creating table needs to be first step
+ * creates migrations collection if it does not exists.
+ * creating collection needs to be first step
  *
- * @method _makeMigrationsTable
+ * @method _makeMigrationsCollection
  *
  * @return {Object}
  *
  * @private
  */
-Migrate._makeMigrationsTable = function () {
+Migrate._makeMigrationsCollection = function () {
   return this
     .database
     .schema
-    .createTableIfNotExists(this.migrationsTable, function (table) {
-      table.increments('id')
-      table.string('name')
-      table.integer('batch')
-      table.timestamp('migration_time')
+    .createCollectionIfNotExists(this.migrationsCollection, function (collection) {
+      collection.increments('id')
+      collection.string('name')
+      collection.integer('batch')
+      collection.timestamp('migration_time')
     })
 }
 
@@ -237,14 +237,14 @@ Migrate._mapMigrationsToActions = function (migrationsList, direction) {
 
 /**
  * return list of migrated files saved inside migrations
- * table.
+ * collection.
  *
  * @return     {Array}  The migrated files.
  *
  * @private
  */
 Migrate._getMigratedFiles = function () {
-  return this.database.select('name as name').from(this.migrationsTable).orderBy('name').pluck('name')
+  return this.database.select('name as name').from(this.migrationsCollection).orderBy('name').pluck('name')
 }
 
 /**
@@ -259,7 +259,7 @@ Migrate._getMigratedFiles = function () {
 Migrate._getFilesTillBatch = function (batch) {
   return this.database
     .select('name')
-    .from(this.migrationsTable)
+    .from(this.migrationsCollection)
     .where('batch', '>', batch)
     .orderBy('name')
     .pluck('name')

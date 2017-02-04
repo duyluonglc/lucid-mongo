@@ -21,12 +21,12 @@ const mustImplement = ['up', 'down']
  * @type {Object}
  */
 const aliases = {
-  create: 'createTable',
-  createIfNotExists: 'createTableIfNotExists',
-  rename: 'renameTable',
-  drop: 'dropTable',
-  has: 'hasTable',
-  dropIfExists: 'dropTableIfExists'
+  create: 'createCollection',
+  createIfNotExists: 'createCollectionIfNotExists',
+  rename: 'renameCollection',
+  drop: 'dropCollection',
+  has: 'hasCollection',
+  dropIfExists: 'dropCollectionIfExists'
 }
 
 let proxyHandler = exports = module.exports = {}

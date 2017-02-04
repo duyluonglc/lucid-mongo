@@ -77,7 +77,7 @@ setup.migrate = function * (schemas, direction) {
   const Migrations = Ioc.use('Adonis/Src/Migrations')
   yield new Migrations()[direction](schemas)
   if (direction === 'down') {
-    yield new Migrations().database.schema.dropTable('adonis_migrations')
+    yield new Migrations().database.schema.dropCollection('adonis_migrations')
   }
 }
 

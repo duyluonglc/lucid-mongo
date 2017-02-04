@@ -49,9 +49,9 @@ describe('Commands', function () {
   })
 
   after(function * () {
-    yield Database.schema.dropTableIfExists('adonis_schema')
-    yield Database.schema.dropTableIfExists('users')
-    yield Database.schema.dropTableIfExists('accounts')
+    yield Database.schema.dropCollectionIfExists('adonis_schema')
+    yield Database.schema.dropCollectionIfExists('users')
+    yield Database.schema.dropCollectionIfExists('accounts')
     yield filesFixtures.cleanStorage()
     Database.close()
   })
@@ -65,9 +65,9 @@ describe('Commands', function () {
     it('should rollback and re-run all the migrations when the handle method is called', function * () {
       class Users extends Schema {
         up () {
-          this.create('users', function (table) {
-            table.increments()
-            table.timestamps()
+          this.create('users', function (collection) {
+            collection.increments()
+            collection.timestamps()
           })
         }
       }
@@ -78,11 +78,11 @@ describe('Commands', function () {
       }
 
       yield this.refresh.handle({}, {})
-      const users = yield Database.table('users').columnInfo()
+      const users = yield Database.collection('users').columnInfo()
       expect(users).to.be.an('object')
       expect(Object.keys(users)).deep.equal(['id', 'created_at', 'updated_at'])
-      yield Database.schema.dropTable('adonis_schema')
-      yield Database.schema.dropTable('users')
+      yield Database.schema.dropCollection('adonis_schema')
+      yield Database.schema.dropCollection('users')
     })
   })
 
@@ -95,9 +95,9 @@ describe('Commands', function () {
     it('should migrate all pending migrations', function * () {
       class Users extends Schema {
         up () {
-          this.create('users', function (table) {
-            table.increments()
-            table.timestamps()
+          this.create('users', function (collection) {
+            collection.increments()
+            collection.timestamps()
           })
         }
       }
@@ -108,11 +108,11 @@ describe('Commands', function () {
       }
 
       yield this.run.handle({}, {})
-      const users = yield Database.table('users').columnInfo()
+      const users = yield Database.collection('users').columnInfo()
       expect(users).to.be.an('object')
       expect(Object.keys(users)).deep.equal(['id', 'created_at', 'updated_at'])
-      yield Database.schema.dropTable('adonis_schema')
-      yield Database.schema.dropTable('users')
+      yield Database.schema.dropCollection('adonis_schema')
+      yield Database.schema.dropCollection('users')
     })
   })
 
@@ -127,9 +127,9 @@ describe('Commands', function () {
     it('should rollback migrations to the previous batch', function * () {
       class Users extends Schema {
         up () {
-          this.create('users', function (table) {
-            table.increments()
-            table.timestamps()
+          this.create('users', function (collection) {
+            collection.increments()
+            collection.timestamps()
           })
         }
         down () {
@@ -147,9 +147,9 @@ describe('Commands', function () {
 
       yield this.run.handle({}, {})
       yield this.rollback.handle({}, {})
-      const users = yield Database.table('users').columnInfo()
+      const users = yield Database.collection('users').columnInfo()
       expect(users).deep.equal({})
-      yield Database.schema.dropTable('adonis_schema')
+      yield Database.schema.dropCollection('adonis_schema')
     })
   })
 
@@ -166,8 +166,8 @@ describe('Commands', function () {
     it('should rollback migrations to the latest batch', function * () {
       class Users extends Schema {
         up () {
-          this.create('users', function (table) {
-            table.increments()
+          this.create('users', function (collection) {
+            collection.increments()
           })
         }
         down () {
@@ -176,8 +176,8 @@ describe('Commands', function () {
       }
       class Accounts extends Schema {
         up () {
-          this.create('accounts', function (table) {
-            table.increments()
+          this.create('accounts', function (collection) {
+            collection.increments()
           })
         }
         down () {
@@ -204,20 +204,20 @@ describe('Commands', function () {
 
       yield this.run.handle({}, {})
       yield this.reRun.handle({}, {})
-      const users = yield Database.table('users').columnInfo()
-      const accounts = yield Database.table('accounts').columnInfo()
+      const users = yield Database.collection('users').columnInfo()
+      const accounts = yield Database.collection('accounts').columnInfo()
       expect(users).to.be.an('object')
       expect(Object.keys(users)).deep.equal(['id'])
       expect(accounts).to.be.an('object')
       expect(Object.keys(accounts)).deep.equal(['id'])
 
       yield this.reset.handle({}, {})
-      const usersInfo = yield Database.table('users').columnInfo()
-      const accountsInfo = yield Database.table('accounts').columnInfo()
+      const usersInfo = yield Database.collection('users').columnInfo()
+      const accountsInfo = yield Database.collection('accounts').columnInfo()
       expect(usersInfo).deep.equal({})
       expect(accountsInfo).deep.equal({})
 
-      yield Database.schema.dropTable('adonis_schema')
+      yield Database.schema.dropCollection('adonis_schema')
     })
   })
 

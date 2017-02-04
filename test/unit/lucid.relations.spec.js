@@ -794,7 +794,7 @@ describe('Relations', function () {
             relatedQuery = query
           })
         }
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -831,7 +831,7 @@ describe('Relations', function () {
             relatedQuery = query
           })
         }
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -862,7 +862,7 @@ describe('Relations', function () {
             relatedQuery = query
           })
         }
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -876,7 +876,7 @@ describe('Relations', function () {
         account () {
           return this.hasOne(Account, 'regid', 'supplier_regid')
         }
-        static get table () {
+        static get collection () {
           return 'all_suppliers'
         }
       }
@@ -902,7 +902,7 @@ describe('Relations', function () {
             relatedQuery = query
           })
         }
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -910,7 +910,7 @@ describe('Relations', function () {
         account () {
           return this.hasOne(Account, 'regid', 'supplier_regid')
         }
-        static get table () {
+        static get collection () {
           return 'all_suppliers'
         }
       }
@@ -1280,7 +1280,7 @@ describe('Relations', function () {
 
     it('should be able to save related model instance with different foriegnKey', function * () {
       class Account extends Model {
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -1303,7 +1303,7 @@ describe('Relations', function () {
 
     it('should be able to save related model instance with different primary and foriegn key', function * () {
       class Account extends Model {
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -1311,7 +1311,7 @@ describe('Relations', function () {
         account () {
           return this.hasOne(Account, 'regid', 'supplier_regid')
         }
-        static get table () {
+        static get collection () {
           return 'all_suppliers'
         }
       }
@@ -1393,7 +1393,7 @@ describe('Relations', function () {
 
     it('should be able to created related model using create method with different primary and foriegn key', function * () {
       class Account extends Model {
-        static get table () {
+        static get collection () {
           return 'all_accounts'
         }
       }
@@ -1401,7 +1401,7 @@ describe('Relations', function () {
         account () {
           return this.hasOne(Account, 'regid', 'supplier_regid')
         }
-        static get table () {
+        static get collection () {
           return 'all_suppliers'
         }
       }
@@ -2886,7 +2886,7 @@ describe('Relations', function () {
       expect(coursesRelation.toKey).to.equal('id')
       expect(coursesRelation.fromKey).to.equal('id')
       expect(coursesRelation.pivotLocalKey).to.equal('student_id')
-      expect(coursesRelation.pivotTable).to.equal('course_student')
+      expect(coursesRelation.pivotCollection).to.equal('course_student')
       expect(coursesRelation.pivotOtherKey).to.equal('course_id')
     })
 
@@ -3115,7 +3115,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to add query constraints pivotTable on runtime', function * () {
+    it('should be able to add query constraints pivotCollection on runtime', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'maths', id: 13})
@@ -3263,7 +3263,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to attach extra values to pivot table', function * () {
+    it('should be able to attach extra values to pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       class Course extends Model {
@@ -3290,7 +3290,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to query multiple extra values from pivot table', function * () {
+    it('should be able to query multiple extra values from pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       class Course extends Model {
@@ -3318,7 +3318,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to attach extra values on each key for pivot table', function * () {
+    it('should be able to attach extra values on each key for pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 38})
@@ -3348,7 +3348,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able save to related model and put relation into pivot table', function * () {
+    it('should be able save to related model and put relation into pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -3373,7 +3373,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able save many instances of related model and put relation into pivot table', function * () {
+    it('should be able save many instances of related model and put relation into pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -3402,7 +3402,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to detach mappings from pivot table', function * () {
+    it('should be able to detach mappings from pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 38})
@@ -3427,7 +3427,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to detach all mappings from pivot table', function * () {
+    it('should be able to detach all mappings from pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 38})
@@ -3452,7 +3452,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be detach all mappings from pivot table and attach the given ones', function * () {
+    it('should be detach all mappings from pivot collection and attach the given ones', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 38})
@@ -3485,7 +3485,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to create a related model and put relation into pivot table', function * () {
+    it('should be able to create a related model and put relation into pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -3509,7 +3509,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to create many related models and put relation into pivot table', function * () {
+    it('should be able to create many related models and put relation into pivot collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -3764,7 +3764,7 @@ describe('Relations', function () {
       }
     })
 
-    it('should be able to pick ids for the related table', function * () {
+    it('should be able to pick ids for the related collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12, weightage: 8})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'maths', id: 14, weightage: 6})
@@ -3790,7 +3790,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to pick key/value pair for the related table', function * () {
+    it('should be able to pick key/value pair for the related collection', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12, weightage: 8})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'maths', id: 14, weightage: 6})
@@ -3816,7 +3816,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to select pivot table fields when eagerloading', function * () {
+    it('should be able to select pivot collection fields when eagerloading', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12, weightage: 8})
       yield relationFixtures.createRecords(Database, 'course_student', [{student_id: savedStudent[0], course_id: savedCourse[0], is_enrolled: 1}])
@@ -3837,7 +3837,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to update the existing pivot table record', function * () {
+    it('should be able to update the existing pivot collection record', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -3894,7 +3894,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'students')
     })
 
-    it('should be able to update the pivot table when executing updatePivot method', function * () {
+    it('should be able to update the pivot collection when executing updatePivot method', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12, weightage: 8})
       const savedCourse1 = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 14, weightage: 8})
@@ -3927,7 +3927,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be return timestamps from the pivot table model withTimestamps method is used', function * () {
+    it('should be return timestamps from the pivot collection model withTimestamps method is used', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       const savedCourse = yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
       class Course extends Model {
@@ -3953,7 +3953,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should set timestamps on the pivot table when withTimestamps is set to true', function * () {
+    it('should set timestamps on the pivot collection when withTimestamps is set to true', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -3996,7 +3996,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to save pivot table values when creating a record', function * () {
+    it('should be able to save pivot collection values when creating a record', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -4016,7 +4016,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'course_student')
     })
 
-    it('should be able to save pivot table values when creating a record via save method', function * () {
+    it('should be able to save pivot collection values when creating a record via save method', function * () {
       const savedStudent = yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       class Course extends Model {
       }
@@ -4097,7 +4097,7 @@ describe('Relations', function () {
       yield relationFixtures.truncate(Database, 'students')
     })
 
-    it('should return zero records when related rows exists but pivot table is empty @current', function * () {
+    it('should return zero records when related rows exists but pivot collection is empty @current', function * () {
       yield relationFixtures.createRecords(Database, 'students', {name: 'ricky', id: 29})
       yield relationFixtures.createRecords(Database, 'courses', {title: 'geometry', id: 12})
 

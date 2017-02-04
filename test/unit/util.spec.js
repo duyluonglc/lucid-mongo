@@ -17,22 +17,22 @@ const chai = require('chai')
 const expect = chai.expect
 
 describe('Utils', function () {
-  it('should make plural table for a given model', function () {
+  it('should make plural collection for a given model', function () {
     class Person {}
-    const tableName = util.makeTableName(Person)
-    expect(tableName).to.equal('people')
+    const collectionName = util.makeCollectionName(Person)
+    expect(collectionName).to.equal('people')
   })
 
-  it('should convert CamelCase models table to underscore table names', function () {
+  it('should convert CamelCase models collection to underscore collection names', function () {
     class LineItem {}
-    const tableName = util.makeTableName(LineItem)
-    expect(tableName).to.equal('line_items')
+    const collectionName = util.makeCollectionName(LineItem)
+    expect(collectionName).to.equal('line_items')
   })
 
   it('should convert proper plural names', function () {
     class Mouse {}
-    const tableName = util.makeTableName(Mouse)
-    expect(tableName).to.equal('mice')
+    const collectionName = util.makeCollectionName(Mouse)
+    expect(collectionName).to.equal('mice')
   })
 
   it('should make model foriegn key', function () {
@@ -122,34 +122,34 @@ describe('Utils', function () {
     expect(_.isFunction(util.lodash().foo)).to.equal(true)
   })
 
-  it('should make a pivot table name for two models', function () {
+  it('should make a pivot collection name for two models', function () {
     class Student {}
     class Course {}
-    const pivotTable = util.makePivotTableName(Student, Course)
-    expect(pivotTable).to.equal('course_student')
+    const pivotCollection = util.makePivotCollectionName(Student, Course)
+    expect(pivotCollection).to.equal('course_student')
   })
 
-  it('should make a pivot table name for two models when model names are plural', function () {
+  it('should make a pivot collection name for two models when model names are plural', function () {
     class Students {}
     class Courses {}
-    const pivotTable = util.makePivotTableName(Students, Courses)
-    expect(pivotTable).to.equal('course_student')
+    const pivotCollection = util.makePivotCollectionName(Students, Courses)
+    expect(pivotCollection).to.equal('course_student')
   })
 
-  it('should make a pivot table name for two models when model name is in pascal case', function () {
+  it('should make a pivot collection name for two models when model name is in pascal case', function () {
     class AdminUsers {}
     class Roles {}
-    const pivotTable = util.makePivotTableName(AdminUsers, Roles)
-    expect(pivotTable).to.equal('admin_user_role')
+    const pivotCollection = util.makePivotCollectionName(AdminUsers, Roles)
+    expect(pivotCollection).to.equal('admin_user_role')
   })
 
-  it('should make proper pivotTable key name for a given model', function () {
+  it('should make proper pivotCollection key name for a given model', function () {
     class AdminUser {}
     const pivotKey = util.makePivotModelKey(AdminUser)
     expect(pivotKey).to.equal('admin_user_id')
   })
 
-  it('should make proper pivotTable key name for a given model when model name is plural', function () {
+  it('should make proper pivotCollection key name for a given model when model name is plural', function () {
     class AdminUsers {}
     const pivotKey = util.makePivotModelKey(AdminUsers)
     expect(pivotKey).to.equal('admin_user_id')

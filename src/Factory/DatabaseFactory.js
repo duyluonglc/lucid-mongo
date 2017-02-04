@@ -17,7 +17,7 @@ const fake = require('./fake')
 class DatabaseFactory {
 
   constructor (binding, callback) {
-    this.dbTable = binding
+    this.collection = binding
     this.callback = callback
     this.binding = Ioc.use('Adonis/Src/Database')
     this.returningField = 'id'
@@ -39,16 +39,16 @@ class DatabaseFactory {
   }
 
   /**
-   * sets table name to be used by the query
+   * sets collection name to be used by the query
    * builder
    *
-   * @param  {String} tableName
+   * @param  {String} collectionName
    * @return {Object}           reference to this
    *
    * @public
    */
-  table (tableName) {
-    this.dbTable = tableName
+  collection (collectionName) {
+    this.collection = collectionName
     return this
   }
 
@@ -81,7 +81,7 @@ class DatabaseFactory {
    */
   * create (rows, values) {
     const self = this
-    const binding = this.binding.table(this.dbTable)
+    const binding = this.binding.collection(this.collection)
     rows = rows || 1
     const range = _.range(rows)
     const ids = yield cf.mapSerial(function * (iterator) {
@@ -91,7 +91,7 @@ class DatabaseFactory {
   }
 
   /**
-   * will reset the given table by calling
+   * will reset the given collection by calling
    * truncate method on it.
    *
    * @return {Number}
@@ -99,7 +99,7 @@ class DatabaseFactory {
    * @public
    */
   reset () {
-    return this.binding.table(this.dbTable).truncate()
+    return this.binding.collection(this.collection).truncate()
   }
 }
 

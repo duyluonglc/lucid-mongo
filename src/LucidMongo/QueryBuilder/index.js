@@ -35,7 +35,7 @@ class QueryBuilder {
   * connect () {
     const Database = Ioc.use('Adonis/Src/Database')
     const connection = yield Database.connection(this.HostModel.connection)
-    const collection = connection.collection(this.HostModel.table)
+    const collection = connection.collection(this.HostModel.collection)
     this.modelQueryBuilder.collection(collection)
     return connection
   }

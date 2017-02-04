@@ -404,11 +404,11 @@ methods.withCount = function (target) {
     const selectedColumns = _.find(target.modelQueryBuilder._statements, (statement) => statement.grouping === 'columns')
 
     /**
-     * Select all columns from the table when none have
+     * Select all columns from the collection when none have
      * been selected already.
      */
     if (!selectedColumns) {
-      target.modelQueryBuilder.column(`${this.HostModel.table}.*`)
+      target.modelQueryBuilder.column(`${this.HostModel.collection}.*`)
     }
 
     /**
@@ -457,7 +457,7 @@ methods.ids = function (target) {
 }
 
 /**
- * pluck two fields from SQL table and return them as a
+ * pluck two fields from SQL collection and return them as a
  * key/value pair.
  *
  * @param  {Object} target

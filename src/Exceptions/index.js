@@ -38,7 +38,7 @@ class RuntimeException extends NE.RuntimeException {
 
   /**
    * this exception is raised when a dataabse factory is not defined
-   * for a given key/table name, but attempting to access it.
+   * for a given key/collection name, but attempting to access it.
    *
    * @param  {String} key
    * @param  {Number} [code=500]
@@ -56,14 +56,14 @@ class RuntimeException extends NE.RuntimeException {
    *
    * @method migrationsAreLocked
    *
-   * @param  {String}            lockTable
+   * @param  {String}            lockCollection
    * @param {Number}             [code=500]
    *
    * @return {Object}
    */
-  static migrationsAreLocked (lockTable, code) {
+  static migrationsAreLocked (lockCollection, code) {
     return new this(
-      `Migrations are currently locked. Make sure to run single migration process at a given time or delete ${lockTable} table from database`,
+      `Migrations are currently locked. Make sure to run single migration process at a given time or delete ${lockCollection} collection from database`,
       code || this.defaultErrorCode,
       'E_LOCK_ON_MIGRATIONS'
       )

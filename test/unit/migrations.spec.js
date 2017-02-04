@@ -38,34 +38,34 @@ describe('Migrations', function () {
   })
 
   after(function * () {
-    yield Database.schema.dropTableIfExists('adonis_migrations')
-    yield Database.schema.dropTableIfExists('users')
-    yield Database.connection('alternateConnection').schema.dropTableIfExists('accounts')
+    yield Database.schema.dropCollectionIfExists('adonis_migrations')
+    yield Database.schema.dropCollectionIfExists('users')
+    yield Database.connection('alternateConnection').schema.dropCollectionIfExists('accounts')
     yield filesFixtures.cleanStorage()
     Database.close()
   })
 
-  it('should make migrations table', function * () {
+  it('should make migrations collection', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner._makeMigrationsTable()
-    const columns = yield runner.database.table('adonis_migrations').columnInfo()
+    yield runner._makeMigrationsCollection()
+    const columns = yield runner.database.collection('adonis_migrations').columnInfo()
     expect(columns).to.be.an('object')
     expect(_.keys(columns)).deep.equal(['id', 'name', 'batch', 'migration_time'])
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
-  it('should not throw error when migrations table already exists', function * () {
+  it('should not throw error when migrations collection already exists', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner.database.schema.createTable('adonis_migrations', (table) => {
-      table.integer('id')
+    yield runner.database.schema.createCollection('adonis_migrations', (collection) => {
+      collection.integer('id')
     })
-    const columns = yield runner.database.table('adonis_migrations').columnInfo()
+    const columns = yield runner.database.collection('adonis_migrations').columnInfo()
     expect(columns).to.be.an('object')
     expect(_.keys(columns)).deep.equal(['id'])
-    yield runner._makeMigrationsTable()
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner._makeMigrationsCollection()
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should return difference of files to be executed for up direction', function () {
@@ -144,58 +144,58 @@ describe('Migrations', function () {
     expect(diff).to.throw(/Make sure you are exporting a class from 1/)
   })
 
-  it('should make lock table', function * () {
+  it('should make lock collection', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner._makeLockTable()
-    const columns = yield runner.database.table('adonis_migrations_lock').columnInfo()
+    yield runner._makeLockCollection()
+    const columns = yield runner.database.collection('adonis_migrations_lock').columnInfo()
     expect(columns).to.be.an('object')
     expect(_.keys(columns)).deep.equal(['id', 'is_locked'])
-    yield runner.database.schema.dropTable('adonis_migrations_lock')
+    yield runner.database.schema.dropCollection('adonis_migrations_lock')
   })
 
   it('should return false when there is no lock', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner._makeLockTable()
+    yield runner._makeLockCollection()
     const isLocked = yield runner._checkLock()
     expect(isLocked).to.equal(false)
-    yield runner.database.schema.dropTable('adonis_migrations_lock')
+    yield runner.database.schema.dropCollection('adonis_migrations_lock')
   })
 
-  it('should add a lock to the lock table', function * () {
+  it('should add a lock to the lock collection', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner._makeLockTable()
+    yield runner._makeLockCollection()
     yield runner._addLock()
-    const lock = yield runner.database.table('adonis_migrations_lock').where('is_locked', 1)
+    const lock = yield runner.database.collection('adonis_migrations_lock').where('is_locked', 1)
     expect(lock.length).to.equal(1)
-    yield runner.database.schema.dropTable('adonis_migrations_lock')
+    yield runner.database.schema.dropCollection('adonis_migrations_lock')
   })
 
-  it('should throw an error when a table has been locked', function * () {
+  it('should throw an error when a collection has been locked', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner._makeLockTable()
+    yield runner._makeLockCollection()
     yield runner._addLock()
     try {
       yield runner._checkLock()
       expect(true).to.equal(false)
     } catch (e) {
       expect(e.name).to.equal('RuntimeException')
-      expect(e.message).to.equal('E_LOCK_ON_MIGRATIONS: Migrations are currently locked. Make sure to run single migration process at a given time or delete adonis_migrations_lock table from database')
+      expect(e.message).to.equal('E_LOCK_ON_MIGRATIONS: Migrations are currently locked. Make sure to run single migration process at a given time or delete adonis_migrations_lock collection from database')
     }
-    yield runner.database.schema.dropTable('adonis_migrations_lock')
+    yield runner.database.schema.dropCollection('adonis_migrations_lock')
   })
 
-  it('should free an added lock by deleting the lock table', function * () {
+  it('should free an added lock by deleting the lock collection', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
-    yield runner._makeLockTable()
+    yield runner._makeLockCollection()
     yield runner._addLock()
     yield runner._deleteLock()
     try {
-      yield runner.database.table('adonis_migrations_lock').where('is_locked', 1)
+      yield runner.database.collection('adonis_migrations_lock').where('is_locked', 1)
       expect(true).to.equal(false)
     } catch (e) {
       expect(e.code).to.be.oneOf(['ER_NO_SUCH_TABLE', 'SQLITE_ERROR', '42P01'])
@@ -207,9 +207,9 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', function (table) {
-          table.increments()
-          table.string('username')
+        this.create('users', function (collection) {
+          collection.increments()
+          collection.string('username')
         })
       }
       down () {
@@ -219,9 +219,9 @@ describe('Migrations', function () {
 
     class Accounts extends Schema {
       up () {
-        this.create('accounts', function (table) {
-          table.increments()
-          table.string('account_name')
+        this.create('accounts', function (collection) {
+          collection.increments()
+          collection.string('account_name')
         })
       }
     }
@@ -233,8 +233,8 @@ describe('Migrations', function () {
     yield runner.up(batch1)
     const status = yield runner.status(all)
     expect(status).deep.equal({'2015-01-20': 'Y', '2016-03-13': 'N'})
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should migrate the database by calling the up method', function * () {
@@ -242,9 +242,9 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', function (table) {
-          table.increments()
-          table.string('username')
+        this.create('users', function (collection) {
+          collection.increments()
+          collection.string('username')
         })
       }
     }
@@ -252,11 +252,11 @@ describe('Migrations', function () {
     const result = yield runner.up(migrations)
     expect(result.status).to.equal('completed')
     expect(result.migrated).deep.equal(_.keys(migrations))
-    const usersTable = yield runner.database.table('users').columnInfo()
-    expect(usersTable).to.be.an('object')
-    expect(_.keys(usersTable)).deep.equal(['id', 'username'])
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    const usersCollection = yield runner.database.collection('users').columnInfo()
+    expect(usersCollection).to.be.an('object')
+    expect(_.keys(usersCollection)).deep.equal(['id', 'username'])
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should rollback the recently executed migrations', function * () {
@@ -265,15 +265,15 @@ describe('Migrations', function () {
     const rollbackRunner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', function (table) {
-          table.increments()
-          table.string('username')
+        this.create('users', function (collection) {
+          collection.increments()
+          collection.string('username')
         })
       }
 
       down () {
-        this.table('users', function (table) {
-          table.dropColumn('username')
+        this.collection('users', function (collection) {
+          collection.dropColumn('username')
         })
       }
     }
@@ -286,12 +286,12 @@ describe('Migrations', function () {
     expect(rollback.status).to.equal('completed')
     expect(rollback.migrated).deep.equal(_.keys(migrations))
 
-    const usersTable = yield runner.database.table('users').columnInfo()
-    expect(usersTable).to.be.an('object')
-    expect(_.keys(usersTable)).deep.equal(['id'])
+    const usersCollection = yield runner.database.collection('users').columnInfo()
+    expect(usersCollection).to.be.an('object')
+    expect(_.keys(usersCollection)).deep.equal(['id'])
 
-    yield runner.database.schema.dropTable('adonis_migrations')
-    yield runner.database.schema.dropTable('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
   })
 
   it('should be able to use a different connection for a given schema', function * () {
@@ -303,9 +303,9 @@ describe('Migrations', function () {
       }
 
       up () {
-        this.create('accounts', function (table) {
-          table.increments()
-          table.string('account_name')
+        this.create('accounts', function (collection) {
+          collection.increments()
+          collection.string('account_name')
         })
       }
     }
@@ -315,16 +315,16 @@ describe('Migrations', function () {
     expect(result.migrated).deep.equal(_.keys(migrations))
 
     try {
-      yield runner.database.table('accounts')
+      yield runner.database.collection('accounts')
       expect(true).to.equal(false)
     } catch (e) {
       expect(e.code).to.be.oneOf(['ER_NO_SUCH_TABLE', 'SQLITE_ERROR', '42P01'])
-      const accounts = yield runner.database.connection('alternateConnection').table('accounts').columnInfo()
+      const accounts = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
       expect(accounts).to.be.an('object')
       expect(_.keys(accounts)).deep.equal(['id', 'account_name'])
     }
-    yield runner.database.schema.dropTable('adonis_migrations')
-    yield runner.database.connection('alternateConnection').schema.dropTable('accounts')
+    yield runner.database.schema.dropCollection('adonis_migrations')
+    yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')
   })
 
   it('should be able to rollback migrations when schema is using a different connection', function * () {
@@ -337,15 +337,15 @@ describe('Migrations', function () {
       }
 
       up () {
-        this.create('accounts', function (table) {
-          table.increments()
-          table.string('account_name')
+        this.create('accounts', function (collection) {
+          collection.increments()
+          collection.string('account_name')
         })
       }
 
       down () {
-        this.table('accounts', function (table) {
-          table.dropColumn('account_name')
+        this.collection('accounts', function (collection) {
+          collection.dropColumn('account_name')
         })
       }
     }
@@ -358,29 +358,29 @@ describe('Migrations', function () {
     expect(rollback.status).to.equal('completed')
     expect(rollback.migrated).deep.equal(_.keys(migrations))
 
-    const accounts = yield runner.database.connection('alternateConnection').table('accounts').columnInfo()
+    const accounts = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
     expect(accounts).to.be.an('object')
     expect(_.keys(accounts)).deep.equal(['id'])
 
-    const migrationsTable = yield runner.database.table('adonis_migrations')
-    expect(migrationsTable.length).to.equal(0)
+    const migrationsCollection = yield runner.database.collection('adonis_migrations')
+    expect(migrationsCollection.length).to.equal(0)
 
-    yield runner.database.schema.dropTable('adonis_migrations')
-    yield runner.database.connection('alternateConnection').schema.dropTable('accounts')
+    yield runner.database.schema.dropCollection('adonis_migrations')
+    yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')
   })
 
   it('should only rollback to the previous batch', function * () {
     class User extends Schema {
       up () {
-        this.create('users', function (table) {
-          table.increments()
-          table.string('username')
+        this.create('users', function (collection) {
+          collection.increments()
+          collection.string('username')
         })
       }
 
       down () {
-        this.table('users', function (table) {
-          table.dropColumn('username')
+        this.collection('users', function (collection) {
+          collection.dropColumn('username')
         })
       }
     }
@@ -391,21 +391,21 @@ describe('Migrations', function () {
       }
 
       up () {
-        this.create('accounts', function (table) {
-          table.increments()
-          table.string('account_name')
+        this.create('accounts', function (collection) {
+          collection.increments()
+          collection.string('account_name')
         })
       }
 
       down () {
-        this.table('accounts', function (table) {
-          table.dropColumn('account_name')
+        this.collection('accounts', function (collection) {
+          collection.dropColumn('account_name')
         })
       }
     }
 
-    const migrationsB1 = {'2016-01-30_create_users_table': User}
-    const migrationsB2 = {'2016-01-30_create_accouts_table': Account}
+    const migrationsB1 = {'2016-01-30_create_users_collection': User}
+    const migrationsB2 = {'2016-01-30_create_accouts_collection': Account}
     let allMigs = {}
     _.merge(allMigs, migrationsB1, migrationsB2)
     const Runner = new Migrations(Database, Config)
@@ -426,28 +426,28 @@ describe('Migrations', function () {
     expect(rollback.status).to.equal('completed')
     expect(rollback.migrated).deep.equal(_.keys(migrationsB2))
 
-    const usersInfo = yield runner.database.table('users').columnInfo()
+    const usersInfo = yield runner.database.collection('users').columnInfo()
     expect(_.keys(usersInfo)).deep.equal(['id', 'username'])
 
-    const accountsInfo = yield runner.database.connection('alternateConnection').table('accounts').columnInfo()
+    const accountsInfo = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
     expect(_.keys(accountsInfo)).deep.equal(['id'])
-    yield runner.database.schema.dropTable('adonis_migrations')
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.connection('alternateConnection').schema.dropTable('accounts')
+    yield runner.database.schema.dropCollection('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')
   })
 
   it('should rollback to a given specific batch', function * () {
     class User extends Schema {
       up () {
-        this.create('users', function (table) {
-          table.increments()
-          table.string('username')
+        this.create('users', function (collection) {
+          collection.increments()
+          collection.string('username')
         })
       }
 
       down () {
-        this.table('users', function (table) {
-          table.dropColumn('username')
+        this.collection('users', function (collection) {
+          collection.dropColumn('username')
         })
       }
     }
@@ -458,21 +458,21 @@ describe('Migrations', function () {
       }
 
       up () {
-        this.create('accounts', function (table) {
-          table.increments()
-          table.string('account_name')
+        this.create('accounts', function (collection) {
+          collection.increments()
+          collection.string('account_name')
         })
       }
 
       down () {
-        this.table('accounts', function (table) {
-          table.dropColumn('account_name')
+        this.collection('accounts', function (collection) {
+          collection.dropColumn('account_name')
         })
       }
     }
 
-    const migrationsB1 = {'2016-01-30_create_accounts_table': Account}
-    const migrationsB2 = {'2016-01-30_create_users_table': User}
+    const migrationsB1 = {'2016-01-30_create_accounts_collection': Account}
+    const migrationsB2 = {'2016-01-30_create_users_collection': User}
     let allMigs = {}
     _.merge(allMigs, migrationsB1, migrationsB2)
     const Runner = new Migrations(Database, Config)
@@ -493,14 +493,14 @@ describe('Migrations', function () {
     expect(rollback.status).to.equal('completed')
     expect(rollback.migrated).deep.equal(_.reverse(_.keys(allMigs)))
 
-    const usersInfo = yield runner.database.table('users').columnInfo()
+    const usersInfo = yield runner.database.collection('users').columnInfo()
     expect(_.keys(usersInfo)).deep.equal(['id'])
 
-    const accountsInfo = yield runner.database.connection('alternateConnection').table('accounts').columnInfo()
+    const accountsInfo = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
     expect(_.keys(accountsInfo)).deep.equal(['id'])
-    yield runner.database.schema.dropTable('adonis_migrations')
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.connection('alternateConnection').schema.dropTable('accounts')
+    yield runner.database.schema.dropCollection('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')
   })
 
   it('should have access to knex fn inside the schema class', function * () {
@@ -509,7 +509,7 @@ describe('Migrations', function () {
     let fn = null
     class Users extends Schema {
       up () {
-        this.table('users', (table) => {
+        this.collection('users', (collection) => {
           fn = this.fn
         })
       }
@@ -518,7 +518,7 @@ describe('Migrations', function () {
     yield runner.up(migrations)
     expect(fn).to.be.an('object')
     expect(fn.now).to.be.a('function')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should be able to define soft delete field inside migrations', function * () {
@@ -526,20 +526,20 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
-          table.softDeletes()
+        this.create('users', (collection) => {
+          collection.increments()
+          collection.softDeletes()
         })
       }
     }
     const migrations = {'2015-01-20': Users}
     yield runner.up(migrations)
-    const usersInfo = yield runner.database.table('users').columnInfo()
+    const usersInfo = yield runner.database.collection('users').columnInfo()
     expect(usersInfo.deleted_at).to.be.an('object')
     expect(usersInfo.deleted_at.nullable).to.equal(true)
     expect(usersInfo.deleted_at.type).to.be.oneOf(['datetime', 'timestamp with time zone'])
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should be able to define nullableTimestamps inside migrations', function * () {
@@ -547,23 +547,23 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
-          table.nullableTimestamps()
+        this.create('users', (collection) => {
+          collection.increments()
+          collection.nullableTimestamps()
         })
       }
     }
     const migrations = {'2015-01-20': Users}
     yield runner.up(migrations)
-    const usersInfo = yield runner.database.table('users').columnInfo()
+    const usersInfo = yield runner.database.collection('users').columnInfo()
     expect(usersInfo.created_at).to.be.an('object')
     expect(usersInfo.created_at.nullable).to.equal(true)
     expect(usersInfo.created_at.type).to.be.oneOf(['datetime', 'timestamp with time zone'])
     expect(usersInfo.updated_at).to.be.an('object')
     expect(usersInfo.updated_at.nullable).to.equal(true)
     expect(usersInfo.updated_at.type).to.be.oneOf(['datetime', 'timestamp with time zone'])
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should be able to run multiple commands inside a single up method', function * () {
@@ -571,24 +571,24 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
 
-        this.create('accounts', (table) => {
-          table.increments()
+        this.create('accounts', (collection) => {
+          collection.increments()
         })
       }
     }
     const migrations = {'2015-01-20': Users}
     yield runner.up(migrations)
-    const usersInfo = yield runner.database.table('users').columnInfo()
-    const accountsInfo = yield runner.database.table('accounts').columnInfo()
+    const usersInfo = yield runner.database.collection('users').columnInfo()
+    const accountsInfo = yield runner.database.collection('accounts').columnInfo()
     expect(usersInfo.id).to.be.an('object')
     expect(accountsInfo.id).to.be.an('object')
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('accounts')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('accounts')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should be able to run multiple commands inside a single down method', function * () {
@@ -596,12 +596,12 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
 
-        this.create('accounts', (table) => {
-          table.increments()
+        this.create('accounts', (collection) => {
+          collection.increments()
         })
       }
 
@@ -612,17 +612,17 @@ describe('Migrations', function () {
     }
     const migrations = {'2015-01-20': Users}
     yield runner.up(migrations)
-    const usersInfo = yield runner.database.table('users').columnInfo()
-    const accountsInfo = yield runner.database.table('accounts').columnInfo()
+    const usersInfo = yield runner.database.collection('users').columnInfo()
+    const accountsInfo = yield runner.database.collection('accounts').columnInfo()
     expect(usersInfo.id).to.be.an('object')
     expect(accountsInfo.id).to.be.an('object')
     const runner1 = new Runner()
     yield runner1.down(migrations)
-    const usersTable = yield runner1.database.table('users').columnInfo()
-    const accountsTable = yield runner1.database.table('accounts').columnInfo()
-    expect(usersTable).deep.equal({})
-    expect(accountsTable).deep.equal({})
-    yield runner.database.schema.dropTable('adonis_migrations')
+    const usersCollection = yield runner1.database.collection('users').columnInfo()
+    const accountsCollection = yield runner1.database.collection('accounts').columnInfo()
+    expect(usersCollection).deep.equal({})
+    expect(accountsCollection).deep.equal({})
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should have access to knex schema inside the schema class', function * () {
@@ -631,7 +631,7 @@ describe('Migrations', function () {
     let schema = null
     class Users extends Schema {
       up () {
-        this.table('users', (table) => {
+        this.collection('users', (collection) => {
           schema = this.schema
         })
       }
@@ -640,7 +640,7 @@ describe('Migrations', function () {
     yield runner.up(migrations)
     expect(schema).to.be.an('object')
     expect(schema.raw).to.be.a('function')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should insert migration/batch on every migration completion', function * () {
@@ -648,16 +648,16 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
       }
     }
 
     class Accounts extends Schema {
       up () {
-        this.create('accounts', (table) => {
-          table.increments()
+        this.create('accounts', (collection) => {
+          collection.increments()
         })
       }
     }
@@ -665,19 +665,19 @@ describe('Migrations', function () {
     const migrations = {'2015-01-20': Users, '2016-07-28': Accounts}
     const sqlCommands = []
     Database.on('query', (output) => {
-      if (output.sql.match(/create table [`"]users[`"]|create table [`"]accounts[`"]|insert into [`"]adonis_migrations[`"]/)) {
+      if (output.sql.match(/create collection [`"]users[`"]|create collection [`"]accounts[`"]|insert into [`"]adonis_migrations[`"]/)) {
         sqlCommands.push(output.sql)
       }
     })
     yield runner.up(migrations)
     expect(sqlCommands.length).to.equal(4)
-    expect(sqlCommands[0]).to.match(/create table [`"]users[`"]/)
+    expect(sqlCommands[0]).to.match(/create collection [`"]users[`"]/)
     expect(sqlCommands[1]).to.match(/insert into [`"]adonis_migrations[`"]/)
-    expect(sqlCommands[2]).to.match(/create table [`"]accounts[`"]/)
+    expect(sqlCommands[2]).to.match(/create collection [`"]accounts[`"]/)
     expect(sqlCommands[3]).to.match(/insert into [`"]adonis_migrations[`"]/)
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('accounts')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('accounts')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should update progress for each file', function * () {
@@ -685,8 +685,8 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
       }
     }
@@ -702,12 +702,12 @@ describe('Migrations', function () {
       yield runner.up(migrations)
       expect(true).to.equal(false)
     } catch (e) {
-      const migrations = yield runner.database.table('adonis_migrations')
+      const migrations = yield runner.database.collection('adonis_migrations')
       expect(migrations).to.be.an('array')
       expect(migrations.length).to.equal(1)
       expect(migrations[0].name).to.equal('2015-01-20')
-      yield runner.database.schema.dropTable('users')
-      yield runner.database.schema.dropTable('adonis_migrations')
+      yield runner.database.schema.dropCollection('users')
+      yield runner.database.schema.dropCollection('adonis_migrations')
     }
   })
 
@@ -716,8 +716,8 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
       }
     }
@@ -729,10 +729,10 @@ describe('Migrations', function () {
     expect(response).to.have.length(1)
     expect(response[0].file).to.equal('2015-01-20')
     expect(response[0].queries).to.be.an('array')
-    const migrationsCompleted = yield runner.database.table('adonis_migrations')
+    const migrationsCompleted = yield runner.database.collection('adonis_migrations')
     expect(migrationsCompleted).to.be.an('array')
     expect(migrationsCompleted).to.have.length(0)
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should return the sql output for rollback', function * () {
@@ -740,8 +740,8 @@ describe('Migrations', function () {
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
       }
 
@@ -757,8 +757,8 @@ describe('Migrations', function () {
     expect(response).to.have.length(1)
     expect(response[0].file).to.equal('2015-01-20')
     expect(response[0].queries).to.be.an('array')
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
   it('should be able to access the database provider using this.db', function * () {
@@ -774,60 +774,60 @@ describe('Migrations', function () {
     }
     const migrations = {'2016-04-20': Users}
     yield runner.up(migrations)
-    expect(db.table).to.be.a('function')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    expect(db.collection).to.be.a('function')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
-  it('should be able to migrate a table data to a different column @fun', function * () {
+  it('should be able to migrate a collection data to a different column @fun', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
 
         this.db(function * (database) {
-          yield database.table('users').insert([{username: 'foo'}, {username: 'bar'}])
+          yield database.collection('users').insert([{username: 'foo'}, {username: 'bar'}])
         })
       }
     }
 
     class UsersMigrate extends Schema {
       up () {
-        this.table('users', (table) => {
-          table.string('uname')
+        this.collection('users', (collection) => {
+          collection.string('uname')
         })
 
         this.db(function * (database) {
-          const usernames = yield database.table('users').pluck('username')
+          const usernames = yield database.collection('users').pluck('username')
           yield cf.forEach(function * (username) {
-            yield database.table('users').where('username', username).update('uname', username)
+            yield database.collection('users').where('username', username).update('uname', username)
           }, usernames)
         })
 
-        this.table('users', (table) => {
-          table.dropColumn('username')
+        this.collection('users', (collection) => {
+          collection.dropColumn('username')
         })
       }
     }
 
     const migrations = {'2016-04-20': Users, '2016-10-30': UsersMigrate}
     yield runner.up(migrations)
-    const users = yield Database.table('users').pluck('uname')
+    const users = yield Database.collection('users').pluck('uname')
     expect(users).deep.equal(['foo', 'bar'])
-    yield runner.database.schema.dropTable('users')
-    yield runner.database.schema.dropTable('adonis_migrations')
+    yield runner.database.schema.dropCollection('users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
-  it('should be able to rename the database table', function * () {
+  it('should be able to rename the database collection', function * () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
     class Users extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
+        this.create('users', (collection) => {
+          collection.increments()
         })
       }
     }
@@ -838,9 +838,9 @@ describe('Migrations', function () {
     }
     const migrations = {'2016-04-20': Users, '2016-10-19': MyUsers}
     yield runner.up(migrations)
-    const myUsersInfo = yield runner.database.table('my_users').columnInfo()
+    const myUsersInfo = yield runner.database.collection('my_users').columnInfo()
     expect(myUsersInfo.id).be.an('object')
-    yield runner.database.schema.dropTable('adonis_migrations')
-    yield runner.database.schema.dropTable('my_users')
+    yield runner.database.schema.dropCollection('adonis_migrations')
+    yield runner.database.schema.dropCollection('my_users')
   })
 })

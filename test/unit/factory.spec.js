@@ -214,7 +214,7 @@ describe('Factory', function () {
     })
   })
 
-  it('should create rows inside associated table for a given model', function * () {
+  it('should create rows inside associated collection for a given model', function * () {
     class User extends Model {}
     Ioc.bind('App/Model/User', function () {
       return User
@@ -231,7 +231,7 @@ describe('Factory', function () {
     yield modelFixtures.truncate(Database)
   })
 
-  it('should truncate rows inside associated table for a given model', function * () {
+  it('should truncate rows inside associated collection for a given model', function * () {
     class User extends Model {}
     Ioc.bind('App/Model/User', function () {
       return User
@@ -263,14 +263,14 @@ describe('Factory', function () {
     yield modelFixtures.truncate(Database)
   })
 
-  it('should be able to define different table name when using database factory', function * () {
+  it('should be able to define different collection name when using database factory', function * () {
     Factory.blueprint('forUsers', function (fake) {
       return {
         username: fake.username(),
         firstname: fake.first()
       }
     })
-    const ids = yield Factory.get('forUsers').table('users').create(10)
+    const ids = yield Factory.get('forUsers').collection('users').create(10)
     expect(ids).to.be.an('array')
     expect(ids.length).to.equal(10)
     yield modelFixtures.truncate(Database)
@@ -283,13 +283,13 @@ describe('Factory', function () {
         firstname: fake.first()
       }
     })
-    const dbFactory = Factory.get('forUsers').table('users').returning('username')
+    const dbFactory = Factory.get('forUsers').collection('users').returning('username')
     yield dbFactory.create(10)
     expect(dbFactory.returningField).to.equal('username')
     yield modelFixtures.truncate(Database)
   })
 
-  it('should be able to truncate the database table using the reset method', function * () {
+  it('should be able to truncate the database collection using the reset method', function * () {
     Factory.blueprint('users', function (fake) {
       return {
         username: fake.username(),
@@ -298,7 +298,7 @@ describe('Factory', function () {
     })
     yield Factory.get('users').create(10)
     yield Factory.get('users').reset()
-    const ids = yield Database.table('users').pluck('id')
+    const ids = yield Database.collection('users').pluck('id')
     expect(ids).to.be.an('array')
     expect(ids.length).to.equal(0)
   })
@@ -379,9 +379,9 @@ describe('Factory', function () {
         firstname: user.firstname
       }
     })
-    const dbFactory = Factory.get('forUsers').table('users')
+    const dbFactory = Factory.get('forUsers').collection('users')
     yield dbFactory.create(1, {username: 'foo', firstname: 'bar'})
-    const users = yield Database.table('users')
+    const users = yield Database.collection('users')
     expect(users[0].username).to.equal('foo')
     expect(users[0].firstname).to.equal('bar')
     yield modelFixtures.truncate(Database)

@@ -61,12 +61,12 @@ describe('Relationships', function () {
       const Schema = Ioc.use('Adonis/Src/Schema')
       class UserSchema extends Schema {
         up () {
-          this.create('users', function (table) {
-            table.increments()
-            table.string('username')
-            table.string('email')
-            table.string('password')
-            table.timestamps()
+          this.create('users', function (collection) {
+            collection.increments()
+            collection.string('username')
+            collection.string('email')
+            collection.string('password')
+            collection.timestamps()
           })
         }
 
@@ -76,12 +76,12 @@ describe('Relationships', function () {
       }
       class ProfileSchema extends Schema {
         up () {
-          this.create('profiles', function (table) {
-            table.increments()
-            table.integer('user_id')
-            table.string('avatar')
-            table.string('name')
-            table.timestamps()
+          this.create('profiles', function (collection) {
+            collection.increments()
+            collection.integer('user_id')
+            collection.string('avatar')
+            collection.string('name')
+            collection.timestamps()
           })
         }
         down () {

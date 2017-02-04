@@ -63,9 +63,9 @@ const validHookTypes = [
 ]
 
 /**
- * model defines a single table inside sql database and
+ * model defines a single collection inside sql database and
  * a model instance belongs to a single row inside
- * database table. Simple!
+ * database collection. Simple!
  *
  * @class
  */
@@ -89,6 +89,7 @@ class Model {
   instantiate (values) {
     this.attributes = {}
     this.original = {}
+    this.unsetFields = []
     this.transaction = null // will be added via useTransaction
     this.relations = {}
     this.exists = false
@@ -268,7 +269,7 @@ class Model {
 
     this.addGlobalScope((builder) => {
       if (this.deleteTimestamp && !builder.avoidTrashed) {
-        builder.whereNull(`${this.table}.${this.deleteTimestamp}`)
+        builder.whereNull(`${this.collection}.${this.deleteTimestamp}`)
       }
     })
   }
@@ -346,15 +347,15 @@ class Model {
   }
 
   /**
-   * returns the sql table name to be used for making queries from this
+   * returns the sql collection name to be used for making queries from this
    * model.
    *
    * @return {String}
    *
    * @public
    */
-  static get table () {
-    return util.makeTableName(this)
+  static get collection () {
+    return util.makeCollectionName(this)
   }
 
   /**
@@ -369,7 +370,7 @@ class Model {
 
   /**
    * Returns a custom prefix to be used for selecting the database
-   * table for a given model
+   * collection for a given model
    *
    * @return {String}
    *
@@ -381,7 +382,7 @@ class Model {
 
   /**
    * A getter defining whether or not to skip
-   * table prefixing for this model.
+   * collection prefixing for this model.
    *
    * @return {Boolean}
    */
@@ -390,7 +391,7 @@ class Model {
   }
 
   /**
-   * primary key to be used for given table. Same key is used for fetching
+   * primary key to be used for given collection. Same key is used for fetching
    * associations. Defaults to id
    *
    * @return {String}
@@ -429,7 +430,7 @@ class Model {
   }
 
   /**
-   * date format to be used for setting dates inside the table.
+   * date format to be used for setting dates inside the collection.
    * dates will be manipulated with moment.
    *
    * @return {String}
@@ -718,7 +719,7 @@ class Model {
   }
 
   /**
-   * truncate model database table
+   * truncate model database collection
    *
    * @method truncate
    *
@@ -855,6 +856,15 @@ class Model {
    */
   isDeleted () {
     return this.frozen
+  }
+
+  /**
+   * unset field.
+   *
+   * @public
+   */
+  unset (field) {
+    this.unsetFields.push(field)
   }
 
   /**
@@ -1018,7 +1028,7 @@ class Model {
    * relations.
    *
    * @param  {Object}      related
-   * @param  {String}      [pivotTable]
+   * @param  {String}      [pivotCollection]
    * @param  {String}      [pivotLocalKey]
    * @param  {String}      [pivotOtherKey]
    * @param  {String}      [primaryKey]
@@ -1027,8 +1037,8 @@ class Model {
    *
    * @public
    */
-  belongsToMany (related, pivotTable, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
-    return new Relations.BelongsToMany(this, related, pivotTable, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey)
+  belongsToMany (related, pivotCollection, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
+    return new Relations.BelongsToMany(this, related, pivotCollection, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey)
   }
 
   /**

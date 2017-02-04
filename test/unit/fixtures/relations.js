@@ -10,170 +10,170 @@ const bluebird = require('bluebird')
 const files = require('./files')
 
 module.exports = {
-  setupTables: function (knex) {
-    const tables = [
-      knex.schema.createTable('suppliers', function (table) {
-        table.increments()
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+  setupCollections: function (knex) {
+    const collections = [
+      knex.schema.createCollection('suppliers', function (collection) {
+        collection.increments()
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('accounts', function (table) {
-        table.increments()
-        table.integer('supplier_id')
-        table.integer('points').defaultTo(0)
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('accounts', function (collection) {
+        collection.increments()
+        collection.integer('supplier_id')
+        collection.integer('points').defaultTo(0)
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('profiles', function (table) {
-        table.increments()
-        table.integer('account_id')
-        table.boolean('is_primary')
-        table.string('profile_name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('profiles', function (collection) {
+        collection.increments()
+        collection.integer('account_id')
+        collection.boolean('is_primary')
+        collection.string('profile_name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('head_offices', function (table) {
-        table.increments()
-        table.integer('supplier_id')
-        table.string('location')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('head_offices', function (collection) {
+        collection.increments()
+        collection.integer('supplier_id')
+        collection.string('location')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('all_suppliers', function (table) {
-        table.increments()
-        table.string('regid').unique()
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('all_suppliers', function (collection) {
+        collection.increments()
+        collection.string('regid').unique()
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('all_accounts', function (table) {
-        table.increments()
-        table.string('supplier_regid')
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('all_accounts', function (collection) {
+        collection.increments()
+        collection.string('supplier_regid')
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('users', function (table) {
-        table.increments()
-        table.string('username')
-        table.integer('manager_id')
-        table.string('type')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('users', function (collection) {
+        collection.increments()
+        collection.string('username')
+        collection.integer('manager_id')
+        collection.string('type')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('posts', function (table) {
-        table.increments()
-        table.string('title')
-        table.string('body')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('posts', function (collection) {
+        collection.increments()
+        collection.string('title')
+        collection.string('body')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('comments', function (table) {
-        table.increments()
-        table.integer('post_id')
-        table.string('body')
-        table.integer('likes').defaultTo(0)
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('comments', function (collection) {
+        collection.increments()
+        collection.integer('post_id')
+        collection.string('body')
+        collection.integer('likes').defaultTo(0)
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('replies', function (table) {
-        table.increments()
-        table.integer('comment_id')
-        table.string('body')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('replies', function (collection) {
+        collection.increments()
+        collection.integer('comment_id')
+        collection.string('body')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('students', function (table) {
-        table.increments()
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('students', function (collection) {
+        collection.increments()
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('courses', function (table) {
-        table.increments()
-        table.string('title')
-        table.integer('weightage')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('courses', function (collection) {
+        collection.increments()
+        collection.string('title')
+        collection.integer('weightage')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('subjects', function (table) {
-        table.increments()
-        table.string('title')
-        table.integer('course_id')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('subjects', function (collection) {
+        collection.increments()
+        collection.string('title')
+        collection.integer('course_id')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('course_student', function (table) {
-        table.integer('student_id')
-        table.integer('course_id')
-        table.boolean('is_enrolled')
-        table.integer('lessons_done')
-        table.timestamps()
+      knex.schema.createCollection('course_student', function (collection) {
+        collection.integer('student_id')
+        collection.integer('course_id')
+        collection.boolean('is_enrolled')
+        collection.integer('lessons_done')
+        collection.timestamps()
       }),
-      knex.schema.createTable('authors', function (table) {
-        table.increments()
-        table.integer('country_id')
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('authors', function (collection) {
+        collection.increments()
+        collection.integer('country_id')
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('publications', function (table) {
-        table.increments()
-        table.integer('author_id')
-        table.string('title')
-        table.string('body')
-        table.integer('amount')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('publications', function (collection) {
+        collection.increments()
+        collection.integer('author_id')
+        collection.string('title')
+        collection.string('body')
+        collection.integer('amount')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('countries', function (table) {
-        table.increments()
-        table.string('name')
-        table.string('locale')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('countries', function (collection) {
+        collection.increments()
+        collection.string('name')
+        collection.string('locale')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       })
     ]
-    return bluebird.all(tables)
+    return bluebird.all(collections)
   },
-  dropTables: function (knex) {
-    const tables = [
-      knex.schema.dropTable('accounts'),
-      knex.schema.dropTable('head_offices'),
-      knex.schema.dropTable('profiles'),
-      knex.schema.dropTable('suppliers'),
-      knex.schema.dropTable('all_accounts'),
-      knex.schema.dropTable('all_suppliers'),
-      knex.schema.dropTable('users'),
-      knex.schema.dropTable('posts'),
-      knex.schema.dropTable('comments'),
-      knex.schema.dropTable('replies'),
-      knex.schema.dropTable('courses'),
-      knex.schema.dropTable('students'),
-      knex.schema.dropTable('subjects'),
-      knex.schema.dropTable('course_student'),
-      knex.schema.dropTable('authors'),
-      knex.schema.dropTable('publications'),
-      knex.schema.dropTable('countries')
+  dropCollections: function (knex) {
+    const collections = [
+      knex.schema.dropCollection('accounts'),
+      knex.schema.dropCollection('head_offices'),
+      knex.schema.dropCollection('profiles'),
+      knex.schema.dropCollection('suppliers'),
+      knex.schema.dropCollection('all_accounts'),
+      knex.schema.dropCollection('all_suppliers'),
+      knex.schema.dropCollection('users'),
+      knex.schema.dropCollection('posts'),
+      knex.schema.dropCollection('comments'),
+      knex.schema.dropCollection('replies'),
+      knex.schema.dropCollection('courses'),
+      knex.schema.dropCollection('students'),
+      knex.schema.dropCollection('subjects'),
+      knex.schema.dropCollection('course_student'),
+      knex.schema.dropCollection('authors'),
+      knex.schema.dropCollection('publications'),
+      knex.schema.dropCollection('countries')
     ]
-    return bluebird.all(tables)
+    return bluebird.all(collections)
   },
-  createRecords: function * (knex, table, values) {
-    if (table === 'course_student') {
-      return yield knex.table(table).insert(values)
+  createRecords: function * (knex, collection, values) {
+    if (collection === 'course_student') {
+      return yield knex.collection(collection).insert(values)
     }
-    return yield knex.table(table).insert(values).returning('id')
+    return yield knex.collection(collection).insert(values).returning('id')
   },
-  truncate: function * (knex, table) {
-    yield knex.table(table).truncate()
+  truncate: function * (knex, collection) {
+    yield knex.collection(collection).truncate()
   },
   up: function * (knex) {
     yield files.createDir()
-    yield this.setupTables(knex)
+    yield this.setupCollections(knex)
   },
   down: function * (knex) {
-    yield this.dropTables(knex)
+    yield this.dropCollections(knex)
   }
 }

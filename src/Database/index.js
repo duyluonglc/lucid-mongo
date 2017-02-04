@@ -10,7 +10,7 @@
 */
 
 /**
- * to have stable support for proxies
+ * to have scollection support for proxies
  * we need harmony-reflect
  */
 require('harmony-reflect')
@@ -200,7 +200,7 @@ Database.close = function (connection) {
  *
  * @example
  * const trx = yield Database.beginTransaction()
- * yield Database.table('users').transacting(trx)
+ * yield Database.collection('users').transacting(trx)
  * trx.commit()
  * trx.rollback()
  *
@@ -232,7 +232,7 @@ Database.beginTransaction = function (clientTransaction) {
  *
  * @example
  * Database.transaction(function * (trx) {
- *   yield trx.table('users')
+ *   yield trx.collection('users')
  * })
  *
  * @public
@@ -260,8 +260,8 @@ Database.transaction = function (clientTransaction) {
  * @return {Object}
  *
  * @example
- * Database.table('users').forPage(1)
- * Database.table('users').forPage(1, 30)
+ * Database.collection('users').forPage(1)
+ * Database.collection('users').forPage(1, 30)
  *
  * @public
  */
@@ -284,8 +284,8 @@ Database.forPage = function (page, perPage) {
  * @return {Array}
  *
  * @example
- * Database.table('users').paginate(1)
- * Database.table('users').paginate(1, 30)
+ * Database.collection('users').paginate(1)
+ * Database.collection('users').paginate(1, 30)
  *
  * @public
  */
@@ -331,7 +331,7 @@ Database.paginate = function * (page, perPage, countByQuery) {
  * @param  {Number}   [page=1]
  *
  * @example
- * Database.table('users').chunk(200, function (users) {
+ * Database.collection('users').chunk(200, function (users) {
  *
  * })
  *
@@ -348,18 +348,18 @@ Database.chunk = function * (limit, cb, page) {
 }
 
 /**
- * Overriding the orginal MongoClient.table method to prefix
- * the table name based upon the prefix option
+ * Overriding the orginal MongoClient.collection method to prefix
+ * the collection name based upon the prefix option
  * defined in the config
  *
- * @param  {String} tableName
+ * @param  {String} collectionName
  *
  * @return {Object}
  */
-Database.table = function (tableName) {
+Database.collection = function (collectionName) {
   const prefix = this._instancePrefix || this.client.config.prefix
-  const prefixedTableName = (prefix && !this._skipPrefix) ? `${prefix}${tableName}` : tableName
-  this._originalTable(prefixedTableName)
+  const prefixedCollectionName = (prefix && !this._skipPrefix) ? `${prefix}${collectionName}` : collectionName
+  this._originalCollection(prefixedCollectionName)
   return this
 }
 
@@ -403,10 +403,10 @@ const customImplementations = ['_resolveConnectionKey', '_setConfigProvider', 'g
 mquery.prototype.forPage = Database.forPage
 mquery.prototype.paginate = Database.paginate
 mquery.prototype.chunk = Database.chunk
-mquery.prototype._originalTable = mquery.prototype.table
-mquery.prototype.table = Database.table
-mquery.prototype.from = Database.table
-mquery.prototype.into = Database.table
+mquery.prototype._originalCollection = mquery.prototype.dbCollection
+mquery.prototype.dbCollection = Database.collection
+mquery.prototype.from = Database.collection
+mquery.prototype.into = Database.collection
 mquery.prototype.withPrefix = Database.withPrefix
 mquery.prototype.withoutPrefix = Database.withoutPrefix
 mquery.prototype.pluckAll = Database.pluckAll

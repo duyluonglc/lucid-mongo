@@ -57,14 +57,14 @@ describe('Crud', function () {
 
     class UserSchema extends Schema {
       up () {
-        this.create('users', function (table) {
-          table.increments()
-          table.string('username', 40)
-          table.string('email_address', 120)
-          table.string('password', 80)
-          table.string('firstname')
-          table.string('lastname')
-          table.timestamps()
+        this.create('users', function (collection) {
+          collection.increments()
+          collection.string('username', 40)
+          collection.string('email_address', 120)
+          collection.string('password', 80)
+          collection.string('firstname')
+          collection.string('lastname')
+          collection.timestamps()
         })
       }
 
@@ -106,7 +106,7 @@ describe('Crud', function () {
     yield setup.end()
   })
 
-  it('should return list of all users inside the users table', function * () {
+  it('should return list of all users inside the users collection', function * () {
     const users = yield this.User.all()
     expect(users.size()).to.equal(5)
     users.each((user) => {

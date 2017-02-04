@@ -49,7 +49,7 @@ class Status extends Command {
     try {
       const migrationsFiles = this.loadFiles(this.helpers.migrationsPath())
       const response = yield migrationsRunner.status(migrationsFiles)
-      this.table(['Migration', 'Status'], response)
+      this.collection(['Migration', 'Status'], response)
     } catch (e) {
       this.error(e)
     }

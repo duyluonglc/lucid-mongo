@@ -132,7 +132,7 @@ class Relation {
    * @return {Object}
    */
   exists (callback) {
-    const relatedQuery = this.relatedQuery.whereRaw(`${this.related.table}.${this.toKey} = ${this.parent.constructor.table}.${this.fromKey}`)
+    const relatedQuery = this.relatedQuery.whereRaw(`${this.related.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
     if (typeof (callback) === 'function') {
       callback(relatedQuery)
     }
@@ -146,7 +146,7 @@ class Relation {
    * @return {Object}
    */
   counts (callback) {
-    const relatedQuery = this.relatedQuery.count('*').whereRaw(`${this.related.table}.${this.toKey} = ${this.parent.constructor.table}.${this.fromKey}`)
+    const relatedQuery = this.relatedQuery.count('*').whereRaw(`${this.related.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
     if (typeof (callback) === 'function') {
       callback(relatedQuery)
     }

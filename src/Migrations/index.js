@@ -19,8 +19,8 @@ class Migrations {
 
   constructor () {
     this.database = DatabaseReference
-    this.migrationsTable = ConfigReference.get('database.migrationsTable', 'adonis_schema')
-    this.lockTable = `${this.migrationsTable}_lock`
+    this.migrationsCollection = ConfigReference.get('database.migrationsCollection', 'adonis_schema')
+    this.lockCollection = `${this.migrationsCollection}_lock`
     this.migrations = []
   }
 
@@ -34,7 +34,7 @@ class Migrations {
    * @public
    */
   * up (files, toSql) {
-    yield this._makeMigrationsTable()
+    yield this._makeMigrationsCollection()
     const migratedFiles = yield this._getMigratedFiles()
     const migrations = this._getMigrationsList(files, migratedFiles, 'up')
 
@@ -57,7 +57,7 @@ class Migrations {
     }
 
     const nextBatch = yield this._getNextBatchNumber()
-    yield this._makeLockTable()
+    yield this._makeLockCollection()
     yield this._checkLock()
     yield this._addLock()
     try {
@@ -83,7 +83,7 @@ class Migrations {
    * @public
    */
   * down (files, batch, toSql) {
-    yield this._makeMigrationsTable()
+    yield this._makeMigrationsCollection()
     if (!batch && batch !== 0) {
       batch = yield this._getRecentBatchNumber()
     }
@@ -109,7 +109,7 @@ class Migrations {
       return sqlQueries
     }
 
-    yield this._makeLockTable()
+    yield this._makeLockCollection()
     yield this._checkLock()
     yield this._addLock()
     try {
@@ -133,7 +133,7 @@ class Migrations {
    * @public
    */
   * status (files) {
-    yield this._makeMigrationsTable()
+    yield this._makeMigrationsCollection()
     const migratedFiles = yield this._getMigratedFiles()
     this.database.close()
     return _.transform(files, function (result, file, name) {

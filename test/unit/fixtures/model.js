@@ -4,98 +4,98 @@ const bluebird = require('bluebird')
 
 module.exports = {
   up: function (knex) {
-    const tables = [
-      knex.schema.createTable('users', function (table) {
-        table.increments()
-        table.string('uuid').defaultTo(null)
-        table.string('username')
-        table.string('firstname')
-        table.string('lastname')
-        table.enum('status', ['active', 'suspended']).defaultTo('active')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+    const collections = [
+      knex.schema.createCollection('users', function (collection) {
+        collection.increments()
+        collection.string('uuid').defaultTo(null)
+        collection.string('username')
+        collection.string('firstname')
+        collection.string('lastname')
+        collection.enum('status', ['active', 'suspended']).defaultTo('active')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('zombies', function (table) {
-        table.increments('zombie_id')
-        table.string('username')
-        table.string('firstname')
-        table.string('lastname')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('zombies', function (collection) {
+        collection.increments('zombie_id')
+        collection.string('username')
+        collection.string('firstname')
+        collection.string('lastname')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('accounts', function (table) {
-        table.increments()
-        table.string('account_name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('accounts', function (collection) {
+        collection.increments()
+        collection.string('account_name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('profiles', function (table) {
-        table.increments()
-        table.integer('user_id')
-        table.string('display_name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('profiles', function (collection) {
+        collection.increments()
+        collection.integer('user_id')
+        collection.string('display_name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('cars', function (table) {
-        table.increments()
-        table.integer('user_id')
-        table.string('car_name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('cars', function (collection) {
+        collection.increments()
+        collection.integer('user_id')
+        collection.string('car_name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      knex.schema.createTable('keys', function (table) {
-        table.increments()
-        table.integer('car_id')
-        table.string('key_number')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      knex.schema.createCollection('keys', function (collection) {
+        collection.increments()
+        collection.integer('car_id')
+        collection.string('key_number')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       })
     ]
-    return bluebird.all(tables)
+    return bluebird.all(collections)
   },
 
   down: function (knex) {
-    const dropTables = [
-      knex.schema.dropTable('users'),
-      knex.schema.dropTable('zombies'),
-      knex.schema.dropTable('accounts'),
-      knex.schema.dropTable('profiles'),
-      knex.schema.dropTable('cars'),
-      knex.schema.dropTable('keys')
+    const dropCollections = [
+      knex.schema.dropCollection('users'),
+      knex.schema.dropCollection('zombies'),
+      knex.schema.dropCollection('accounts'),
+      knex.schema.dropCollection('profiles'),
+      knex.schema.dropCollection('cars'),
+      knex.schema.dropCollection('keys')
     ]
-    return bluebird.all(dropTables)
+    return bluebird.all(dropCollections)
   },
 
   truncate: function (knex) {
-    const truncateTables = [
-      knex.table('users').truncate(),
-      knex.table('zombies').truncate(),
-      knex.table('accounts').truncate(),
-      knex.table('profiles').truncate(),
-      knex.table('cars').truncate(),
-      knex.table('keys').truncate()
+    const truncateCollections = [
+      knex.collection('users').truncate(),
+      knex.collection('zombies').truncate(),
+      knex.collection('accounts').truncate(),
+      knex.collection('profiles').truncate(),
+      knex.collection('cars').truncate(),
+      knex.collection('keys').truncate()
     ]
-    return bluebird.all(truncateTables)
+    return bluebird.all(truncateCollections)
   },
 
   setupAccount: function (knex) {
-    return knex.table('accounts').insert({account_name: 'sales', created_at: new Date(), updated_at: new Date()})
+    return knex.collection('accounts').insert({account_name: 'sales', created_at: new Date(), updated_at: new Date()})
   },
 
   setupProfile: function (knex) {
-    return knex.table('profiles').insert({user_id: 1, display_name: 'virk', created_at: new Date(), updated_at: new Date()})
+    return knex.collection('profiles').insert({user_id: 1, display_name: 'virk', created_at: new Date(), updated_at: new Date()})
   },
 
   setupCar: function (knex) {
-    return knex.table('cars').insert({user_id: 1, car_name: 'audi a6', created_at: new Date(), updated_at: new Date()})
+    return knex.collection('cars').insert({user_id: 1, car_name: 'audi a6', created_at: new Date(), updated_at: new Date()})
   },
 
   setupCarKey: function (knex) {
-    return knex.table('keys').insert({car_id: 1, key_number: '98010291222', created_at: new Date(), updated_at: new Date()})
+    return knex.collection('keys').insert({car_id: 1, key_number: '98010291222', created_at: new Date(), updated_at: new Date()})
   },
 
   setupUser: function (knex) {
-    return knex.table('users').insert({
+    return knex.collection('users').insert({
       firstname: 'aman',
       lastname: 'virk',
       username: 'avirk',

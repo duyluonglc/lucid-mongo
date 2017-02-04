@@ -19,7 +19,7 @@ const Batch = exports = module.exports = {}
  * @private
  */
 Batch._getRecentBatchNumber = function * () {
-  const result = yield this.database.from(this.migrationsTable).max('batch as batch')
+  const result = yield this.database.from(this.migrationsCollection).max('batch as batch')
   const batchNumber = result[0].batch || 1
   return Number(batchNumber) - 1
 }
@@ -33,7 +33,7 @@ Batch._getRecentBatchNumber = function * () {
  * @private
  */
 Batch._getNextBatchNumber = function * () {
-  const result = yield this.database.table(this.migrationsTable).max('batch as batch')
+  const result = yield this.database.collection(this.migrationsCollection).max('batch as batch')
   const batchNumber = result[0].batch || 0
   return Number(batchNumber) + 1
 }
@@ -49,11 +49,11 @@ Batch._getNextBatchNumber = function * () {
  */
 Batch._updateProgress = function * (migration, batchNumber) {
   const migrations = {name: migration, batch: batchNumber, migration_time: new Date()}
-  return yield this.database.table(this.migrationsTable).insert(migrations)
+  return yield this.database.collection(this.migrationsCollection).insert(migrations)
 }
 
 /**
- * deletes batch row from migrations table, required
+ * deletes batch row from migrations collection, required
  * when rolling back
  *
  * @yield {Object}
@@ -61,5 +61,5 @@ Batch._updateProgress = function * (migration, batchNumber) {
  * @private
  */
 Batch._revertProgress = function * (file, batchNumber) {
-  return yield this.database.table(this.migrationsTable).where('name', file).delete()
+  return yield this.database.collection(this.migrationsCollection).where('name', file).delete()
 }

@@ -9,7 +9,7 @@ const mysqlConnections = require('./mysqlConnections')
 const postgresConnection = require('./postgresConnection')
 const sqliteConnections = require('./sqliteConnections')
 const get = function (key, hasPrefix) {
-  if (key === 'database.migrationsTable') {
+  if (key === 'database.migrationsCollection') {
     return 'adonis_migrations'
   }
 

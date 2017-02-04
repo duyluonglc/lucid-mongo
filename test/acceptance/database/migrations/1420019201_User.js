@@ -13,14 +13,14 @@ const Schema = use('Adonis/Src/Schema')
 
 class User extends Schema {
   up () {
-    this.create('users', function (table) {
-      table.increments()
-      table.string('username')
-      table.string('email')
-      table.string('firstname')
-      table.string('lastname')
-      table.string('password')
-      table.timestamps()
+    this.create('users', function (collection) {
+      collection.increments()
+      collection.string('username')
+      collection.string('email')
+      collection.string('firstname')
+      collection.string('lastname')
+      collection.string('password')
+      collection.timestamps()
     })
   }
 

@@ -31,14 +31,14 @@ class HasManyThrough extends Relation {
    */
   _makeJoinQuery (ignoreSelections) {
     var self = this
-    const selectionKeys = [`${this.related.table}.*`, `${this.through.table}.${this.toKey}`]
+    const selectionKeys = [`${this.related.collection}.*`, `${this.through.collection}.${this.toKey}`]
 
     if (!ignoreSelections) {
       this.relatedQuery.select.apply(this.relatedQuery, selectionKeys)
     }
 
-    this.relatedQuery.innerJoin(`${this.through.table}`, function () {
-      this.on(`${self.through.table}.${self.viaKey}`, `${self.related.table}.${self.viaForeignKey}`)
+    this.relatedQuery.innerJoin(`${this.through.collection}`, function () {
+      this.on(`${self.through.collection}.${self.viaKey}`, `${self.related.collection}.${self.viaForeignKey}`)
     })
   }
 
@@ -47,7 +47,7 @@ class HasManyThrough extends Relation {
    */
   _decorateRead () {
     this._makeJoinQuery()
-    this.relatedQuery.where(`${this.through.table}.${this.toKey}`, this.parent[this.fromKey])
+    this.relatedQuery.where(`${this.through.collection}.${this.toKey}`, this.parent[this.fromKey])
   }
 
   /**
@@ -62,10 +62,10 @@ class HasManyThrough extends Relation {
     const queryClone = this.relatedQuery.clone()
 
     queryClone
-    .innerJoin(`${this.through.table}`, function () {
-      this.on(`${self.through.table}.${self.viaKey}`, `${self.related.table}.${self.viaForeignKey}`)
+    .innerJoin(`${this.through.collection}`, function () {
+      this.on(`${self.through.collection}.${self.viaKey}`, `${self.related.collection}.${self.viaForeignKey}`)
     })
-    .where(`${this.through.table}.${this.toKey}`, this.parent[this.fromKey])
+    .where(`${this.through.collection}.${this.toKey}`, this.parent[this.fromKey])
 
     return queryClone
   }
@@ -85,7 +85,7 @@ class HasManyThrough extends Relation {
      * since selecting fields in countby requires unwanted
      * groupBy clauses.
      */
-    const countByQuery = this._getAlternateQuery().count(`${this.through.table}.${this.toKey} as total`)
+    const countByQuery = this._getAlternateQuery().count(`${this.through.collection}.${this.toKey} as total`)
 
     this._decorateRead()
     return this.relatedQuery.paginate(page, perPage, countByQuery)
@@ -100,7 +100,7 @@ class HasManyThrough extends Relation {
    */
   exists (callback) {
     this._makeJoinQuery(true)
-    this.relatedQuery.whereRaw(`${this.through.table}.${this.toKey} = ${this.parent.constructor.table}.${this.fromKey}`)
+    this.relatedQuery.whereRaw(`${this.through.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
     if (typeof (callback) === 'function') {
       callback(this.relatedQuery)
     }
@@ -116,7 +116,7 @@ class HasManyThrough extends Relation {
    */
   counts (callback) {
     this._makeJoinQuery(true)
-    this.relatedQuery.count('*').whereRaw(`${this.through.table}.${this.toKey} = ${this.parent.constructor.table}.${this.fromKey}`)
+    this.relatedQuery.count('*').whereRaw(`${this.through.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
     if (typeof (callback) === 'function') {
       callback(this.relatedQuery)
     }
@@ -204,7 +204,7 @@ class HasManyThrough extends Relation {
       scopeMethod(this.relatedQuery)
     }
     this._makeJoinQuery()
-    const results = yield this.relatedQuery.whereIn(`${this.through.table}.${this.toKey}`, values).fetch()
+    const results = yield this.relatedQuery.whereIn(`${this.through.collection}.${this.toKey}`, values).fetch()
     return results.groupBy((item) => {
       return item[`${this.toKey}`]
     }).mapValues(function (value) {
@@ -231,7 +231,7 @@ class HasManyThrough extends Relation {
       scopeMethod(this.relatedQuery)
     }
     this._makeJoinQuery()
-    const results = yield this.relatedQuery.where(`${this.through.table}.${this.toKey}`, value).fetch()
+    const results = yield this.relatedQuery.where(`${this.through.collection}.${this.toKey}`, value).fetch()
     const response = {}
     response[value] = results
     return response
