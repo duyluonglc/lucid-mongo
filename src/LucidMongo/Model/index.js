@@ -89,6 +89,7 @@ class Model {
   instantiate (values) {
     this.attributes = {}
     this.original = {}
+    this.unsetFields = []
     this.transaction = null // will be added via useTransaction
     this.relations = {}
     this.exists = false
@@ -855,6 +856,15 @@ class Model {
    */
   isDeleted () {
     return this.frozen
+  }
+
+  /**
+   * unset field.
+   *
+   * @public
+   */
+  unset (field) {
+    this.unsetFields.push(field)
   }
 
   /**

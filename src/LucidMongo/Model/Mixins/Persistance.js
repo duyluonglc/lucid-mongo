@@ -72,13 +72,20 @@ Peristance.update = function * () {
     const query = this.constructor.query()
     yield query.connect()
     const dirtyValues = this.$dirty
-    if (!_.size(dirtyValues)) {
+    if (!_.size(dirtyValues) && !this.unsetFields.length) {
       return 0
+    }
+    let dirty = { $set: dirtyValues }
+    if (this.unsetFields.length) {
+      dirty.$unset = {}
+      this.unsetFields.forEach(field => {
+        dirty.$unset[field] = 1
+      })
     }
     if (this.transaction) {
       query.transacting(this.transaction)
     }
-    const affected = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirtyValues)
+    const affected = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirty)
     if (affected > 0) {
       _.merge(this.attributes, dirtyValues)
       this.original = _.clone(this.attributes)
