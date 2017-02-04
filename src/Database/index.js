@@ -305,7 +305,7 @@ Database.paginate = function * (page, perPage, countByQuery) {
   countByQuery._statements = _.filter(countByQuery._statements, (statement) => excludeAttrFromCount.indexOf(statement.grouping) < 0)
 
   const count = yield countByQuery
-  console.log(count)
+
   if (!count || parseInt(count, 10) === 0) {
     return util.makePaginateMeta(0, parsedPage, parsedPerPage)
   }

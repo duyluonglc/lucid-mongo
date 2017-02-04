@@ -863,6 +863,15 @@ class Model {
    *
    * @public
    */
+  set (key, value) {
+    this.attributes[key] = value
+  }
+
+  /**
+   * unset field.
+   *
+   * @public
+   */
   unset (field) {
     this.unsetFields.push(field)
   }
@@ -1057,6 +1066,57 @@ class Model {
    */
   hasManyThrough (related, through, primaryKey, foreignKey, throughPrimaryKey, throughForeignKey) {
     return new Relations.HasManyThrough(this, related, through, primaryKey, foreignKey, throughPrimaryKey, throughForeignKey)
+  }
+
+  /**
+   * returns morphMany instance for a given model. Later
+   * returned instance will be responsible for
+   * resolving relations
+   *
+   * @param  {Object}  related
+   * @param  {String}  embedField
+   * @param  {String}  [primaryKey]
+   * @param  {String}  [foreignKey]
+   * @return {Object}
+   *
+   * @public
+   */
+  morphMany (related, embedField, primaryKey, foreignKey) {
+    return new Relations.MorphMany(this, related, embedField, primaryKey, foreignKey)
+  }
+
+  /**
+   * returns embedsOne instance for a given model. Later
+   * returned instance will be responsible for
+   * resolving relations
+   *
+   * @param  {Object}  related
+   * @param  {String}  [embedField]
+   * @param  {String}  [primaryKey]
+   * @param  {String}  [foreignKey]
+   * @return {Object}
+   *
+   * @public
+   */
+  embedsOne (related, embedField, primaryKey, foreignKey) {
+    return new Relations.EmbedsOne(this, related, embedField, primaryKey, foreignKey)
+  }
+
+  /**
+   * returns embedsMany instance for a given model. Later
+   * returned instance will be responsible for
+   * resolving relations
+   *
+   * @param  {Object}  related
+   * @param  {String}  [embedField]
+   * @param  {String}  [primaryKey]
+   * @param  {String}  [foreignKey]
+   * @return {Object}
+   *
+   * @public
+   */
+  embedsMany (related, embedField, primaryKey, foreignKey) {
+    return new Relations.EmbedsMany(this, related, embedField, primaryKey, foreignKey)
   }
 
   /**

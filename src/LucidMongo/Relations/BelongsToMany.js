@@ -338,7 +338,6 @@ class BelongsToMany extends Relation {
     const results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
     const response = {}
     response[value] = results
-    console.log(response)
     return response
   }
 
