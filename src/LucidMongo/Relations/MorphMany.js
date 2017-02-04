@@ -11,6 +11,8 @@
 
 const Relation = require('./Relation')
 const helpers = require('../QueryBuilder/helpers')
+const CE = require('../../Exceptions')
+const logger = new CatLog('adonis:lucid')
 
 class MorphMany extends Relation {
 

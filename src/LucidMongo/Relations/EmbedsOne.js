@@ -13,6 +13,8 @@ const Relation = require('./Relation')
 const helpers = require('../QueryBuilder/helpers')
 const uuid = use('uuid')
 const _ = use('lodash')
+const CE = require('../../Exceptions')
+const logger = new CatLog('adonis:lucid')
 
 class EmbedOne extends Relation {
 

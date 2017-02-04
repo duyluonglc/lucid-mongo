@@ -13,6 +13,8 @@ const Relation = require('./Relation')
 const helpers = require('../QueryBuilder/helpers')
 const uuid = use('uuid')
 const _ = use('lodash')
+const CE = require('../../Exceptions')
+const logger = new CatLog('adonis:lucid')
 
 class EmbedMany extends Relation {
 
@@ -101,7 +103,7 @@ class EmbedMany extends Relation {
       embedItems.push(relatedInstance.toJSON())
     } else {
       embedItems = embedItems.map(item => {
-        return item._id == relatedInstance._id ? relatedInstance.toJSON() : item
+        return item._id === relatedInstance._id ? relatedInstance.toJSON() : item
       })
     }
     this.parent.set(this.embedField, embedItems)
