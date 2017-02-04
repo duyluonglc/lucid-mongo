@@ -10,10 +10,10 @@
 */
 
 const Relation = require('./Relation')
-const helpers = require('../QueryBuilder/helpers')
 const uuid = use('uuid')
 const _ = use('lodash')
 const CE = require('../../Exceptions')
+const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')
 
 class EmbedOne extends Relation {
@@ -42,7 +42,8 @@ class EmbedOne extends Relation {
     }
 
     return _(results).keyBy('_id').mapValues((value) => {
-      const modelInstance = new this.related()
+      const RelatedModel = this.related
+      const modelInstance = new RelatedModel()
       modelInstance.attributes = value[this.embedField]
       modelInstance.exists = true
       modelInstance.original = _.clone(modelInstance.attributes)
@@ -67,7 +68,8 @@ class EmbedOne extends Relation {
       scopeMethod(this.relatedQuery)
     }
     const response = {}
-    const modelInstance = new this.related()
+    const RelatedModel = this.related
+    const modelInstance = new RelatedModel()
     modelInstance.attributes = result[this.embedField]
     modelInstance.exists = true
     modelInstance.original = _.clone(modelInstance.attributes)

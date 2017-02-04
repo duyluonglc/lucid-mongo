@@ -14,6 +14,7 @@ const helpers = require('../QueryBuilder/helpers')
 const uuid = use('uuid')
 const _ = use('lodash')
 const CE = require('../../Exceptions')
+const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')
 
 class EmbedMany extends Relation {
@@ -43,7 +44,8 @@ class EmbedMany extends Relation {
 
     return _(results).keyBy('_id').mapValues((value) => {
       return helpers.toCollection(_.map(value[this.embedField], embed => {
-        const modelInstance = new this.related()
+        const RelatedModel = this.related
+        const modelInstance = new RelatedModel()
         modelInstance.attributes = embed
         modelInstance.exists = true
         modelInstance.original = _.clone(modelInstance.attributes)
@@ -70,7 +72,8 @@ class EmbedMany extends Relation {
     }
     const response = {}
     response[value] = helpers.toCollection(_.map(result[this.embedField], embed => {
-      const modelInstance = new this.related()
+      const RelatedModel = this.related
+      const modelInstance = new RelatedModel()
       modelInstance.attributes = embed
       modelInstance.exists = true
       modelInstance.original = _.clone(modelInstance.attributes)
