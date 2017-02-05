@@ -13,7 +13,7 @@ You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.
 
 ## <a name="getting-started"></a>Getting Started
 
-LucidMongo is included by default with every new adonis application, but here are the steps, if in case you want to set it up manually.
+To setup this package
 
 ```bash
 $ npm i --save adonis-lucid-mongodb
