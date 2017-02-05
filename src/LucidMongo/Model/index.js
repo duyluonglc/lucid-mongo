@@ -547,12 +547,23 @@ class Model {
    * returns query builder instance to be used for
    * creating fluent queries.
    *
+   * @param  {Object} {where, with, select, limit, skip, sort}
    * @return {Object}
    *
    * @public
    */
-  static query () {
-    return new QueryBuilder(this).where({})
+  static query (params) {
+    const query = new QueryBuilder(this)
+    if (params && _.isObject(params)) {
+      return query.select(params.select)
+        .where(params.where)
+        .with(params.with)
+        .limit(params.limit)
+        .skip(params.skip)
+        .sort(params.sort)
+    } else {
+      return query.where({})
+    }
   }
 
   /**
@@ -671,7 +682,7 @@ class Model {
    * @public
    */
   static * all () {
-    return yield this.query().where({}).fetch()
+    return yield this.query().fetch()
   }
 
   /**
@@ -733,37 +744,65 @@ class Model {
    * shorthand to get access to the with method on
    * query builder chain.
    *
-   * @return {Object}
+   * @return {function}
    *
    * @public
    */
-  static with () {
-    const args = _.toArray(arguments)
-    return this.query().with(args)
+  static get with () {
+    const query = this.query()
+    return query.with.bind(query)
   }
 
   /**
    * shorthand to get access to the where method on
    * query builder chain.
    *
-   * @return {Object}
+   * @return {function}
    *
    * @public
    */
-  static where () {
-    return this.query().where(_.toArray(arguments))
+  static get where () {
+    const query = this.query()
+    return query.where.bind(query)
+  }
+
+  /**
+   * shorthand to get access to the where method on
+   * query builder chain.
+   *
+   * @return {function}
+   *
+   * @public
+   */
+  static get whereIn () {
+    const query = this.query()
+    return query.whereIn.bind(query)
   }
 
   /**
    * shorthand to get access to the select method on
    * query builder chain.
    *
-   * @return {Object}
+   * @return {function}
    *
    * @public
    */
-  static select () {
-    return this.query().select(_.toArray(arguments))
+  static get select () {
+    const query = this.query()
+    return query.select.bind(query)
+  }
+
+  /**
+   * shorthand to get access to the limit method on
+   * query builder chain.
+   *
+   * @return {function}
+   *
+   * @public
+   */
+  static get limit () {
+    const query = this.query()
+    return query.limit.bind(query)
   }
 
   /**
@@ -1211,13 +1250,7 @@ class Model {
   }
 }
 
-class ExtendedModel extends mixin(
-  Model,
-  Mixins.AccessorMutator,
-  Mixins.Serializer,
-  Mixins.Persistance,
-  Mixins.Dates,
-  Mixins.Hooks
-) {}
+class ExtendedModel extends mixin(Model, Mixins.AccessorMutator, Mixins.Serializer, Mixins.Persistance, Mixins.Dates, Mixins.Hooks) {
+}
 
 module.exports = ExtendedModel
