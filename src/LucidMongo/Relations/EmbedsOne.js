@@ -101,6 +101,23 @@ class EmbedOne extends Relation {
     yield this.parent.save()
     return relatedInstance
   }
+
+  /**
+   * Delete related instance
+   *
+   * @param {any} relatedInstance
+   * @returns
+   *
+   * @memberOf EmbedOne
+   */
+  * delete () {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('delete', this.parent.constructor.name, this.related.name)
+    }
+
+    this.parent.unset(this.toKey)
+    return yield this.parent.save()
+  }
 }
 
 module.exports = EmbedOne

@@ -79,10 +79,11 @@ methods.paginate = function (target) {
  * @public
  */
 methods.insertAttributes = function (target) {
-  return function (values) {
+  return function * (values) {
     values = target.HostModel.prototype.setCreateTimestamp(values)
     values = target.HostModel.prototype.setUpdateTimestamp(values)
-    return target.modelQueryBuilder._collection.collection.insert(values)
+    yield target.connect()
+    return yield target.modelQueryBuilder._collection.collection.insert(values)
   }
 }
 
@@ -96,9 +97,10 @@ methods.insertAttributes = function (target) {
  * @return {Promise}
  */
 methods.updateAttributes = function (target) {
-  return function (values) {
+  return function * (values) {
     values = target.HostModel.prototype.setUpdateTimestamp(values)
-    return target.modelQueryBuilder.update(values)
+    yield target.connect()
+    return yield target.modelQueryBuilder.update(values)
   }
 }
 methods.update = methods.updateAttributes
@@ -116,13 +118,14 @@ methods.update = methods.updateAttributes
  * @public
  */
 methods.deleteAttributes = function (target) {
-  return function (values) {
+  return function * (values) {
     if (target.HostModel.deleteTimestamp) {
       values = values || {}
       values = target.HostModel.prototype.setDeleteTimestamp(values)
-      return this.updateAttributes(values)
+      return yield this.updateAttributes(values)
     }
-    return target.modelQueryBuilder.remove()
+    yield target.connect()
+    return yield target.modelQueryBuilder.remove()
   }
 }
 methods.delete = methods.deleteAttributes
@@ -138,13 +141,13 @@ methods.delete = methods.deleteAttributes
  * @public
  */
 methods.restoreAttributes = function (target) {
-  return function (values) {
+  return function * (values) {
     if (!target.HostModel.deleteTimestamp) {
       throw CE.ModelException.cannotRestore(target.HostModel.name)
     }
     values = values || {}
     values = target.HostModel.prototype.setRestoreTimestamp(values)
-    return this.updateAttributes(values)
+    return yield this.updateAttributes(values)
   }
 }
 methods.restore = methods.restoreAttributes
@@ -177,7 +180,7 @@ methods.first = function (target) {
  */
 methods.last = function (target) {
   return function * () {
-    target.modelQueryBuilder.orderBy(target.HostModel.primaryKey, 'desc').limit(1)
+    this.orderBy(target.HostModel.primaryKey, 'desc').limit(1)
     const results = yield this.fetch()
     return results.first() || null
   }

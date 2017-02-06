@@ -99,7 +99,7 @@ class EmbedMany extends Relation {
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
     }
-    let embedItems = _.clone(this.parent.attributes[this.toKey])
+    let embedItems = _.clone(this.parent.get(this.toKey))
     if (!embedItems || !_.isArray(embedItems)) {
       embedItems = []
     }
@@ -114,6 +114,108 @@ class EmbedMany extends Relation {
     this.parent.set(this.toKey, embedItems)
     yield this.parent.save()
     return relatedInstance
+  }
+
+  /**
+   * Remove related instance
+   *
+   * @param {any} id
+   * @returns
+   *
+   * @memberOf EmbedMany
+   */
+  * delete (references) {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('delete', this.parent.constructor.name, this.references.name)
+    }
+    if (!references) {
+      throw CE.InvalidArgumentException.invalidParameter('delete expects a primary key or array of primary key')
+    }
+    if (!this.parent[this.fromKey]) {
+      logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
+    }
+    let embedItems = _.clone(this.parent.get(this.toKey))
+    if (!embedItems || !_.isArray(embedItems)) {
+      embedItems = []
+    }
+
+    if (_.isArray(references)) {
+      references.forEach(reference => {
+        _.remove(embedItems, item => item[this.fromKey] === (_.isObject(reference) ? reference[this.fromKey] : reference))
+      })
+    } else {
+      _.remove(embedItems, item => item[this.fromKey] === (_.isObject(references) ? references[this.fromKey] : references))
+    }
+    this.parent.set(this.toKey, embedItems)
+    return yield this.parent.save()
+  }
+
+  /**
+   * delete all references
+   *
+   * @return {Number}
+   *
+   * @public
+   */
+  * deleteAll () {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('deleteAll', this.parent.constructor.name, this.related.name)
+    }
+
+    this.parent.unset(this.toKey)
+    return yield this.parent.save()
+  }
+
+  /**
+   * fetch
+   *
+   * @public
+   *
+   * @return {Array}
+   */
+  * fetch () {
+    return helpers.toCollection(_.map(this.parent.get(this.toKey), embed => {
+      const RelatedModel = this.related
+      const modelInstance = new RelatedModel()
+      modelInstance.attributes = embed
+      modelInstance.exists = true
+      modelInstance.original = _.clone(modelInstance.attributes)
+      return modelInstance
+    }))
+  }
+
+  /**
+   * find
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * find (id) {
+    return this.fetch().find(item => item[this.fromKey] === id)
+  }
+
+  /**
+   * fetch
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * first () {
+    return this.fetch().head()
+  }
+
+  /**
+   * belongsTo cannot have paginate, since it
+   * maps one to one relationship
+   *
+   * @public
+   *
+   * @throws CE.ModelRelationException
+   */
+  paginate () {
+    throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
   }
 }
 

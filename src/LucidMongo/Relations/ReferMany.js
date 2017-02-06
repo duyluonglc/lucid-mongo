@@ -52,7 +52,6 @@ class ReferMany extends Relation {
         response[parentId] = (response[parentId] || _([])).concat(item)
       })
     })
-    console.log(response)
     return response
   }
 
@@ -99,8 +98,7 @@ class ReferMany extends Relation {
 
     if (relatedInstance.isNew()) {
       yield relatedInstance.save()
-      console.log(relatedInstance)
-      let referKeys = _.clone(this.parent.attributes[this.toKey])
+      let referKeys = _.clone(this.parent.get(this.toKey))
       if (!referKeys || !_.isArray(referKeys)) {
         referKeys = []
       }
@@ -113,6 +111,202 @@ class ReferMany extends Relation {
 
     return relatedInstance
   }
+
+  /**
+   * fetch
+   *
+   * @public
+   *
+   * @return {Array}
+   */
+  * fetch () {
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parentget(this.toKey)).fetch()
+  }
+
+  /**
+   * find
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * find (id) {
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey)).find(id)
+  }
+
+  /**
+   * fetch
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * first () {
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey)).first()
+  }
+
+  /**
+   * belongsTo cannot have paginate, since it
+   * maps one to one relationship
+   *
+   * @public
+   *
+   * @throws CE.ModelRelationException
+   */
+  paginate () {
+    throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
+  }
+
+  /**
+   * attach method will add relationship to the pivot collection
+   * with current instance and related model values
+   *
+   * @param  {Array|Object} references
+   * @return {Number}
+   *
+   * @example
+   * user.roles().attach(1)
+   * user.roles().attach(role1)
+   * user.roles().attach([1,2])
+   * user.roles().attach([role1, role2])
+   *
+   * @public
+   */
+  * attach (references) {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('attach', this.parent.constructor.name, this.related.name)
+    }
+
+    // if (!_.isArray(references) && !_.isObject(references)) {
+    //   throw CE.InvalidArgumentException.invalidParameter('attach expects an array of values or a plain object')
+    // }
+
+    if (!this.parent[this.fromKey]) {
+      logger.warn(`Trying to attach values with ${this.fromKey} as primaryKey, whose value is falsy`)
+    }
+
+    let saveReferences = _.isArray(this.parent.get(this.toKey)) ? _.clone(this.parent.get(this.toKey)) : []
+    if (_.isArray(references)) {
+      references = _.map(references, function (reference) {
+        return _.isObject(reference) ? reference[this.fromKey] : reference
+      })
+    } else if (_.isObject(references)) {
+      references = [references[this.fromKey]]
+    } else {
+      references = [references]
+    }
+    saveReferences = _.union(_.concat(saveReferences, references))
+    return yield this.parent.set(this.toKey, saveReferences).save()
+  }
+
+  /**
+   * removes the relationship stored inside a pivot collection. If
+   * references are not defined all relationships will be
+   * deleted
+   * @method detach
+   * @param  {Array} [references]
+   * @return {Number}
+   *
+   * @public
+   */
+  * detach (references) {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('detach', this.parent.constructor.name, this.related.name)
+    }
+
+    // if (!_.isArray(references) && !_.isObject(references)) {
+    //   throw CE.InvalidArgumentException.invalidParameter('attach expects an array of values or a plain object')
+    // }
+
+    if (!this.parent[this.fromKey]) {
+      logger.warn(`Trying to detach values with ${this.fromKey} as primaryKey, whose value is falsy`)
+    }
+
+    let saveReferences = _.isArray(this.parent.get(this.toKey)) ? _.clone(this.parent.get(this.toKey)) : []
+    if (references !== undefined) {
+      if (_.isArray(references)) {
+        references = _.map(references, function (reference) {
+          return _.isObject(reference) ? reference[this.fromKey] : reference
+        })
+      } else if (_.isObject(references)) {
+        references = [references[this.fromKey]]
+      } else {
+        references = [references]
+      }
+      saveReferences = _.difference(saveReferences, references)
+    } else {
+      saveReferences = []
+    }
+    return yield this.parent.set(this.toKey, saveReferences).save()
+  }
+
+  /**
+   * shorthand for detach and then attach
+   *
+   * @param  {Array} [references]
+   * @return {Number}
+   *
+   * @public
+   */
+  * sync (references) {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('sync', this.parent.constructor.name, this.related.name)
+    }
+    let saveReferences = []
+    if (references !== undefined) {
+      if (_.isArray(references)) {
+        saveReferences = _.map(references, function (reference) {
+          return _.isObject(reference) ? reference[this.fromKey] : reference
+        })
+      } else if (_.isObject(references)) {
+        saveReferences = [references[this.fromKey]]
+      } else {
+        saveReferences = [references]
+      }
+      saveReferences = _.difference(saveReferences, references)
+    }
+    return yield this.parent.set(this.toKey, saveReferences).save()
+  }
+
+  /**
+   * detach item from references and delete item
+   *
+   * @param  {Object} [reference]
+   * @return {Number}
+   *
+   * @public
+   */
+  * delete (reference) {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('delete', this.parent.constructor.name, this.related.name)
+    }
+    if (!reference) {
+      throw CE.InvalidArgumentException.invalidParameter('delete expects a primary key or instance of related')
+    }
+    yield this.detach(reference)
+    if (_.isObject(reference)) {
+      return yield reference.delete()
+    } else {
+      return yield this.relatedQuery.where(this.fromKey, reference).delete()
+    }
+  }
+
+  /**
+   * detach all item from references and delete them
+   *
+   * @return {Number}
+   *
+   * @public
+   */
+  * deleteAll () {
+    if (this.parent.isNew()) {
+      throw CE.ModelRelationException.unSavedTarget('deleteAll', this.parent.constructor.name, this.related.name)
+    }
+    const references = this.target.get(this.toKey)
+    yield this.detach()
+    return yield this.relatedQuery.whereIn(this.fromKey, references).delete()
+  }
+
 }
 
 module.exports = ReferMany

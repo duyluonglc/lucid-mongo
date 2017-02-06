@@ -826,7 +826,7 @@ class Model {
    * @public
    */
   get $primaryKeyValue () {
-    return this.attributes[this.constructor.primaryKey]
+    return this.get(this.constructor.primaryKey)
   }
 
   /**
@@ -838,7 +838,7 @@ class Model {
    * @public
    */
   set $primaryKeyValue (value) {
-    this.attributes[this.constructor.primaryKey] = value
+    this.set(this.constructor.primaryKey, value)
   }
 
   /**
@@ -898,12 +898,13 @@ class Model {
   }
 
   /**
-   * unset field.
+   * set field.
    *
    * @public
    */
   set (key, value) {
     this.attributes[key] = value
+    return this
   }
 
   /**
@@ -1173,7 +1174,7 @@ class Model {
   }
 
   /**
-   * returns eagerly loaded relation for a given model
+   * returns attribute or relation data of model
    * instance
    *
    * @param  {String} key
@@ -1182,6 +1183,19 @@ class Model {
    * @public
    */
   get (key) {
+    return this.attributes[key]
+  }
+
+  /**
+   * returns relation data of model
+   * instance
+   *
+   * @param  {String} key
+   * @return {Object}
+   *
+   * @public
+   */
+  getRelated (key) {
     return this.relations[key]
   }
 
