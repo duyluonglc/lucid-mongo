@@ -11,7 +11,7 @@
 
 const _ = require('lodash')
 const CE = require('../../../Exceptions')
-const Peristance = exports = module.exports = {}
+const Persistance = exports = module.exports = {}
 
 /**
  * inserts instance values to the database and sets instance
@@ -23,7 +23,7 @@ const Peristance = exports = module.exports = {}
  *
  * @public
  */
-Peristance.insert = function * () {
+Persistance.insert = function * () {
   /**
    * insert handler is sent to hooks execution method
    * and will be called there itself.
@@ -63,7 +63,7 @@ Peristance.insert = function * () {
  *
  * @public
  */
-Peristance.update = function * () {
+Persistance.update = function * () {
   /**
    * update handler is sent to hooks execution method
    * and will be called there itself.
@@ -105,7 +105,7 @@ Peristance.update = function * () {
  *
  * @public
  */
-Peristance.delete = function * () {
+Persistance.delete = function * () {
   const deleteHandler = function * () {
     const query = this.constructor.query().where(this.constructor.primaryKey, this.$primaryKeyValue)
     yield query.connect()
@@ -132,7 +132,7 @@ Peristance.delete = function * () {
  *
  * @public
  */
-Peristance.restore = function * () {
+Persistance.restore = function * () {
   const restoreHandler = function * () {
     const query = this.constructor.query().where(this.constructor.primaryKey, this.$primaryKeyValue)
     if (this.transaction) {
