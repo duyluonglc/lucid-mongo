@@ -258,7 +258,27 @@ methods.onlyTrashed = function (target) {
 methods.with = function (target) {
   return function () {
     const relations = _.isArray(arguments[0]) ? arguments[0] : _.toArray(arguments)
-    target.eagerLoad.with(relations)
+    relations.forEach(item => {
+      console.log(item)
+      if (_.isObject(item)) {
+        target.eagerLoad.with([item.relation])
+        if (item.scope) {
+          if (_.isObject(item.scope)) {
+            this.scope(item.relation, function (query) {
+              if (item.scope.where) { query = query.where(item.scope.where) }
+              if (item.scope.with) { query = query.with(item.scope.with) }
+              if (item.scope.limit) { query = query.limit(item.scope.limit) }
+              if (item.scope.skip) { query = query.skip(item.scope.skip) }
+              if (item.scope.sort) { query = query.sort(item.scope.sort) }
+            })
+          } else if (item) {
+            this.scope(item.relation, item.scope)
+          }
+        }
+      } else {
+        target.eagerLoad.with([item])
+      }
+    })
     return this
   }
 }
