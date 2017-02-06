@@ -651,3 +651,35 @@ methods.orderBy = function (target) {
     return this
   }
 }
+
+/**
+ * Where field is null
+ *
+ * @param {String} key
+ * @param {String} [expression]
+ * @param {Mixed} [value]
+ *
+ * @chainable
+ */
+methods.whereNull = function (target) {
+  return function (key) {
+    target.modelQueryBuilder.where(key).exists(false)
+    return this
+  }
+}
+
+/**
+ * Where field is null
+ *
+ * @param {String} key
+ * @param {String} [expression]
+ * @param {Mixed} [value]
+ *
+ * @chainable
+ */
+methods.whereNotNull = function (target) {
+  return function (key) {
+    target.modelQueryBuilder.where(key).exists()
+    return this
+  }
+}
