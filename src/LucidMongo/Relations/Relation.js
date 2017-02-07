@@ -16,6 +16,7 @@ const logger = new CatLog('adonis:lucid')
 const cf = require('co-functional')
 const Ioc = require('adonis-fold').Ioc
 const CE = require('../../Exceptions')
+const _ = require('lodash')
 
 class Relation {
 
@@ -259,6 +260,28 @@ class Relation {
     return cf.map(function * (relatedInstance) {
       return yield self.save(relatedInstance)
     }, arrayOfInstances)
+  }
+
+  /**
+   * returns query builder instance to be used for
+   * creating fluent queries.
+   *
+   * @param  {Object} {where, with, select, limit, skip, sort}
+   * @return {Object}
+   *
+   * @public
+   */
+  query (params) {
+    if (params && _.isObject(params)) {
+      return this.select(params.select)
+        .where(params.where)
+        .with(params.with)
+        .limit(params.limit)
+        .skip(params.skip)
+        .sort(params.sort)
+    } else {
+      throw CE.InvalidArgumentException('params must be an object')
+    }
   }
 
 }
