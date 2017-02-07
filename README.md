@@ -10,6 +10,7 @@ But it not support MongoDB. So I've forked and make new repository adonis-lucid-
 
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
+You can see example here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
 
 ## <a name="getting-started"></a>Getting Started
 
