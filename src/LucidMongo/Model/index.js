@@ -1209,7 +1209,26 @@ class Model {
    */
   related () {
     const relations = _.isArray(arguments[0]) ? arguments[0] : _.toArray(arguments)
-    this.eagerLoad.with(relations)
+    relations.forEach(item => {
+      if (_.isObject(item)) {
+        this.eagerLoad.with([item.relation])
+        if (item.scope) {
+          if (_.isObject(item.scope)) {
+            this.scope(item.relation, function (query) {
+              if (item.scope.where) { query = query.where(item.scope.where) }
+              if (item.scope.with) { query = query.with(item.scope.with) }
+              if (item.scope.limit) { query = query.limit(item.scope.limit) }
+              if (item.scope.skip) { query = query.skip(item.scope.skip) }
+              if (item.scope.sort) { query = query.sort(item.scope.sort) }
+            })
+          } else if (item) {
+            this.scope(item.relation, item.scope)
+          }
+        }
+      } else {
+        this.eagerLoad.with([item])
+      }
+    })
     return this
   }
 

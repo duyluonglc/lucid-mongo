@@ -262,7 +262,6 @@ methods.with = function (target) {
   return function () {
     const relations = _.isArray(arguments[0]) ? arguments[0] : _.toArray(arguments)
     relations.forEach(item => {
-      console.log(item)
       if (_.isObject(item)) {
         target.eagerLoad.with([item.relation])
         if (item.scope) {
