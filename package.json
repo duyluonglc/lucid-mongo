@@ -5,7 +5,7 @@
   "directories": {
     "test": "test"
   },
-  "version": "0.10.5",
+  "version": "0.10.7",
   "scripts": {
     "lint": "standard",
     "test:all": "DB=mongodb npm run test",
@@ -71,6 +71,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/duyluonglc/adonis-lucid.git"
+    "url": "https://github.com/duyluonglc/adonis-lucid-mongodb.git"
   }
 }
