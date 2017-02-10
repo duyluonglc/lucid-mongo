@@ -34,10 +34,10 @@ FieldTypes.getValueWithType = function (key, value) {
  * @public
  */
 FieldTypes.getFormatedField = function (key, value) {
-  if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
+  if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1 && moment.isMoment(value)) {
     return this.formatDate(value)
   }
-  if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1) {
+  if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1 && value instanceof GeoPoint) {
     return {
       lat: value.latitude(),
       lng: value.longitude()
@@ -48,14 +48,14 @@ FieldTypes.getFormatedField = function (key, value) {
 
 /**
  *
- * @method getStoreValues
+ * @method getStoreAbleValues
  *
  * @param  {Object}           values
  * @return {Object}
  *
  * @public
  */
-FieldTypes.getStoreValues = function (values) {
+FieldTypes.getStoreAbleValues = function (values) {
   return _(values).transform((result, value, key) => {
     if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
       result[key] = value.toISOString()
@@ -70,4 +70,27 @@ FieldTypes.getStoreValues = function (values) {
       }
     }
   }).value()
+}
+
+/**
+ *
+ * @method fillDataFromDb
+ *
+ * @param  {Object}           values
+ * @return {Object}
+ *
+ * @public
+ */
+FieldTypes.fillDataFromDb = function (values) {
+  _.map(values, (value, key) => {
+    if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
+      this.attributes[key] = moment(value)
+    } else if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1 &&
+      _.isObject(value) && _.isArray(value.coordinates)) {
+      this.attributes[key] = new GeoPoint(value.coordinates[1], value.coordinates[0])
+    } else {
+      this.attributes[key] = value
+    }
+  })
+  return this
 }
