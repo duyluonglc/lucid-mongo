@@ -505,6 +505,28 @@ class Model {
   }
 
   /**
+   * date fields auto convert to moment
+   *
+   * @return {Array}
+   *
+   * @public
+   */
+  static get dateFields () {
+    return []
+  }
+
+  /**
+   * date fields auto convert to GeoPoint
+   *
+   * @return {Array}
+   *
+   * @public
+   */
+  static get geoFields () {
+    return []
+  }
+
+  /**
    * created at field getter method, by default
    * it returns an instance of moment js.
    *
@@ -903,7 +925,7 @@ class Model {
    * @public
    */
   set (key, value) {
-    this.attributes[key] = value
+    this.attributes[key] = this.mutateProperty(key, value)
     return this
   }
 
@@ -1183,7 +1205,7 @@ class Model {
    * @public
    */
   get (key) {
-    return this.attributes[key]
+    return this.accessProperty(key, this.attributes[key])
   }
 
   /**
@@ -1283,7 +1305,7 @@ class Model {
   }
 }
 
-class ExtendedModel extends mixin(Model, Mixins.AccessorMutator, Mixins.Serializer, Mixins.Persistance, Mixins.Dates, Mixins.Hooks) {
+class ExtendedModel extends mixin(Model, Mixins.AccessorMutator, Mixins.Serializer, Mixins.Persistance, Mixins.Dates, Mixins.Hooks, Mixins.FieldTypes) {
 }
 
 module.exports = ExtendedModel

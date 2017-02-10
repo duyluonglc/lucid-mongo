@@ -14,5 +14,6 @@ module.exports = {
   Dates: require('./Dates'),
   Hooks: require('./Hooks'),
   Persistance: require('./Persistance'),
+  FieldTypes: require('./FieldTypes'),
   Serializer: require('./Serializer')
 }
