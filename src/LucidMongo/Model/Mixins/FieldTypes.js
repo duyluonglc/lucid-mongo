@@ -59,8 +59,7 @@ FieldTypes.getStoreAbleValues = function (values) {
   return _(values).transform((result, value, key) => {
     if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
       result[key] = value.toISOString()
-    }
-    if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1) {
+    } else if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1) {
       result[key] = {
         type: 'Point',
         coordinates: [
@@ -68,6 +67,8 @@ FieldTypes.getStoreAbleValues = function (values) {
           value.latitude()
         ]
       }
+    } else {
+      result[key] = value
     }
   }).value()
 }
