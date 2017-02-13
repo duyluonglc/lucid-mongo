@@ -13,6 +13,7 @@ const _ = require('lodash')
 const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
 const ObjectID = require('mongodb').ObjectID
+const mquery = require('mquery')
 const methods = exports = module.exports = {}
 
 /**
@@ -658,7 +659,6 @@ methods.orderBy = function (target) {
  * Where field is null
  *
  * @param {String} key
- * @param {String} [expression]
  * @param {Mixed} [value]
  *
  * @chainable
@@ -674,7 +674,6 @@ methods.whereNull = function (target) {
  * Where field is null
  *
  * @param {String} key
- * @param {String} [expression]
  * @param {Mixed} [value]
  *
  * @chainable
@@ -682,6 +681,70 @@ methods.whereNull = function (target) {
 methods.whereNotNull = function (target) {
   return function (key) {
     target.modelQueryBuilder.where(key).exists()
+    return this
+  }
+}
+
+/**
+ * Where nested json object
+ *
+ * @param {Mixed} [value]
+ *
+ * @chainable
+ */
+methods.where = function (target) {
+  return function () {
+    if (arguments.length >= 2) {
+      target.modelQueryBuilder.where(arguments[0], arguments[1])
+    } else if (arguments.length === 1 && _.isString(arguments[0])) {
+      return target.modelQueryBuilder.where(arguments[0])
+    } else if (arguments.length === 1 && _.isPlainObject(arguments[0])) {
+      const supportMethods = [
+        'all',
+        'exists',
+        'gt',
+        'gte',
+        'in',
+        'ne',
+        'nin',
+        'regex',
+        'size',
+        'slice'
+      ]
+      _.forEach(arguments[0], (conditions, key) => {
+        if (key === 'and' || key === 'or' || key === 'nor') {
+          if (!_.isArray(conditions)) {
+            throw new CE.InvalidArgumentException(`Method "$${key}" need 1 param type of array`)
+          }
+          let queries = []
+          _.forEach(conditions, (condition) => {
+            queries.push(target.HostModel.query().where(condition)._conditions)
+          })
+          target.modelQueryBuilder[key](queries)
+        } else if (_.isObject(conditions)) {
+          _.forEach(conditions, (c, k) => {
+            if (!_.isFunction(target.modelQueryBuilder[k])) {
+              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
+            }
+
+            if (k === 'near') {
+              let point = {center: [c.lng, c.lat]}
+              if (target.HostModel.geoFields && _(target.HostModel.geoFields).includes(key)) {
+                point = {center: { type: 'Point', coordinates: [c.lng, c.lat], spherical: true }}
+              }
+              if (conditions.maxDistance) {
+                point.maxDistance = conditions.maxDistance
+              }
+              target.modelQueryBuilder.where(key)[k](point)
+            } else if (_(supportMethods).includes(k)) {
+              target.modelQueryBuilder.where(key)[k](c)
+            }
+          })
+        } else {
+          target.modelQueryBuilder.where(key, conditions)
+        }
+      })
+    }
     return this
   }
 }

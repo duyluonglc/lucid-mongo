@@ -584,7 +584,7 @@ class Model {
         .skip(params.skip)
         .sort(params.sort)
     } else {
-      return query.where({})
+      return query
     }
   }
 

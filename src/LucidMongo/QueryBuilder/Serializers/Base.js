@@ -101,7 +101,7 @@ class BaseSerializer {
   * fetch () {
     this._decorateQuery()
     yield this.queryBuilder.connect()
-    const values = yield this.queryBuilder.modelQueryBuilder
+    const values = yield this.queryBuilder.modelQueryBuilder.find()
     const eagerlyFetched = yield this._fetchEager(values)
     return this._toCollection(values, eagerlyFetched)
   }
