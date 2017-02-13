@@ -17,11 +17,22 @@ const logger = new CatLog('adonis:lucid')
 
 class MorphMany extends Relation {
 
-  constructor (parent, related, determine, primaryKey, foreignKey) {
+  /**
+   * Creates an instance of MorphMany.
+   *
+   * @param {String} parent
+   * @param {String} related
+   * @param {String} determiner
+   * @param {String} foreignKey
+   * @param {String} primaryKey
+   *
+   * @memberOf MorphMany
+   */
+  constructor (parent, related, determiner, foreignKey, primaryKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.parent.constructor.foreignKey
-    this.determine = determine || 'parent'
+    this.toKey = foreignKey || 'parentId'
+    this.determiner = determiner || 'parentType'
   }
 
   /**
@@ -40,11 +51,11 @@ class MorphMany extends Relation {
       scopeMethod(this.relatedQuery)
     }
     const results = yield this.relatedQuery
-      .where(`${this.determine}_type`, this.parent.constructor.name)
-      .whereIn(`${this.determine}_id`, values).fetch()
+      .where(this.determiner, this.parent.constructor.name)
+      .whereIn(this.toKey, values).fetch()
 
     return results.groupBy((item) => {
-      return item[`${this.determine}_id`]
+      return item[this.toKey]
     }).mapValues(function (value) {
       return helpers.toCollection(value)
     })
@@ -68,8 +79,8 @@ class MorphMany extends Relation {
       scopeMethod(this.relatedQuery)
     }
     const results = yield this.relatedQuery
-      .where(`${this.determine}_type`, this.parent.constructor.name)
-      .where(`${this.determine}_id`, value).fetch()
+      .where(this.determiner, this.parent.constructor.name)
+      .whereIn(this.toKey, value).fetch()
     const response = {}
     response[value] = results
     return response
@@ -93,8 +104,8 @@ class MorphMany extends Relation {
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
     }
-    relatedInstance.set(`${this.determine}_type`, this.parent.constructor.name)
-    relatedInstance.set(`${this.determine}_id`, this.parent[this.fromKey])
+    relatedInstance.set(this.determiner, this.parent.constructor.name)
+    relatedInstance.set(this.toKey, this.parent[this.fromKey])
     return yield relatedInstance.save()
   }
 }
