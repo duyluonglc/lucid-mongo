@@ -13,7 +13,6 @@ const _ = require('lodash')
 const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
 const ObjectID = require('mongodb').ObjectID
-const mquery = require('mquery')
 const methods = exports = module.exports = {}
 
 /**
