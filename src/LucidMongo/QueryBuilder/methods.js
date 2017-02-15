@@ -747,3 +747,107 @@ methods.where = function (target) {
     return this
   }
 }
+
+/**
+ * Aggregate max
+ *
+ * @param {String} key
+ * @param {Mixed} [value]
+ *
+ * @number
+ */
+methods.max = function (target) {
+  return function * (key, groupBy) {
+    const $match = target.modelQueryBuilder._conditions
+    const connection = yield target.connect()
+    const $group = {
+      _id: groupBy,
+      max: {$max: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      connection.collection(target.HostModel.collection)
+        .aggregate([{$match}, {$group}], (err, result) => {
+          if (err) reject(err)
+          resolve(groupBy ? result : result[0].max)
+        })
+    })
+  }
+}
+
+/**
+ * Aggregate min
+ *
+ * @param {String} key
+ * @param {Mixed} [value]
+ *
+ * @number
+ */
+methods.min = function (target) {
+  return function * (key, groupBy) {
+    const $match = target.modelQueryBuilder._conditions
+    const connection = yield target.connect()
+    const $group = {
+      _id: groupBy,
+      min: {$min: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      connection.collection(target.HostModel.collection)
+        .aggregate([{$match}, {$group}], (err, result) => {
+          if (err) reject(err)
+          resolve(groupBy ? result : result[0].min)
+        })
+    })
+  }
+}
+
+/**
+ * Aggregate sum
+ *
+ * @param {String} key
+ * @param {Mixed} [value]
+ *
+ * @number
+ */
+methods.sum = function (target) {
+  return function * (key, groupBy) {
+    const $match = target.modelQueryBuilder._conditions
+    const connection = yield target.connect()
+    const $group = {
+      _id: groupBy,
+      sum: {$sum: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      connection.collection(target.HostModel.collection)
+        .aggregate([{$match}, {$group}], (err, result) => {
+          if (err) reject(err)
+          resolve(groupBy ? result : result[0].sum)
+        })
+    })
+  }
+}
+
+/**
+ * Aggregate avg
+ *
+ * @param {String} key
+ * @param {Mixed} [value]
+ *
+ * @number
+ */
+methods.avg = function (target) {
+  return function * (key, groupBy) {
+    const $match = target.modelQueryBuilder._conditions
+    const connection = yield target.connect()
+    const $group = {
+      _id: groupBy,
+      avg: {$avg: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      connection.collection(target.HostModel.collection)
+        .aggregate([{$match}, {$group}], (err, result) => {
+          if (err) reject(err)
+          resolve(groupBy ? result : result[0].avg)
+        })
+    })
+  }
+}
