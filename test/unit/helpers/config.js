@@ -8,6 +8,7 @@
 const mysqlConnections = require('./mysqlConnections')
 const postgresConnection = require('./postgresConnection')
 const sqliteConnections = require('./sqliteConnections')
+const mongodbConnections = require('./mongodbConnections')
 const get = function (key, hasPrefix) {
   if (key === 'database.migrationsCollection') {
     return 'adonis_migrations'
@@ -29,6 +30,10 @@ const get = function (key, hasPrefix) {
     return hasPrefix ? postgresConnection.defaultPrefix : postgresConnection.default
   }
 
+  if (key === 'database.mongodb') {
+    return hasPrefix ? mongodbConnections.defaultPrefix : mongodbConnections.default
+  }
+
   if (key === 'database.alternateConnection' && process.env.DB === 'sqlite3') {
     return sqliteConnections.alternateConnection
   }
@@ -39,6 +44,10 @@ const get = function (key, hasPrefix) {
 
   if (key === 'database.alternateConnection' && process.env.DB === 'pg') {
     return postgresConnection.alternateConnection
+  }
+
+  if (key === 'database.alternateConnection' && process.env.DB === 'mongodb') {
+    return mongodbConnections.alternateConnection
   }
 }
 
