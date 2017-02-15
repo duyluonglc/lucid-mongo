@@ -76,9 +76,66 @@ module.exports = {
 
 }
 ```
+## Usage
+The usage of LucidMongo is similar to Lucid
 
-[Official Documentation](http://adonisjs.com/docs/2.0/installation)
+[Official Documentation of Lucid here](http://adonisjs.com/docs/2.0/installation)
 
-## <a name="contribution-guidelines"></a>Contribution Guidelines
+### Query
+
+This package support `where` method with some type of params
+```js
+const users =  yield User.where('name', 'peter').fetch()
+
+const users =  yield User.where({name: 'peter'}).fetch()
+
+const user =  yield User.where('name').equal('peter').first()
+```
+
+### Aggregation
+```js
+  const max = yield User.query().max('age')
+
+  const total = yield Employ.where(active, true).sum('salary', '$department_id')
+
+  const avg = yield Employ.where(active, true).avg('salary', {department: '$department_id', role: '$role_id'})
+```
+
+### Addition relations
+1. `morphMany:` A model can belong to more than one other model, on a single association. For example, you might have a Picture model that belongs to either an Author model or a Reader model
+2. `embedsOne:` EmbedsOne is used to represent a model that embeds another model, for example, a Customer embeds one billingAddress.
+3. `embedsMany:` Use an embedsMany relation to indicate that a model can embed many instances of another model. For example, a Customer can have multiple email addresses and each email address is a complex object that contains label and address.
+4. `referMany:` Similar to populate of mongoosejs
+
+### Nested query
+
+```js
+  const user = User.with('emails').find(1)
+
+  const user = User.with('emails', 'phone').find(1)
+
+  const user = User.with(['emails', 'phone']).find(1)
+
+  const user = User.with({relation: 'email', 'scope': {verified: true}}).find(1)
+
+  const user = User.with({relation: 'email', 'scope': query => {
+    query.where(active, true).limit(1)
+  }}).find(1)
+
+```
+
+### Migration
+Current only support create, drop, rename collection and index
+```js
+up () {
+  this.create('articles', (collection) => {
+    collection.index('name_of_index', {title: 1})
+  })
+
+  this.rename('articles', 'posts')
+}
+```
+
+### <a name="contribution-guidelines"></a>Contribution Guidelines
 
 In favor of active development we accept contributions for everyone. You can contribute by submitting a bug, creating pull requests or even improving documentation.
