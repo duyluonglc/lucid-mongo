@@ -417,9 +417,9 @@ Database.schema = {
     return yield db.dropCollection(collectionName)
   },
 
-  rename: function * (collectionName, target) {
+  renameCollection: function * (collectionName, target) {
     const db = yield Database.connection('default')
-    return yield db.collection(collectionName).renameCollection(target)
+    return yield db.collection(collectionName).rename(target)
   }
 }
 
