@@ -51,7 +51,7 @@ describe('Migrations', function () {
     yield runner._makeMigrationsCollection()
     const columns = yield runner.database.collection('adonis_migrations').columnInfo()
     expect(columns).to.be.an('object')
-    expect(_.keys(columns)).deep.equal(['id', 'name', 'batch', 'migration_time'])
+    expect(_.keys(columns)).deep.equal(['_id', 'name', 'batch', 'migration_time'])
     yield runner.database.schema.dropCollection('adonis_migrations')
   })
 
@@ -59,11 +59,11 @@ describe('Migrations', function () {
     const Runner = new Migrations(Database, Config)
     const runner = new Runner()
     yield runner.database.schema.createCollection('adonis_migrations', (collection) => {
-      collection.integer('id')
+      collection.integer('_id')
     })
     const columns = yield runner.database.collection('adonis_migrations').columnInfo()
     expect(columns).to.be.an('object')
-    expect(_.keys(columns)).deep.equal(['id'])
+    expect(_.keys(columns)).deep.equal(['_id'])
     yield runner._makeMigrationsCollection()
     yield runner.database.schema.dropCollection('adonis_migrations')
   })
@@ -150,7 +150,7 @@ describe('Migrations', function () {
     yield runner._makeLockCollection()
     const columns = yield runner.database.collection('adonis_migrations_lock').columnInfo()
     expect(columns).to.be.an('object')
-    expect(_.keys(columns)).deep.equal(['id', 'is_locked'])
+    expect(_.keys(columns)).deep.equal(['_id', 'is_locked'])
     yield runner.database.schema.dropCollection('adonis_migrations_lock')
   })
 
@@ -254,7 +254,7 @@ describe('Migrations', function () {
     expect(result.migrated).deep.equal(_.keys(migrations))
     const usersCollection = yield runner.database.collection('users').columnInfo()
     expect(usersCollection).to.be.an('object')
-    expect(_.keys(usersCollection)).deep.equal(['id', 'username'])
+    expect(_.keys(usersCollection)).deep.equal(['_id', 'username'])
     yield runner.database.schema.dropCollection('users')
     yield runner.database.schema.dropCollection('adonis_migrations')
   })
@@ -288,7 +288,7 @@ describe('Migrations', function () {
 
     const usersCollection = yield runner.database.collection('users').columnInfo()
     expect(usersCollection).to.be.an('object')
-    expect(_.keys(usersCollection)).deep.equal(['id'])
+    expect(_.keys(usersCollection)).deep.equal(['_id'])
 
     yield runner.database.schema.dropCollection('adonis_migrations')
     yield runner.database.schema.dropCollection('users')
@@ -321,7 +321,7 @@ describe('Migrations', function () {
       expect(e.code).to.be.oneOf(['ER_NO_SUCH_TABLE', 'SQLITE_ERROR', '42P01'])
       const accounts = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
       expect(accounts).to.be.an('object')
-      expect(_.keys(accounts)).deep.equal(['id', 'account_name'])
+      expect(_.keys(accounts)).deep.equal(['_id', 'account_name'])
     }
     yield runner.database.schema.dropCollection('adonis_migrations')
     yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')
@@ -360,7 +360,7 @@ describe('Migrations', function () {
 
     const accounts = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
     expect(accounts).to.be.an('object')
-    expect(_.keys(accounts)).deep.equal(['id'])
+    expect(_.keys(accounts)).deep.equal(['_id'])
 
     const migrationsCollection = yield runner.database.collection('adonis_migrations')
     expect(migrationsCollection.length).to.equal(0)
@@ -427,10 +427,10 @@ describe('Migrations', function () {
     expect(rollback.migrated).deep.equal(_.keys(migrationsB2))
 
     const usersInfo = yield runner.database.collection('users').columnInfo()
-    expect(_.keys(usersInfo)).deep.equal(['id', 'username'])
+    expect(_.keys(usersInfo)).deep.equal(['_id', 'username'])
 
     const accountsInfo = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
-    expect(_.keys(accountsInfo)).deep.equal(['id'])
+    expect(_.keys(accountsInfo)).deep.equal(['_id'])
     yield runner.database.schema.dropCollection('adonis_migrations')
     yield runner.database.schema.dropCollection('users')
     yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')
@@ -494,10 +494,10 @@ describe('Migrations', function () {
     expect(rollback.migrated).deep.equal(_.reverse(_.keys(allMigs)))
 
     const usersInfo = yield runner.database.collection('users').columnInfo()
-    expect(_.keys(usersInfo)).deep.equal(['id'])
+    expect(_.keys(usersInfo)).deep.equal(['_id'])
 
     const accountsInfo = yield runner.database.connection('alternateConnection').collection('accounts').columnInfo()
-    expect(_.keys(accountsInfo)).deep.equal(['id'])
+    expect(_.keys(accountsInfo)).deep.equal(['_id'])
     yield runner.database.schema.dropCollection('adonis_migrations')
     yield runner.database.schema.dropCollection('users')
     yield runner.database.connection('alternateConnection').schema.dropCollection('accounts')

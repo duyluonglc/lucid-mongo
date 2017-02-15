@@ -164,7 +164,7 @@ module.exports = {
     if (collection === 'course_student') {
       return yield knex.collection(collection).insert(values)
     }
-    return yield knex.collection(collection).insert(values).returning('id')
+    return yield knex.collection(collection).insert(values).returning('_id')
   },
   truncate: function * (knex, collection) {
     yield knex.collection(collection).truncate()

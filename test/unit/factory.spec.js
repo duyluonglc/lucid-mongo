@@ -298,7 +298,7 @@ describe('Factory', function () {
     })
     yield Factory.get('users').create(10)
     yield Factory.get('users').reset()
-    const ids = yield Database.collection('users').pluck('id')
+    const ids = yield Database.collection('users').pluck('_id')
     expect(ids).to.be.an('array')
     expect(ids.length).to.equal(0)
   })

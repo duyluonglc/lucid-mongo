@@ -806,7 +806,7 @@ describe('Relations', function () {
           })
         }
         account () {
-          return this.hasOne(Account, 'id', 'supplier_regid')
+          return this.hasOne(Account, '_id', 'supplier_regid')
         }
       }
       Account.bootIfNotBooted()
@@ -837,7 +837,7 @@ describe('Relations', function () {
       }
       class Supplier extends Model {
         account () {
-          return this.hasOne(Account, 'id', 'supplier_regid')
+          return this.hasOne(Account, '_id', 'supplier_regid')
         }
       }
       Account.bootIfNotBooted()
@@ -1286,7 +1286,7 @@ describe('Relations', function () {
       }
       class Supplier extends Model {
         account () {
-          return this.hasOne(Account, 'id', 'supplier_regid')
+          return this.hasOne(Account, '_id', 'supplier_regid')
         }
       }
       Supplier.bootIfNotBooted()
@@ -2161,7 +2161,7 @@ describe('Relations', function () {
 
       Comment.bootIfNotBooted()
       const post = yield Post.find(savedPost[0])
-      const comments = yield post.comments().pair('id', 'body')
+      const comments = yield post.comments().pair('_id', 'body')
       expect(comments).deep.equal({'1': 'Nice article', 2: 'Another article'})
       expect(queryHelpers.formatQuery(commentsQuery.sql)).to.equal(queryHelpers.formatQuery('select "id", "body" from "comments" where "post_id" = ?'))
       expect(commentsQuery.bindings).deep.equal(queryHelpers.formatBindings([savedPost[0]]))
@@ -2378,7 +2378,7 @@ describe('Relations', function () {
         }
       }
       const comment = new Comment()
-      expect(comment.post().toKey).to.equal('id')
+      expect(comment.post().toKey).to.equal('_id')
       expect(comment.post().fromKey).to.equal('post_id')
     })
 
@@ -2442,7 +2442,7 @@ describe('Relations', function () {
         }
       }
       Post.bootIfNotBooted()
-      const comment = yield Comment.query().where('id', savedComment[0]).with('post').first()
+      const comment = yield Comment.query().where('_id', savedComment[0]).with('post').first()
       expect(queryHelpers.formatQuery(postsQuery.sql)).to.equal(queryHelpers.formatQuery('select * from "posts" where "id" in (?)'))
       expect(postsQuery.bindings).deep.equal(queryHelpers.formatBindings(savedPost))
       expect(comment instanceof Comment).to.equal(true)
@@ -2883,8 +2883,8 @@ describe('Relations', function () {
       }
       const student = new Student()
       const coursesRelation = student.courses()
-      expect(coursesRelation.toKey).to.equal('id')
-      expect(coursesRelation.fromKey).to.equal('id')
+      expect(coursesRelation.toKey).to.equal('_id')
+      expect(coursesRelation.fromKey).to.equal('_id')
       expect(coursesRelation.pivotLocalKey).to.equal('student_id')
       expect(coursesRelation.pivotCollection).to.equal('course_student')
       expect(coursesRelation.pivotOtherKey).to.equal('course_id')
@@ -3067,7 +3067,7 @@ describe('Relations', function () {
         }
       }
       Course.bootIfNotBooted()
-      const student = yield Student.query().where('id', savedStudent[0]).with('courses').first()
+      const student = yield Student.query().where('_id', savedStudent[0]).with('courses').first()
       expect(student instanceof Student).to.equal(true)
       expect(student.id).not.to.equal(undefined)
       expect(queryHelpers.formatQuery(courseQuery.sql)).to.equal(queryHelpers.formatQuery('select "courses".*, "course_student"."student_id" as "_pivot_student_id", "course_student"."course_id" as "_pivot_course_id" from "courses" inner join "course_student" on "courses"."id" = "course_student"."course_id" where "course_student"."student_id" in (?)'))
@@ -3101,7 +3101,7 @@ describe('Relations', function () {
         }
       }
       Course.bootIfNotBooted()
-      const student = yield Student.query().where('id', savedStudent[0]).with('courses').first()
+      const student = yield Student.query().where('_id', savedStudent[0]).with('courses').first()
       expect(student instanceof Student).to.equal(true)
       expect(student.id).not.to.equal(undefined)
       expect(queryHelpers.formatQuery(courseQuery.sql)).to.equal(queryHelpers.formatQuery('select "courses".*, "course_student"."student_id" as "_pivot_student_id", "course_student"."course_id" as "_pivot_course_id" from "courses" inner join "course_student" on "courses"."id" = "course_student"."course_id" where "course_student"."student_id" in (?)'))
@@ -3135,7 +3135,7 @@ describe('Relations', function () {
         }
       }
       Course.bootIfNotBooted()
-      const student = yield Student.query().where('id', savedStudent[0]).with('courses').scope('courses', function (builder) {
+      const student = yield Student.query().where('_id', savedStudent[0]).with('courses').scope('courses', function (builder) {
         builder.wherePivot('is_enrolled', 1)
       }).first()
       expect(student instanceof Student).to.equal(true)
@@ -3808,7 +3808,7 @@ describe('Relations', function () {
 
       Course.bootIfNotBooted()
       const student = yield Student.find(savedStudent[0])
-      const courses = yield student.courses().pair('id', 'title')
+      const courses = yield student.courses().pair('_id', 'title')
       expect(courses).deep.equal({'12': 'geometry', '14': 'maths'})
 
       yield relationFixtures.truncate(Database, 'students')
@@ -3829,7 +3829,7 @@ describe('Relations', function () {
       }
 
       Course.bootIfNotBooted()
-      const students = yield Student.query().where('id', savedStudent[0]).with('courses').fetch()
+      const students = yield Student.query().where('_id', savedStudent[0]).with('courses').fetch()
       expect(students.first().get('courses').first()._pivot_is_enrolled).to.be.ok
 
       yield relationFixtures.truncate(Database, 'students')
@@ -4380,8 +4380,8 @@ describe('Relations', function () {
       const country = new Country()
       const countryPublications = country.publications()
       expect(countryPublications.toKey).to.equal('country_id')
-      expect(countryPublications.fromKey).to.equal('id')
-      expect(countryPublications.viaKey).to.equal('id')
+      expect(countryPublications.fromKey).to.equal('_id')
+      expect(countryPublications.viaKey).to.equal('_id')
     })
 
     it('should be able to get all rows using the model instance relational method', function * () {

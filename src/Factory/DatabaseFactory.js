@@ -20,7 +20,7 @@ class DatabaseFactory {
     this.collection = binding
     this.callback = callback
     this.binding = Ioc.use('Adonis/Src/Database')
-    this.returningField = 'id'
+    this.returningField = '_id'
   }
 
   /**

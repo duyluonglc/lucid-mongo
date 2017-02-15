@@ -9,6 +9,8 @@
  * file that was distributed with this source code.
 */
 
+const mquery = require('mquery')
+
 const Batch = exports = module.exports = {}
 
 /**
@@ -19,8 +21,9 @@ const Batch = exports = module.exports = {}
  * @private
  */
 Batch._getRecentBatchNumber = function * () {
-  const result = yield this.database.from(this.migrationsCollection).max('batch as batch')
-  const batchNumber = result[0].batch || 1
+  const db = yield this.database.connection('default')
+  const result = yield mquery().collection(db.collection(this.migrationsCollection)).sort('-batch').findOne()
+  const batchNumber = result ? (result.batch || 1) : 1
   return Number(batchNumber) - 1
 }
 
@@ -33,8 +36,9 @@ Batch._getRecentBatchNumber = function * () {
  * @private
  */
 Batch._getNextBatchNumber = function * () {
-  const result = yield this.database.collection(this.migrationsCollection).max('batch as batch')
-  const batchNumber = result[0].batch || 0
+  const db = yield this.database.connection('default')
+  const result = yield mquery().collection(db.collection(this.migrationsCollection)).sort('-batch').findOne()
+  const batchNumber = result ? result.batch : 0
   return Number(batchNumber) + 1
 }
 
@@ -49,7 +53,8 @@ Batch._getNextBatchNumber = function * () {
  */
 Batch._updateProgress = function * (migration, batchNumber) {
   const migrations = {name: migration, batch: batchNumber, migration_time: new Date()}
-  return yield this.database.collection(this.migrationsCollection).insert(migrations)
+  const db = yield this.database.connection('default')
+  return yield db.collection(this.migrationsCollection).insert(migrations)
 }
 
 /**
@@ -61,5 +66,6 @@ Batch._updateProgress = function * (migration, batchNumber) {
  * @private
  */
 Batch._revertProgress = function * (file, batchNumber) {
-  return yield this.database.collection(this.migrationsCollection).where('name', file).delete()
+  const db = yield this.database.connection('default')
+  return yield mquery().collection(db.collection(this.migrationsCollection)).where('name', file).remove()
 }

@@ -48,7 +48,7 @@ describe('Utils', function () {
   })
 
   it('should make getter name for a given field', function () {
-    const field = 'id'
+    const field = '_id'
     const idGetter = util.makeGetterName(field)
     expect(idGetter).to.equal('getId')
   })

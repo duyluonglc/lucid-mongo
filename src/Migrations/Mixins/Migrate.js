@@ -15,7 +15,7 @@ const cf = require('co-functional')
 const co = require('co')
 const CE = require('../../Exceptions')
 const logger = new CatLog('adonis:lucid')
-
+const mquery = require('mquery')
 const Migrate = exports = module.exports = {}
 
 /**
@@ -54,25 +54,25 @@ Migrate._translateActions = function (schemaInstance, direction) {
  *
  * @private
  */
-Migrate._callSchemaActions = function (defination, connection) {
-  const builder = this.database.connection(connection).schema
+Migrate._callSchemaActions = function (definition, connection) {
   /**
    * Custom check to allow access the database provider and
    * do custom stuff with support for co-routines.
    */
-  if (defination.action === 'db') {
+  if (definition.action === 'db') {
     return co.wrap(function * () {
-      return yield defination.callback(this.database)
+      return yield definition.callback(this.database)
     }.bind(this))
   }
 
   /**
    * co.wrap returns a function which returns a promise, so we
    * need to wrap schema method inside a function to keep
-   * the API scollection.
+   * the API collection.
    */
   return (function () {
-    return builder[defination.action](defination.key, this._wrapSchemaCallback(defination.callback))
+    // const builder = yield this.database.connection(connection)
+    return this.database.schema[definition.action](definition.key, this._wrapSchemaCallback(definition.callback))
   }.bind(this))
 }
 
@@ -141,10 +141,8 @@ Migrate._decorateCollection = function (collection) {
  *
  * @private
  */
-Migrate._makeMigrationsCollection = function () {
-  return this
-    .database
-    .schema
+Migrate._makeMigrationsCollection = function * () {
+  return yield this.database.schema
     .createCollectionIfNotExists(this.migrationsCollection, function (collection) {
       collection.increments('id')
       collection.string('name')
@@ -207,7 +205,6 @@ Migrate._executeActions = function * (actions, file, direction, batchNumber) {
  */
 Migrate._getMigrationsList = function (files, values, direction) {
   const diff = direction === 'down' ? _.reverse(_.intersection(values, _.keys(files))) : _.difference(_.keys(files), values)
-
   return _.reduce(diff, (result, name) => {
     result[name] = files[name]
     return result
@@ -243,8 +240,9 @@ Migrate._mapMigrationsToActions = function (migrationsList, direction) {
  *
  * @private
  */
-Migrate._getMigratedFiles = function () {
-  return this.database.select('name as name').from(this.migrationsCollection).orderBy('name').pluck('name')
+Migrate._getMigratedFiles = function * () {
+  const db = yield this.database.connection('default')
+  return mquery().collection(db.collection(this.migrationsCollection)).find().select('name').sort('name')
 }
 
 /**
@@ -256,13 +254,13 @@ Migrate._getMigratedFiles = function () {
  *
  * @private
  */
-Migrate._getFilesTillBatch = function (batch) {
-  return this.database
+Migrate._getFilesTillBatch = function * (batch) {
+  const db = yield this.database.connection('default')
+  const migrateFiles = yield mquery().collection(db.collection(this.migrationsCollection)).find()
     .select('name')
-    .from(this.migrationsCollection)
-    .where('batch', '>', batch)
-    .orderBy('name')
-    .pluck('name')
+    .where('batch').gt(batch)
+    .sort('name')
+  return _.map(migrateFiles, 'name')
 }
 
 /**

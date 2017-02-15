@@ -10,6 +10,7 @@
 */
 
 const _ = require('lodash')
+const mquery = require('mquery')
 const CE = require('../../Exceptions')
 const Lock = exports = module.exports = {}
 
@@ -23,7 +24,7 @@ const Lock = exports = module.exports = {}
 Lock._makeLockCollection = function () {
   return this.database.schema
     .createCollectionIfNotExists(this.lockCollection, function (collection) {
-      collection.increments('id')
+      collection.increments('_id')
       collection.boolean('is_locked')
     })
 }
@@ -33,8 +34,9 @@ Lock._makeLockCollection = function () {
  *
  * @private
  */
-Lock._addLock = function () {
-  return this.database.insert({is_locked: 1}).into(this.lockCollection)
+Lock._addLock = function * () {
+  const db = yield this.database.connection('default')
+  return yield db.collection(this.lockCollection).insert({is_locked: 1})
 }
 
 /**
@@ -46,11 +48,12 @@ Lock._addLock = function () {
  * @private
  */
 Lock._checkLock = function * () {
-  const result = yield this.database
-    .from(this.lockCollection)
+  const db = yield this.database.connection('default')
+  const result = yield mquery().collection(db.collection(this.lockCollection))
     .where('is_locked', 1)
-    .orderBy('id', 'desc')
+    .sort('-_id')
     .limit(1)
+    .find()
 
   if (_.size(result)) {
     throw CE.RuntimeException.migrationsAreLocked(this.lockCollection)
@@ -67,5 +70,5 @@ Lock._checkLock = function * () {
  * @private
  */
 Lock._deleteLock = function * () {
-  return this.database.schema.dropCollection(this.lockCollection)
+  return yield this.database.schema.dropCollection(this.lockCollection)
 }

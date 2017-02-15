@@ -102,7 +102,7 @@ describe('Database provider', function () {
   it('should not use global scope for query chain', function () {
     Database._setConfigProvider(config)
     const user = Database.collection('users').where('username', 'foo')
-    const accounts = Database.collection('accounts').where('id', 1)
+    const accounts = Database.collection('accounts').where('_id', 1)
     expect(user.toSQL().sql).to.equal(queryHelpers.formatQuery('select * from "users" where "username" = ?'))
     expect(accounts.toSQL().sql).to.equal(queryHelpers.formatQuery('select * from "accounts" where "id" = ?'))
   })
@@ -187,7 +187,7 @@ describe('Database provider', function () {
 
   it('should be able to commit transactions automatically', function * () {
     const response = yield Database.transaction(function * (trx) {
-      return yield trx.collection('users').insert({username: 'auto-trx'}).returning('id')
+      return yield trx.collection('users').insert({username: 'auto-trx'}).returning('_id')
     })
     expect(response).to.be.an('array')
     expect(response.length).to.equal(1)
@@ -253,7 +253,7 @@ describe('Database provider', function () {
   })
 
   it('should be able paginate results using order by on the original query', function * () {
-    const paginatedUsers = yield Database.collection('users').orderBy('id', 'desc').paginate(1)
+    const paginatedUsers = yield Database.collection('users').orderBy('_id', 'desc').paginate(1)
     expect(paginatedUsers).to.have.property('total')
     expect(paginatedUsers).to.have.property('lastPage')
     expect(paginatedUsers).to.have.property('perPage')
@@ -272,8 +272,8 @@ describe('Database provider', function () {
   })
 
   it('should be able to pluck multiple fields using the pluckAll method', function * () {
-    const users = yield Database.collection('users').withoutPrefix().pluckAll('id', 'username')
-    expect(users[0]).to.have.property('id')
+    const users = yield Database.collection('users').withoutPrefix().pluckAll('_id', 'username')
+    expect(users[0]).to.have.property('_id')
     expect(users[0]).to.have.property('username')
   })
 

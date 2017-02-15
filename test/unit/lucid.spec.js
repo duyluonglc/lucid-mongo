@@ -429,7 +429,7 @@ describe('LucidMongo', function () {
       expect(user.isNew()).to.equal(false)
       user.username = 'amanVirk'
       yield user.save()
-      const queryUser = yield User.query().where('id', userId).first()
+      const queryUser = yield User.query().where('_id', userId).first()
       expect(queryUser.username).to.equal('amanVirk')
       expect(queryUser.id).to.equal(user.$primaryKeyValue)
       expect(user.attributes).deep.equal(user.original)
@@ -511,7 +511,7 @@ describe('LucidMongo', function () {
       const userId = firstUser.id
       firstUser.firstname = 'new_name'
       yield firstUser.save()
-      const getSavedUser = yield User.query().where('id', userId).fetch()
+      const getSavedUser = yield User.query().where('_id', userId).fetch()
       expect(getSavedUser.first().firstname).to.equal('new_name_first')
       expect(getSavedUser.attributes).deep.equal(getSavedUser.original)
     })
@@ -637,7 +637,7 @@ describe('LucidMongo', function () {
       expect(user.id).to.equal(1)
       yield user.delete()
       expect(user.isDeleted()).to.equal(true)
-      const fetchUser = yield User.query().where('id', 1).withTrashed().first()
+      const fetchUser = yield User.query().where('_id', 1).withTrashed().first()
       expect(fetchUser.id).equal(1)
       expect(fetchUser.deleted_at).to.equal(user.deleted_at)
     })
@@ -691,7 +691,7 @@ describe('LucidMongo', function () {
       expect(user.id).to.equal(1)
       yield user.delete()
       expect(user.isDeleted()).to.equal(true)
-      const fetchUser = yield User.query().where('id', 1)
+      const fetchUser = yield User.query().where('_id', 1)
       expect(user.deleted_at).to.equal(null)
       expect(fetchUser.length).to.equal(0)
     })
@@ -1011,7 +1011,7 @@ describe('LucidMongo', function () {
     it('should be able to find a given record using primary key', function * () {
       class User extends Model {
       }
-      const newUser = yield User.query().returning('id').insert({username: 'audie', firstname: 'Audie', lastname: 'Yose'})
+      const newUser = yield User.query().returning('_id').insert({username: 'audie', firstname: 'Audie', lastname: 'Yose'})
       const userId = newUser[0]
       const user = yield User.find(userId)
       expect(user instanceof User)
@@ -1050,7 +1050,7 @@ describe('LucidMongo', function () {
       class User extends Model {
       }
       yield User.createMany([{username: 'foo'}, {username: 'bar'}])
-      const userIds = yield User.query().where('id', '>', 1).ids()
+      const userIds = yield User.query().where('_id', '>', 1).ids()
       expect(userIds).to.be.an('array')
       userIds.forEach(function (id) {
         expect(id).to.be.a('number')
@@ -1062,7 +1062,7 @@ describe('LucidMongo', function () {
       class User extends Model {
       }
       yield User.createMany([{username: 'foo'}, {username: 'bar'}])
-      const usersPair = yield User.pair('id', 'username')
+      const usersPair = yield User.pair('_id', 'username')
       const users = yield User.all()
       let manualPair = users.map(function (user) {
         return [user.id, user.username]
@@ -1075,7 +1075,7 @@ describe('LucidMongo', function () {
       class User extends Model {
       }
       yield User.createMany([{username: 'foo'}, {username: 'bar'}])
-      const usersPair = yield User.query().pair('id', 'username')
+      const usersPair = yield User.query().pair('_id', 'username')
       const users = yield User.all()
       let manualPair = users.map(function (user) {
         return [user.id, user.username]
@@ -1138,7 +1138,7 @@ describe('LucidMongo', function () {
       class User extends Model {
       }
       try {
-        yield User.query().where('id', 1220).firstOrFail()
+        yield User.query().where('_id', 1220).firstOrFail()
         expect(true).to.equal(false)
       } catch (e) {
         expect(e.name).to.equal('ModelNotFoundException')
@@ -1150,7 +1150,7 @@ describe('LucidMongo', function () {
       class User extends Model {
       }
       try {
-        yield User.query().where('id', 1220).firstOrFail(function () {
+        yield User.query().where('_id', 1220).firstOrFail(function () {
           throw new Error('Cannot find results')
         })
         expect(true).to.equal(false)

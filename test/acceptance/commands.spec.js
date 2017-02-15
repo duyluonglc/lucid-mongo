@@ -49,7 +49,7 @@ describe('Commands', function () {
     yield setup.runCommand('migration:run', [], {})
     const usersCollection = yield this.database.collection('users').columnInfo()
     expect(usersCollection).to.be.an('object')
-    expect(Object.keys(usersCollection)).deep.equal(['id', 'username', 'email', 'firstname', 'lastname', 'password', 'created_at', 'updated_at'])
+    expect(Object.keys(usersCollection)).deep.equal(['_id', 'username', 'email', 'firstname', 'lastname', 'password', 'created_at', 'updated_at'])
   })
 
   it('should seed database by creating five users', function * () {

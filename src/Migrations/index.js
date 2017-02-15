@@ -45,7 +45,6 @@ class Migrations {
       this.database.close()
       return {migrated: [], status: 'skipped'}
     }
-
     const migrationActions = this._mapMigrationsToActions(migrations, 'up')
     /**
      * if SQL required return SQL
@@ -55,7 +54,6 @@ class Migrations {
       this.database.close()
       return sqlQueries
     }
-
     const nextBatch = yield this._getNextBatchNumber()
     yield this._makeLockCollection()
     yield this._checkLock()

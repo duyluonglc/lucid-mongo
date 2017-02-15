@@ -178,13 +178,13 @@ Database.getConnectionPools = function () {
 Database.close = function (connection) {
   connection = connection ? Database._resolveConnectionKey(connection) : null
   if (connection && connectionPools[connection]) {
-    connectionPools[connection].client.destroy()
+    connectionPools[connection].close()
     delete connectionPools[connection]
     return
   }
 
   _.each(connectionPools, (pool) => {
-    pool.client.destroy()
+    pool.close()
   })
   connectionPools = {}
 }
@@ -390,6 +390,78 @@ Database.pluckAll = function (fields) {
   return this.select.apply(this, args)
 }
 
+Database.schema = {
+  createCollection: function * (collectionName, callback) {
+    const db = yield Database.connection('default')
+    const collection = yield db.createCollection(collectionName)
+    const schemaBuilder = new SchemaBuilder(collection)
+    callback(schemaBuilder)
+    return yield schemaBuilder.build()
+  },
+
+  createCollectionIfNotExists: function * (collectionName, callback) {
+    const db = yield Database.connection('default')
+    const collection = yield db.createCollection(collectionName)
+    const schemaBuilder = new SchemaBuilder(collection)
+    callback(schemaBuilder)
+    return yield schemaBuilder.build()
+  },
+
+  dropCollection: function * (collectionName) {
+    const db = yield Database.connection('default')
+    return yield db.dropCollection(collectionName)
+  },
+
+  dropIfExists: function * (collectionName) {
+    const db = yield Database.connection('default')
+    return yield db.dropCollection(collectionName)
+  },
+
+  rename: function * (collectionName, target) {
+    const db = yield Database.connection('default')
+    return yield db.collection(collectionName).renameCollection(target)
+  }
+}
+
+function SchemaBuilder (collection) {
+  this.collection = collection
+  this.createIndexes = []
+  this.dropIndexes = []
+
+  this.increments = function () {}
+  this.timestamps = function () {}
+  this.softDeletes = function () {}
+  this.string = function () {}
+  this.timestamp = function () {}
+  this.boolean = function () {}
+  this.integer = function () {}
+  this.double = function () {}
+  this.index = function (name, keys, options) {
+    if (!name) {
+      throw new CE.InvalidArgumentException(`param name is required to create index`)
+    }
+    if (!keys || !_.size(keys)) {
+      throw new CE.InvalidArgumentException(`param keys is required to create index`)
+    }
+    options = options || {}
+    options['name'] = name
+    this.createIndexes.push({keys, options})
+  }
+  this.dropIndex = function (name) {
+    this.dropIndexes.push(name)
+  }
+  this.build = function * () {
+    for (var i in this.createIndexes) {
+      var createIndex = this.createIndexes[i]
+      yield this.collection.createIndex(createIndex.keys, createIndex.options)
+    }
+    for (var j in this.dropIndexes) {
+      var dropIndex = this.dropIndexes[j]
+      yield this.collection.dropIndex(dropIndex.keys, dropIndex.options)
+    }
+  }
+}
+
 /**
  * these methods are not proxied and instead actual implementations
  * are returned
@@ -398,7 +470,7 @@ Database.pluckAll = function (fields) {
  *
  * @private
  */
-const customImplementations = ['_resolveConnectionKey', '_setConfigProvider', 'getConnectionPools', 'connection', 'close']
+const customImplementations = ['_resolveConnectionKey', '_setConfigProvider', 'getConnectionPools', 'connection', 'close', 'schema']
 
 mquery.prototype.forPage = Database.forPage
 mquery.prototype.paginate = Database.paginate
