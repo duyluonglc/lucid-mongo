@@ -90,15 +90,19 @@ const users =  yield User.where('name', 'peter').fetch()
 const users =  yield User.where({name: 'peter'}).fetch()
 
 const user =  yield User.where('name').equal('peter').first()
+
+const user =  yield User.where({age: {gte: 18}}).fetch()
+
+const user =  yield User.where('age').gt(18).paginate(20)
 ```
 
 ### Aggregation
 ```js
-  const max = yield User.query().max('age')
+  const max = yield Employee.query().max('age')
 
-  const total = yield Employ.where(active, true).sum('salary', '$department_id')
+  const total = yield Employee.where(active, true).sum('salary', '$department_id')
 
-  const avg = yield Employ.where(active, true).avg('salary', {department: '$department_id', role: '$role_id'})
+  const avg = yield Employee.where(active, true).avg('salary', {department: '$department_id', role: '$role_id'})
 ```
 
 ### Addition relations
