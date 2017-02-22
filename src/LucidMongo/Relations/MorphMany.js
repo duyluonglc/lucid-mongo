@@ -80,7 +80,7 @@ class MorphMany extends Relation {
     }
     const results = yield this.relatedQuery
       .where(this.determiner, this.parent.constructor.name)
-      .whereIn(this.toKey, value).fetch()
+      .where(this.toKey, value).fetch()
     const response = {}
     response[value] = results
     return response
