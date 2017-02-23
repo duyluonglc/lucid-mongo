@@ -39,16 +39,9 @@ Persistance.insert = function * () {
       query.transacting(this.transaction)
     }
     const save = yield query.insertAttributes(values)
-    if (save[0]) {
-      /**
-       * Since {returning} statement does not work for Sqlite3, we need to
-       * make use of the returning value only when {incrementing} is set
-       * to true.
-       */
-      this.$primaryKeyValue = this.constructor.incrementing ? save[0] : values[this.constructor.primaryKey]
-      this.exists = true
-      this.original = _.clone(this.attributes)
-    }
+    this.$primaryKeyValue = values[this.constructor.primaryKey] || save.insertedIds[1]
+    this.exists = true
+    this.original = _.clone(this.attributes)
     return !!save
   }
   return yield this.executeInsertHooks(this, insertHandler)
