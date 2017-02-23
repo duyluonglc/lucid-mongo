@@ -11,6 +11,7 @@
 
 const Relation = require('./Relation')
 const helpers = require('../QueryBuilder/helpers')
+const inflect = use('inflect')
 const uuid = use('uuid')
 const _ = use('lodash')
 const CE = require('../../Exceptions')
@@ -22,7 +23,7 @@ class EmbedMany extends Relation {
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.parent.related.foreignKey
+    this.toKey = foreignKey || inflect.camelize(inflect.pluralize(this.related.name), false)
   }
 
   /**
@@ -99,7 +100,7 @@ class EmbedMany extends Relation {
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
     }
-    let embedItems = _.clone(this.parent.get(this.toKey))
+    let embedItems = this.parent.get(this.toKey) ? _.clone(this.parent.get(this.toKey)) : []
     if (!embedItems || !_.isArray(embedItems)) {
       embedItems = []
     }

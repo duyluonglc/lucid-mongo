@@ -10,6 +10,7 @@
 */
 
 const Relation = require('./Relation')
+const inflect = use('inflect')
 const uuid = use('uuid')
 const _ = use('lodash')
 const CE = require('../../Exceptions')
@@ -21,7 +22,7 @@ class EmbedOne extends Relation {
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.parent.related.foreignKey
+    this.toKey = foreignKey || inflect.camelize(this.related.name, false)
   }
 
   /**
