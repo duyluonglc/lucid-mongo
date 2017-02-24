@@ -24,13 +24,18 @@ and then register lucid providers inside the your `bootstrap/app.js` file.
 
 ```javascript
 const providers = [
+  // ...
   'adonis-lucid-mongodb/providers/DatabaseProvider',
-  'adonis-lucid-mongodb/providers/LucidProvider',
-  'adonis-lucid-mongodb/providers/SchemaProvider',
-  'adonis-lucid-mongodb/providers/MigrationsProvider',
-  'adonis-lucid-mongodb/providers/CommandsProvider',
+  'adonis-lucid-mongodb/providers/LucidMongoProvider',
   'adonis-lucid-mongodb/providers/FactoryProvider',
-  'adonis-lucid-mongodb/providers/SeederProvider',  
+]
+
+const aceProviders = [
+  // ...
+  'adonis-lucid-mongodb/providers/CommandsProvider',
+  'adonis-lucid-mongodb/providers/MigrationsProvider',
+  'adonis-lucid-mongodb/providers/SchemaProvider',
+  'adonis-lucid-mongodb/providers/SeederProvider',
 ]
 ```
 
@@ -83,7 +88,6 @@ The usage of LucidMongo is similar to Lucid
 
 ### Query
 
-This package support `where` method with some type of params
 ```js
 const users =  yield User.where('name', 'peter').fetch()
 
@@ -91,16 +95,16 @@ const users =  yield User.where({name: 'peter'}).limit(10).fetch()
 
 const user =  yield User.where('name').equal('peter').sort('-age').first()
 
-const user =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
+const users =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
 
-const user =  yield User.where('age').gt(18).paginate(20)
+const users =  yield User.where('age').gt(18).paginate(20)
 
-const user =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
+const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
-### Query log
-To show query log run this command:
+### Query logs
+To show query logs run this command:
 - Linux, MacOS `DEBUG=mquery && npm run dev`
 - Windows `setx DEBUG mquery && npm run dev`
 
@@ -173,7 +177,7 @@ class Bill extends Model {
 }
 ```
 
-### Nested query
+### Query relationships
 
 ```js
   const user = User.with('emails').find(1)
