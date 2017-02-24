@@ -87,14 +87,22 @@ This package support `where` method with some type of params
 ```js
 const users =  yield User.where('name', 'peter').fetch()
 
-const users =  yield User.where({name: 'peter'}).fetch()
+const users =  yield User.where({name: 'peter'}).limit(10).fetch()
 
-const user =  yield User.where('name').equal('peter').first()
+const user =  yield User.where('name').equal('peter').sort('-age').first()
 
-const user =  yield User.where({age: {gte: 18}}).fetch()
+const user =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
 
 const user =  yield User.where('age').gt(18).paginate(20)
+
+const user =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 ```
+[More Documentation of mquery](https://github.com/aheckmann/mquery)
+
+### Query log
+* to show query log run this command: *
+- Linux, MacOS `DEBUG=mquery && npm run dev`
+- Windows `setx DEBUG mquery && npm run dev`
 
 ### Aggregation
 ```js
@@ -107,9 +115,53 @@ const user =  yield User.where('age').gt(18).paginate(20)
 
 ### Addition relations
 1. `morphMany:` A model can belong to more than one other model, on a single association. For example, you might have a Picture model that belongs to either an Author model or a Reader model
+```js
+class Author extends Model {
+
+  pictures () {
+    return this.morphMany('App/Models/Picture', 'pictureableType', 'pictureableId')
+  }
+
+}
+
+class Author extends Model {
+
+  pictures () {
+    return this.morphMany('App/Models/Picture', 'pictureableType', 'pictureableId')
+  }
+
+}
+```
 2. `embedsOne:` EmbedsOne is used to represent a model that embeds another model, for example, a Customer embeds one billingAddress.
+```js
+class Customer extends Model {
+
+  billingAddress () {
+    return this.embedsOne('App/Models/Address', '_id', 'billingAddress')
+  }
+
+}
+```
 3. `embedsMany:` Use an embedsMany relation to indicate that a model can embed many instances of another model. For example, a Customer can have multiple email addresses and each email address is a complex object that contains label and address.
-4. `referMany:` Similar to populate of mongoosejs
+```js
+class Customer extends Model {
+
+  emails () {
+    return this.embedsMany('App/Models/Email', '_id', 'emails')
+  }
+
+}
+```
+4. `referMany:` Population is the process of automatically replacing the specified paths in the document with document(s) from other collection(s)
+```js
+class Bill extends Model {
+
+  items () {
+    return this.referMany('App/Models/Item', '_id', 'items')
+  }
+
+}
+```
 
 ### Nested query
 
@@ -120,7 +172,7 @@ const user =  yield User.where('age').gt(18).paginate(20)
 
   const user = User.with(['emails', 'phone']).find(1)
 
-  const user = User.with({relation: 'email', 'scope': {verified: true}}).find(1)
+  const user = User.with({relation: 'email', 'scope': {where: {verified: true}, sort: '-age'}}).find(1)
 
   const user = User.with({relation: 'email', 'scope': query => {
     query.where(active, true).limit(1)
