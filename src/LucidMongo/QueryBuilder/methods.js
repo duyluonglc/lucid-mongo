@@ -722,7 +722,7 @@ methods.where = function (target) {
             queries.push(target.HostModel.query().where(condition)._conditions)
           })
           target.modelQueryBuilder[key](queries)
-        } else if (_.isObject(conditions)) {
+        } else if (_.isPlainObject(conditions)) {
           _.forEach(conditions, (c, k) => {
             if (!_.isFunction(target.modelQueryBuilder[k])) {
               throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
@@ -768,10 +768,11 @@ methods.max = function (target) {
     }
     return new Promise((resolve, reject) => {
       debug('max', target.HostModel.collection, $match, $group)
-      connection.collection(target.HostModel.collection).aggregate([{$match}, {$group}], (err, result) => {
-        if (err) reject(err)
-        resolve(groupBy ? result : result[0].max)
-      })
+      connection.collection(target.HostModel.collection)
+        .aggregate([{$match}, {$group}], (err, result) => {
+          if (err) reject(err)
+          resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].max))
+        })
     })
   }
 }
@@ -797,7 +798,7 @@ methods.min = function (target) {
       connection.collection(target.HostModel.collection)
         .aggregate([{$match}, {$group}], (err, result) => {
           if (err) reject(err)
-          resolve(groupBy ? result : result[0].min)
+          resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].min))
         })
     })
   }
@@ -824,7 +825,7 @@ methods.sum = function (target) {
       connection.collection(target.HostModel.collection)
         .aggregate([{$match}, {$group}], (err, result) => {
           if (err) reject(err)
-          resolve(groupBy ? result : result[0].sum)
+          resolve(groupBy ? result : (_.isEmpty(result) ? 0 : result[0].max))
         })
     })
   }
@@ -851,7 +852,7 @@ methods.avg = function (target) {
       connection.collection(target.HostModel.collection)
         .aggregate([{$match}, {$group}], (err, result) => {
           if (err) reject(err)
-          resolve(groupBy ? result : result[0].avg)
+          resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].avg))
         })
     })
   }

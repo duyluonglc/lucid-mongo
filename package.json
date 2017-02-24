@@ -5,7 +5,7 @@
   "directories": {
     "test": "test"
   },
-  "version": "1.0.5",
+  "version": "1.0.6",
   "scripts": {
     "lint": "standard",
     "test:all": "DB=mongodb npm run test",
