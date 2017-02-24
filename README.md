@@ -100,7 +100,7 @@ const user =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
 ### Query log
-* to show query log run this command: *
+To show query log run this command:
 - Linux, MacOS `DEBUG=mquery && npm run dev`
 - Windows `setx DEBUG mquery && npm run dev`
 
@@ -113,6 +113,16 @@ const user =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender
   const avg = yield Employee.where(active, true).avg('salary', {department: '$department_id', role: '$role_id'})
 ```
 
+### Relations
+This package support relations like adonis-lucid:
+- hasOne
+- belongsTo
+- hasMany
+- belongsToMany
+[More Documentation of adonis relationships](http://adonisjs.com/docs/3.2/relationships)
+
+mongodb has no join query so this package has no query like: `has`, `whereHas`, `doesntHave`, `whereDoesntHave`
+
 ### Addition relations
 1. `morphMany:` A model can belong to more than one other model, on a single association. For example, you might have a Picture model that belongs to either an Author model or a Reader model
 ```js
@@ -124,7 +134,7 @@ class Author extends Model {
 
 }
 
-class Author extends Model {
+class Reader extends Model {
 
   pictures () {
     return this.morphMany('App/Models/Picture', 'pictureableType', 'pictureableId')
