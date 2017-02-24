@@ -13,6 +13,7 @@ const _ = require('lodash')
 // const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
 const ObjectID = require('mongodb').ObjectID
+const debug = require('debug')('mquery')
 const methods = exports = module.exports = {}
 
 /**
@@ -83,6 +84,7 @@ methods.insertAttributes = function (target) {
     values = target.HostModel.prototype.setCreateTimestamp(values)
     values = target.HostModel.prototype.setUpdateTimestamp(values)
     yield target.connect()
+    debug('insert', target.HostModel.collection, values)
     return yield target.modelQueryBuilder._collection.collection.insert(values)
   }
 }
@@ -765,11 +767,11 @@ methods.max = function (target) {
       max: {$max: '$' + key}
     }
     return new Promise((resolve, reject) => {
-      connection.collection(target.HostModel.collection)
-        .aggregate([{$match}, {$group}], (err, result) => {
-          if (err) reject(err)
-          resolve(groupBy ? result : result[0].max)
-        })
+      debug('max', target.HostModel.collection, $match, $group)
+      connection.collection(target.HostModel.collection).aggregate([{$match}, {$group}], (err, result) => {
+        if (err) reject(err)
+        resolve(groupBy ? result : result[0].max)
+      })
     })
   }
 }
@@ -791,6 +793,7 @@ methods.min = function (target) {
       min: {$min: '$' + key}
     }
     return new Promise((resolve, reject) => {
+      debug('min', target.HostModel.collection, $match, $group)
       connection.collection(target.HostModel.collection)
         .aggregate([{$match}, {$group}], (err, result) => {
           if (err) reject(err)
@@ -817,6 +820,7 @@ methods.sum = function (target) {
       sum: {$sum: '$' + key}
     }
     return new Promise((resolve, reject) => {
+      debug('sum', target.HostModel.collection, $match, $group)
       connection.collection(target.HostModel.collection)
         .aggregate([{$match}, {$group}], (err, result) => {
           if (err) reject(err)
@@ -843,6 +847,7 @@ methods.avg = function (target) {
       avg: {$avg: '$' + key}
     }
     return new Promise((resolve, reject) => {
+      debug('avg', target.HostModel.collection, $match, $group)
       connection.collection(target.HostModel.collection)
         .aggregate([{$match}, {$group}], (err, result) => {
           if (err) reject(err)
