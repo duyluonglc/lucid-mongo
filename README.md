@@ -97,13 +97,16 @@ const users =  yield User.where('name', 'peter').fetch()
 
 const users =  yield User.where({name: 'peter'}).limit(10).fetch()
 
-const user =  yield User.where('name').equal('peter').sort('-age').first()
+const user =  yield User.where('name').eq('peter').where('age').gt(18).lte(60).sort('-age').first()
 
 const users =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
 
 const users =  yield User.where('age').gt(18).paginate(20)
 
 const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
+
+// to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
+const images = yield Image.({location: {near: {lat: 1, lng: 1}, maxDistance: 5}}).fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
@@ -127,6 +130,7 @@ This package support relations like adonis-lucid:
 - belongsTo
 - hasMany
 - belongsToMany
+
 [More Documentation of adonis relationships](http://adonisjs.com/docs/3.2/relationships)
 
 mongodb has no join query so this package has no query like: `has`, `whereHas`, `doesntHave`, `whereDoesntHave`
@@ -202,12 +206,69 @@ class Bill extends Model {
 Current only support create, drop, rename collection and index
 ```js
 up () {
+
+  user
+
   this.create('articles', (collection) => {
-    collection.index('name_of_index', {title: 1})
+    collection.index('title_index', {title: 1})
+  })
+
+  this.collection('users', (collection) => {
+    collection.index('email_index', {email: 1}, {unique: true})
+  })
+
+  this.collection('image', (collection) => {
+    collection.index('location_index', {location: '2dsphere'}, {'2dsphereIndexVersion': 2})
   })
 
   this.rename('articles', 'posts')
+
+  this.create('posts', (collection) => {
+    collection.dropIndex('title_index')
+  })
+
+  this.drop('articles', 'posts')
 }
+```
+
+### Field type
+> Type of `date`
+```js
+class Staff extends LucidMongo {
+  static get dateFields() { return ['dob'] }
+}
+```
+The field declare as date will convert to moment js object after get from db
+```js
+const staff = yield Staff.first()
+const yearAgo = staff.dob.fromNow()
+```
+You can set attribute of model as moment js object
+```js
+staff.dob = moment(request.input('dob'))
+```
+
+> Type of `geometry`
+```js
+class Image extends LucidMongo {
+  static get geoFields() { return ['location'] }
+}
+```
+When declare field type as geometry the field will be transformed to geoJSON type
+
+```js
+const image = yield Image.create({
+  fileName: fileName,
+  location: {lat: 1, lng: 1}
+})
+```
+Result:
+```json
+{ "type" : "Point", "coordinates" : [ 1, 1 ] }
+```
+After get from db it will be retransformed to 
+```js
+{lat: 1, lng: 1}
 ```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines

@@ -724,10 +724,10 @@ methods.where = function (target) {
               throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
             }
 
-            if (k === 'near') {
+            if (k === 'near' || k === 'nearSphere') {
               let point = {center: [c.lng, c.lat]}
               if (target.HostModel.geoFields && _(target.HostModel.geoFields).includes(key)) {
-                point = {center: { type: 'Point', coordinates: [c.lng, c.lat], spherical: true }}
+                point = {center: { type: 'Point', coordinates: [c.lng, c.lat], spherical: k === 'nearSphere' }}
               }
               if (conditions.maxDistance) {
                 point.maxDistance = conditions.maxDistance
