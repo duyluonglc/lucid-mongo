@@ -695,11 +695,7 @@ methods.whereNotNull = function (target) {
  */
 methods.where = function (target) {
   return function () {
-    if (arguments.length >= 2) {
-      target.modelQueryBuilder.where(arguments[0], arguments[1])
-    } else if (arguments.length === 1 && _.isString(arguments[0])) {
-      return target.modelQueryBuilder.where(arguments[0])
-    } else if (arguments.length === 1 && _.isPlainObject(arguments[0])) {
+    if (_.isPlainObject(arguments[0])) {
       const supportMethods = [
         'all',
         'exists',
@@ -745,6 +741,8 @@ methods.where = function (target) {
           target.modelQueryBuilder.where(key, conditions)
         }
       })
+    } else {
+      target.modelQueryBuilder.where(arguments[0], arguments[1])
     }
     return this
   }
