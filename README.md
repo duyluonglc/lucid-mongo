@@ -2,6 +2,10 @@
 
 > **NB - WORK IN PROGRESS**
 
+[![Version](https://img.shields.io/npm/v/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
+[![Build Status](https://img.shields.io/travis/duyluonglc/adonis-lucid-mongodb/master.svg?style=flat-square)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
+[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/master.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=master)
+[![Downloads](https://img.shields.io/npm/dt/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
 > :pray: This repository is forked of adonis-lucid to connect with mongodb.
 
 Adonis-lucid is a database query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories.
