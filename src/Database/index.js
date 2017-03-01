@@ -142,7 +142,7 @@ Database.connection = function * (connection) {
     if (!config) {
       throw CE.InvalidArgumentException.missingConfig(`Unable to get database client configuration for ${connection}`)
     }
-    const security = (config.connection.user !== '' || config.connection.password !== '') ? `${config.connection.user}:${config.connection.password}@` : ''
+    const security = (process.env.DB_USER && process.env.DB_PASSWORD) ? `${process.env.DB_USER}:${process.env.DB_PASSWORD}@` : (process.env.DB_USER ? `${process.env.DB_USER}@` : '')
     const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
     const dbConnection = yield MongoClient.connect(connectionString)
     connectionPools[connection] = dbConnection
