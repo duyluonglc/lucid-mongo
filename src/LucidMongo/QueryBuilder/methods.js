@@ -155,6 +155,23 @@ methods.restoreAttributes = function (target) {
 methods.restore = methods.restoreAttributes
 
 /**
+ * delete penalty
+ *
+ * @method remove
+ *
+ * @param  {Object}          target
+ * @return {Promise}
+ *
+ * @public
+ */
+methods.remove = function (target) {
+  return function * (values) {
+    yield target.connect()
+    return yield target.modelQueryBuilder.remove()
+  }
+}
+
+/**
  * returns the first record from data collection
  *
  * @method first
