@@ -1,5 +1,7 @@
 # AdonisJS Lucid MongoDB
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/adonis-lucid-mongodb.svg)](https://greenkeeper.io/)
+
 > **NB - WORK IN PROGRESS**
 
 [![Version](https://img.shields.io/npm/v/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
