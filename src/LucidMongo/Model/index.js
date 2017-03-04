@@ -269,7 +269,7 @@ class Model {
 
     this.addGlobalScope((builder) => {
       if (this.deleteTimestamp && !builder.avoidTrashed) {
-        builder.whereNull(`${this.collection}.${this.deleteTimestamp}`)
+        builder.whereNull(`${this.deleteTimestamp}`)
       }
     })
   }
