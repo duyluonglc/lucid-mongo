@@ -14,6 +14,7 @@ const _ = require('lodash')
 const CE = require('../../Exceptions')
 const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')
+const objectId = require('mongodb').ObjectID
 
 class ReferMany extends Relation {
 
@@ -179,23 +180,29 @@ class ReferMany extends Relation {
       throw CE.ModelRelationException.unSavedTarget('attach', this.parent.constructor.name, this.related.name)
     }
 
-    // if (!_.isArray(references) && !_.isObject(references)) {
-    //   throw CE.InvalidArgumentException.invalidParameter('attach expects an array of values or a plain object')
-    // }
-
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to attach values with ${this.fromKey} as primaryKey, whose value is falsy`)
+    const fromKey = this.fromKey
+    console.log(fromKey);
+    const related = this.related
+    if (!this.parent[fromKey]) {
+      logger.warn(`Trying to attach values with ${fromKey} as primaryKey, whose value is falsy`)
     }
 
     let saveReferences = _.isArray(this.parent.get(this.toKey)) ? _.clone(this.parent.get(this.toKey)) : []
     if (_.isArray(references)) {
       references = _.map(references, function (reference) {
-        return _.isObject(reference) ? reference[this.fromKey] : reference
+        if (_.isString(reference) || _.isNumber(reference) || reference instanceof objectId) {
+          return reference
+        } else if (reference instanceof related) {
+          return reference[fromKey]
+        }
+        throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
       })
-    } else if (_.isObject(references)) {
-      references = [references[this.fromKey]]
-    } else {
+    } else if (references instanceof related) {
+      references = [references[fromKey]]
+    } else if (_.isString(references) || _.isNumber(references) || references instanceof objectId) {
       references = [references]
+    } else {
+      throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
     }
     saveReferences = _.union(_.concat(saveReferences, references))
     return yield this.parent.set(this.toKey, saveReferences).save()
@@ -216,9 +223,8 @@ class ReferMany extends Relation {
       throw CE.ModelRelationException.unSavedTarget('detach', this.parent.constructor.name, this.related.name)
     }
 
-    // if (!_.isArray(references) && !_.isObject(references)) {
-    //   throw CE.InvalidArgumentException.invalidParameter('attach expects an array of values or a plain object')
-    // }
+    const fromKey = this.fromKey
+    const related = this.related
 
     if (!this.parent[this.fromKey]) {
       logger.warn(`Trying to detach values with ${this.fromKey} as primaryKey, whose value is falsy`)
@@ -228,14 +234,21 @@ class ReferMany extends Relation {
     if (references !== undefined) {
       if (_.isArray(references)) {
         references = _.map(references, function (reference) {
-          return _.isObject(reference) ? reference[this.fromKey] : reference
+          if (_.isString(reference) || _.isNumber(reference) || reference instanceof objectId) {
+            return reference
+          } else if (reference instanceof related) {
+            return reference[fromKey]
+          }
+          throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
         })
-      } else if (_.isObject(references)) {
+      } else if (references instanceof related) {
         references = [references[this.fromKey]]
-      } else {
+      } else if (_.isString(references) || _.isNumber(references) || references instanceof objectId) {
         references = [references]
+      } else {
+        throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
       }
-      saveReferences = _.difference(saveReferences, references)
+      saveReferences = _.differenceBy(saveReferences, references, String)
     } else {
       saveReferences = []
     }
@@ -254,16 +267,25 @@ class ReferMany extends Relation {
     if (this.parent.isNew()) {
       throw CE.ModelRelationException.unSavedTarget('sync', this.parent.constructor.name, this.related.name)
     }
+    const fromKey = this.fromKey
+    const related = this.related
     let saveReferences = []
     if (references !== undefined) {
       if (_.isArray(references)) {
         saveReferences = _.map(references, function (reference) {
-          return _.isObject(reference) ? reference[this.fromKey] : reference
+          if (_.isString(reference) || _.isNumber(reference) || reference instanceof objectId) {
+            return reference
+          } else if (reference instanceof related) {
+            return reference[fromKey]
+          }
+          throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
         })
-      } else if (_.isObject(references)) {
+      } else if (references instanceof related) {
         saveReferences = [references[this.fromKey]]
-      } else {
+      } else if (_.isString(references) || _.isNumber(references) || references instanceof objectId) {
         saveReferences = [references]
+      } else {
+        throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
       }
       saveReferences = _.difference(saveReferences, references)
     }
@@ -279,6 +301,7 @@ class ReferMany extends Relation {
    * @public
    */
   * delete (reference) {
+    const related = this.related
     if (this.parent.isNew()) {
       throw CE.ModelRelationException.unSavedTarget('delete', this.parent.constructor.name, this.related.name)
     }
@@ -286,7 +309,7 @@ class ReferMany extends Relation {
       throw CE.InvalidArgumentException.invalidParameter('delete expects a primary key or instance of related')
     }
     yield this.detach(reference)
-    if (_.isObject(reference)) {
+    if (reference instanceof related) {
       return yield reference.delete()
     } else {
       return yield this.relatedQuery.where(this.fromKey, reference).delete()
