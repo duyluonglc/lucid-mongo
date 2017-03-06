@@ -284,6 +284,21 @@ class Relation {
     }
   }
 
+  /**
+   * returns query builder instance to be used for
+   * creating fluent queries.
+   *
+   * @param  {Object} values will be set
+   * @return {Object}
+   *
+   * @public
+   */
+  * update (values) {
+    this._validateRead()
+    this._decorateRead()
+    return yield this.relatedQuery.update(values)
+  }
+
 }
 
 module.exports = Relation
