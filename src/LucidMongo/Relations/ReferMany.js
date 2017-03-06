@@ -181,7 +181,6 @@ class ReferMany extends Relation {
     }
 
     const fromKey = this.fromKey
-    console.log(fromKey);
     const related = this.related
     if (!this.parent[fromKey]) {
       logger.warn(`Trying to attach values with ${fromKey} as primaryKey, whose value is falsy`)
