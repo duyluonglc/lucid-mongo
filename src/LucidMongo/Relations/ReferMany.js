@@ -123,7 +123,7 @@ class ReferMany extends Relation {
    * @return {Array}
    */
   * fetch () {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parentget(this.toKey)).fetch()
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey)).fetch()
   }
 
   /**
