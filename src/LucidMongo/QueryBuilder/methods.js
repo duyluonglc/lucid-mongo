@@ -102,7 +102,7 @@ methods.updateAttributes = function (target) {
   return function * (values) {
     values = target.HostModel.prototype.setUpdateTimestamp(values)
     yield target.connect()
-    return yield target.modelQueryBuilder.update(values, { multi: true })
+    return yield target.modelQueryBuilder.setOptions({ multi: true }).update(values)
   }
 }
 methods.update = methods.updateAttributes
