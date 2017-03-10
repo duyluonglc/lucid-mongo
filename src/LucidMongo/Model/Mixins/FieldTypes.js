@@ -48,17 +48,17 @@ FieldTypes.getFormatedField = function (key, value) {
 
 /**
  *
- * @method getStoreAbleValues
+ * @method getPersistanceFormat
  *
  * @param  {Object}           values
  * @return {Object}
  *
  * @public
  */
-FieldTypes.getStoreAbleValues = function (values) {
+FieldTypes.getPersistanceFormat = function (values) {
   return _(values).transform((result, value, key) => {
     if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
-      result[key] = value.toISOString()
+      result[key] = value.toDate()
     } else if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1) {
       result[key] = {
         type: 'Point',
@@ -75,17 +75,17 @@ FieldTypes.getStoreAbleValues = function (values) {
 
 /**
  *
- * @method fillDataFromDb
+ * @method parsePersistance
  *
  * @param  {Object}           values
  * @return {Object}
  *
  * @public
  */
-FieldTypes.fillDataFromDb = function (values) {
+FieldTypes.parsePersistance = function (values) {
   _.map(values, (value, key) => {
-    if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
-      this.attributes[key] = moment(value)
+    if (this.getTimestampKey(key) || (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1)) {
+      this.attributes[key] = value ? moment(value) : value
     } else if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1 &&
       _.isObject(value) && _.isArray(value.coordinates)) {
       this.attributes[key] = new GeoPoint(value.coordinates[1], value.coordinates[0])

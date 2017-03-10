@@ -29,12 +29,12 @@ Persistance.insert = function * () {
    * and will be called there itself.
    */
   const insertHandler = function * () {
-    const values = this.getStoreAbleValues(this.attributes)
+    const values = this.getPersistanceFormat(this.attributes)
     if (!values || _.size(values) < 1) {
       throw CE.ModelException.invalidState(`Cannot save empty ${this.constructor.name} model`)
     }
     const query = this.constructor.query()
-    yield query.connect()
+    // yield query.connect()
     if (this.transaction) {
       query.transacting(this.transaction)
     }
@@ -63,8 +63,8 @@ Persistance.update = function * () {
    */
   const updateHandler = function * () {
     const query = this.constructor.query()
-    yield query.connect()
-    const dirtyValues = this.getStoreAbleValues(this.$dirty)
+    // yield query.connect()
+    const dirtyValues = this.getPersistanceFormat(this.$dirty)
     if (!_.size(dirtyValues) && !this.unsetFields.length) {
       return 0
     }
@@ -101,7 +101,7 @@ Persistance.update = function * () {
 Persistance.delete = function * () {
   const deleteHandler = function * () {
     const query = this.constructor.query().where(this.constructor.primaryKey, this.$primaryKeyValue)
-    yield query.connect()
+    // yield query.connect()
     if (this.transaction) {
       query.transacting(this.transaction)
     }
@@ -128,6 +128,7 @@ Persistance.delete = function * () {
 Persistance.restore = function * () {
   const restoreHandler = function * () {
     const query = this.constructor.query().where(this.constructor.primaryKey, this.$primaryKeyValue)
+    // yield query.connect()
     if (this.transaction) {
       query.transacting(this.transaction)
     }

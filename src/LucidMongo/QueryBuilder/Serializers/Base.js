@@ -82,7 +82,7 @@ class BaseSerializer {
      */
     return helpers.toCollection(values).transform((result, value, index) => {
       const modelInstance = new this.queryBuilder.HostModel()
-      modelInstance.fillDataFromDb(value)
+      modelInstance.parsePersistance(value)
       modelInstance.exists = true
       modelInstance.original = _.cloneDeep(modelInstance.attributes)
       this.queryBuilder.eagerLoad.mapRelationsToRow(eagerValues, modelInstance, value)

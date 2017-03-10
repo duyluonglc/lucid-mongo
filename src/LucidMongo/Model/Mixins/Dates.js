@@ -26,7 +26,7 @@ const moment = require('moment')
  */
 Dates.setCreateTimestamp = function (values) {
   if (this.constructor.createTimestamp) {
-    values[this.constructor.createTimestamp] = moment().format(this.constructor.dateFormat)
+    values[this.constructor.createTimestamp] = moment().toDate()
   }
   return values
 }
@@ -45,7 +45,7 @@ Dates.setCreateTimestamp = function (values) {
  */
 Dates.setUpdateTimestamp = function (values) {
   if (this.constructor.updateTimestamp) {
-    values[this.constructor.updateTimestamp] = moment().format(this.constructor.dateFormat)
+    values[this.constructor.updateTimestamp] = moment().toDate()
   }
   return values
 }
@@ -64,7 +64,7 @@ Dates.setUpdateTimestamp = function (values) {
  */
 Dates.setDeleteTimestamp = function (values) {
   if (this.constructor.deleteTimestamp) {
-    values[this.constructor.deleteTimestamp] = moment().format(this.constructor.dateFormat)
+    values[this.constructor.deleteTimestamp] = moment().toDate()
   }
   return values
 }
