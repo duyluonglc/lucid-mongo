@@ -26,6 +26,8 @@ const Ioc = require('adonis-fold').Ioc
 const Resolver = require('adonis-binding-resolver')
 const resolver = new Resolver(Ioc)
 const ObjectID = require('mongodb').ObjectID
+const moment = require('moment')
+const GeoPoint = require('GeoPoint')
 
 const hookNameSpace = 'Model/Hooks'
 
@@ -159,7 +161,7 @@ class Model {
     resolver.validateBinding(resolvedHandler)
 
     this.$modelHooks[type] = this.$modelHooks[type] || []
-    this.$modelHooks[type].push({handler: resolver.resolveBinding(resolvedHandler), name})
+    this.$modelHooks[type].push({ handler: resolver.resolveBinding(resolvedHandler), name })
   }
 
   /**
@@ -873,7 +875,21 @@ class Model {
    */
   get $dirty () {
     return _.pickBy(this.attributes, (value, key) => {
-      return (typeof (this.original[key]) === 'undefined' || this.original[key] !== value) && !key.startsWith('_pivot_')
+      if (typeof (this.original[key]) === 'undefined') {
+        return true
+      }
+      if (this.original[key] instanceof ObjectID) {
+        return String(this.original[key]) !== String(value)
+      }
+      if (this.getTimestampKey(key) || _.find(this.constructor.dateFields, field => field === key)) {
+        return moment.isMoment(value) && this.original[key].diff(value)
+      }
+      if (_.find(this.constructor.geoFields, field => field === key)) {
+        return this.original[key] instanceof GeoPoint ||
+          value.longitude() !== this.original[key].longitude() ||
+          value.latitude() !== this.original[key].latitude()
+      }
+      return !_.isEqual(this.original[key], value)
     })
   }
 
@@ -1040,7 +1056,7 @@ class Model {
       throw CE.InvalidArgumentException.invalidParameter('createMany expects an array of values')
     }
     const self = this
-    return cf.map(function * (values) {
+    return cf.map(function* (values) {
       return yield self.create(values)
     }, arrayOfValues)
   }

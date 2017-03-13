@@ -57,16 +57,16 @@ FieldTypes.getFormatedField = function (key, value) {
  */
 FieldTypes.getPersistanceFormat = function (values) {
   return _(values).transform((result, value, key) => {
-    if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
-      result[key] = value.toDate()
-    } else if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1) {
-      result[key] = {
+    if (this.getTimestampKey(key) || _.find(this.constructor.dateFields, field => field === key)) {
+      result[key] = moment.isMoment(value) ? value.toDate() : value
+    } else if (_.find(this.constructor.geoFields, field => field === key)) {
+      result[key] = value instanceof GeoPoint ? {
         type: 'Point',
         coordinates: [
           value.longitude(),
           value.latitude()
         ]
-      }
+      } : value
     } else {
       result[key] = value
     }
