@@ -27,7 +27,7 @@ const Resolver = require('adonis-binding-resolver')
 const resolver = new Resolver(Ioc)
 const ObjectID = require('mongodb').ObjectID
 const moment = require('moment')
-const GeoPoint = require('GeoPoint')
+const GeoPoint = require('geopoint')
 
 const hookNameSpace = 'Model/Hooks'
 
