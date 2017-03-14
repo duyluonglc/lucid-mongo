@@ -73,7 +73,7 @@ class ReferMany extends Relation {
       scopeMethod(this.relatedQuery)
     }
     const results = yield this.relatedQuery
-      .whereIn(this.fromKey, result[this.toKey])
+      .whereIn(this.fromKey, result[this.toKey] || [])
       .fetch()
     const response = {}
     response[value] = results
