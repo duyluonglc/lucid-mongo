@@ -15,10 +15,11 @@ const _ = require('lodash')
  * @public
  */
 FieldTypes.getValueWithType = function (key, value) {
-  if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1) {
+  if (_.includes(this.constructor.boolFields, key)) {
+    return !!value
+  } else if (_.includes(this.constructor.dateFields, key)) {
     return moment(value)
-  }
-  if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1) {
+  } else if (_.includes(this.constructor.geoFields, key)) {
     return new GeoPoint(value.lat, value.lng)
   }
   return value
@@ -34,10 +35,11 @@ FieldTypes.getValueWithType = function (key, value) {
  * @public
  */
 FieldTypes.getFormatedField = function (key, value) {
-  if (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1 && moment.isMoment(value)) {
+  if (_.includes(this.constructor.boolFields, key)) {
+    return !!value
+  } else if (_.includes(this.constructor.dateFields, key) && moment.isMoment(value)) {
     return this.formatDate(value)
-  }
-  if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1 && value instanceof GeoPoint) {
+  } else if (_.includes(this.constructor.geoFields, key) && value instanceof GeoPoint) {
     return {
       lat: value.latitude(),
       lng: value.longitude()
@@ -57,16 +59,18 @@ FieldTypes.getFormatedField = function (key, value) {
  */
 FieldTypes.getPersistanceFormat = function (values) {
   return _(values).transform((result, value, key) => {
-    if (this.getTimestampKey(key) || _.find(this.constructor.dateFields, field => field === key)) {
+    if (_.includes(this.constructor.boolFields, key)) {
+      result[key] = !!value
+    } else if (this.getTimestampKey(key) || _.includes(this.constructor.dateFields, key)) {
       result[key] = moment.isMoment(value) ? value.toDate() : value
-    } else if (_.find(this.constructor.geoFields, field => field === key)) {
-      result[key] = value instanceof GeoPoint ? {
+    } else if (_.includes(this.constructor.geoFields, key) && value instanceof GeoPoint) {
+      result[key] = {
         type: 'Point',
         coordinates: [
           value.longitude(),
           value.latitude()
         ]
-      } : value
+      }
     } else {
       result[key] = value
     }
@@ -84,10 +88,11 @@ FieldTypes.getPersistanceFormat = function (values) {
  */
 FieldTypes.parsePersistance = function (values) {
   _.map(values, (value, key) => {
-    if (this.getTimestampKey(key) || (this.constructor.dateFields && this.constructor.dateFields.indexOf(key) > -1)) {
+    if (_.includes(this.constructor.boolFields, key)) {
+      this.attributes[key] = !!value
+    } else if (this.getTimestampKey(key) || _.includes(this.constructor.dateFields, key)) {
       this.attributes[key] = value ? moment(value) : value
-    } else if (this.constructor.geoFields && this.constructor.geoFields.indexOf(key) > -1 &&
-      _.isObject(value) && _.isArray(value.coordinates)) {
+    } else if (_.includes(this.constructor.dateFields, key) && _.isObject(value) && _.isArray(value.coordinates)) {
       this.attributes[key] = new GeoPoint(value.coordinates[1], value.coordinates[0])
     } else {
       this.attributes[key] = value

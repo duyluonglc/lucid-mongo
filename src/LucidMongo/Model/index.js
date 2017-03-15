@@ -507,7 +507,7 @@ class Model {
   }
 
   /**
-   * date fields auto convert to moment
+   * Date fields will auto convert to moment
    *
    * @return {Array}
    *
@@ -518,13 +518,24 @@ class Model {
   }
 
   /**
-   * date fields auto convert to GeoPoint
+   * Geo fields will auto convert to GeoPoint
    *
    * @return {Array}
    *
    * @public
    */
   static get geoFields () {
+    return []
+  }
+
+  /**
+   * Bool fields will auto convert to boolean
+   *
+   * @return {Array}
+   *
+   * @public
+   */
+  static get boolFields () {
     return []
   }
 
