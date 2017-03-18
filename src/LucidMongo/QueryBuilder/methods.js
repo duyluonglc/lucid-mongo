@@ -716,14 +716,22 @@ methods.where = function (target) {
       const supportMethods = [
         'all',
         'exists',
+        'elemMatch',
+        'eq',
         'gt',
         'gte',
+        'lt',
+        'lte',
         'in',
         'ne',
         'nin',
+        'nor',
         'regex',
         'size',
-        'slice'
+        'mod',
+        'slice',
+        'intersects',
+        'regex'
       ]
       _.forEach(arguments[0], (conditions, key) => {
         if (key === 'and' || key === 'or' || key === 'nor') {
