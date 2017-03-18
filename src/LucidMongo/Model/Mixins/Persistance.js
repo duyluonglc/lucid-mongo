@@ -39,7 +39,8 @@ Persistance.insert = function * () {
       query.transacting(this.transaction)
     }
     const save = yield query.insertAttributes(values)
-    this.$primaryKeyValue = values[this.constructor.primaryKey] || save.insertedIds[1]
+    this.parsePersistance(save.ops[0])
+    // this.$primaryKeyValue = values[this.constructor.primaryKey] || save.insertedIds[1]
     this.exists = true
     this.original = _.clone(this.attributes)
     return !!save
@@ -64,26 +65,27 @@ Persistance.update = function * () {
   const updateHandler = function * () {
     const query = this.constructor.query()
     // yield query.connect()
-    const dirtyValues = this.getPersistanceFormat(this.$dirty)
+    let dirtyValues = this.getPersistanceFormat(this.$dirty)
     if (!_.size(dirtyValues) && !this.unsetFields.length) {
       return 0
     }
-    let dirty = { $set: dirtyValues }
+    // let dirty = { $set: dirtyValues }
     if (this.unsetFields.length) {
-      dirty.$unset = {}
+      dirtyValues.$unset = {}
       this.unsetFields.forEach(field => {
-        dirty.$unset[field] = 1
+        dirtyValues.$unset[field] = 1
+        delete this.attributes[field]
       })
     }
     if (this.transaction) {
       query.transacting(this.transaction)
     }
-    const affected = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirty)
-    if (affected > 0) {
-      _.merge(this.attributes, dirtyValues)
+    const save = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirtyValues)
+    if (save.result.ok > 0) {
+      this.parsePersistance(_.omit(dirtyValues, ['$set', '$unset']))
       this.original = _.clone(this.attributes)
     }
-    return affected
+    return save
   }
   return yield this.executeUpdateHooks(this, updateHandler)
 }
