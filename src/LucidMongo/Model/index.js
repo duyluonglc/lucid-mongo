@@ -440,7 +440,7 @@ class Model {
    * @public
    */
   static get dateFormat () {
-    return 'YYYY-MM-DD HH:mm:ss'
+    return 'YYYY-MM-DD[T]HH:mm:ss.SSS[Z]'
   }
 
   /**
