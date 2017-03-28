@@ -203,7 +203,7 @@ class ReferMany extends Relation {
     } else {
       throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
     }
-    saveReferences = _.union(_.concat(saveReferences, references))
+    saveReferences = _.unionBy(saveReferences, references, String)
     return yield this.parent.set(this.toKey, saveReferences).save()
   }
 
