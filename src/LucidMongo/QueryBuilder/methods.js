@@ -636,22 +636,6 @@ methods.find = function (target) {
 }
 
 /**
- * Convert count query
- *
- * @param  {Object} target
- *
- * @return {Function}
- *
- * @public
- */
-methods.count = function (target) {
-  return function * () {
-    yield target.connect()
-    return yield target.modelQueryBuilder.count()
-  }
-}
-
-/**
  * Convert orderBy query
  *
  * @param  {Object} target
@@ -774,6 +758,22 @@ methods.where = function (target) {
 }
 
 /**
+ * Aggregate count
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ *
+ * @public
+ */
+methods.count = function (target) {
+  return function (groupBy) {
+    const serializer = new target.HostModel.QuerySerializer(target, this)
+    return serializer.count(groupBy)
+  }
+}
+
+/**
  * Aggregate max
  *
  * @param {String} key
@@ -782,21 +782,9 @@ methods.where = function (target) {
  * @number
  */
 methods.max = function (target) {
-  return function * (key, groupBy) {
-    const $match = target.modelQueryBuilder._conditions
-    const connection = yield target.connect()
-    const $group = {
-      _id: groupBy,
-      max: {$max: '$' + key}
-    }
-    return new Promise((resolve, reject) => {
-      debug('max', target.HostModel.collection, $match, $group)
-      connection.collection(target.HostModel.collection)
-        .aggregate([{$match}, {$group}], (err, result) => {
-          if (err) reject(err)
-          resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].max))
-        })
-    })
+  return function (key, groupBy) {
+    const serializer = new target.HostModel.QuerySerializer(target, this)
+    return serializer.max(key, groupBy)
   }
 }
 
@@ -809,21 +797,9 @@ methods.max = function (target) {
  * @number
  */
 methods.min = function (target) {
-  return function * (key, groupBy) {
-    const $match = target.modelQueryBuilder._conditions
-    const connection = yield target.connect()
-    const $group = {
-      _id: groupBy,
-      min: {$min: '$' + key}
-    }
-    return new Promise((resolve, reject) => {
-      debug('min', target.HostModel.collection, $match, $group)
-      connection.collection(target.HostModel.collection)
-        .aggregate([{$match}, {$group}], (err, result) => {
-          if (err) reject(err)
-          resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].min))
-        })
-    })
+  return function (key, groupBy) {
+    const serializer = new target.HostModel.QuerySerializer(target, this)
+    return serializer.min(key, groupBy)
   }
 }
 
@@ -836,21 +812,9 @@ methods.min = function (target) {
  * @number
  */
 methods.sum = function (target) {
-  return function * (key, groupBy) {
-    const $match = target.modelQueryBuilder._conditions
-    const connection = yield target.connect()
-    const $group = {
-      _id: groupBy,
-      sum: {$sum: '$' + key}
-    }
-    return new Promise((resolve, reject) => {
-      debug('sum', target.HostModel.collection, $match, $group)
-      connection.collection(target.HostModel.collection)
-        .aggregate([{$match}, {$group}], (err, result) => {
-          if (err) reject(err)
-          resolve(groupBy ? result : (_.isEmpty(result) ? 0 : result[0].max))
-        })
-    })
+  return function (key, groupBy) {
+    const serializer = new target.HostModel.QuerySerializer(target, this)
+    return serializer.sum(key, groupBy)
   }
 }
 
@@ -863,20 +827,8 @@ methods.sum = function (target) {
  * @number
  */
 methods.avg = function (target) {
-  return function * (key, groupBy) {
-    const $match = target.modelQueryBuilder._conditions
-    const connection = yield target.connect()
-    const $group = {
-      _id: groupBy,
-      avg: {$avg: '$' + key}
-    }
-    return new Promise((resolve, reject) => {
-      debug('avg', target.HostModel.collection, $match, $group)
-      connection.collection(target.HostModel.collection)
-        .aggregate([{$match}, {$group}], (err, result) => {
-          if (err) reject(err)
-          resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].avg))
-        })
-    })
+  return function (key, groupBy) {
+    const serializer = new target.HostModel.QuerySerializer(target, this)
+    return serializer.avg(key, groupBy)
   }
 }

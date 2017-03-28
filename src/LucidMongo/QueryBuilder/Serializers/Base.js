@@ -11,6 +11,7 @@
 
 const _ = require('lodash')
 const helpers = require('../helpers')
+const debug = require('debug')('mquery')
 
 class BaseSerializer {
 
@@ -143,6 +144,131 @@ class BaseSerializer {
       return meta
     }
     return collection
+  }
+
+  /**
+   * Aggregate Count
+   *
+   * @return {Number|Collection}
+   *
+   * @public
+   */
+  * count (groupBy) {
+    this._decorateQuery()
+    const connection = yield this.queryBuilder.connect()
+    const collection = connection.collection(this.queryBuilder.HostModel.collection)
+    const $match = this.queryBuilder.modelQueryBuilder._conditions
+    const $group = {
+      _id: '$' + groupBy,
+      count: {$sum: 1}
+    }
+    return new Promise((resolve, reject) => {
+      debug('count', this.queryBuilder.HostModel.collection, $match, $group)
+      collection.aggregate([{$match}, {$group}], (err, result) => {
+        if (err) reject(err)
+        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].count))
+      })
+    })
+  }
+
+  /**
+   * Aggregate max
+   *
+   * @return {Number|Collection}
+   *
+   * @public
+   */
+  * max (key, groupBy) {
+    this._decorateQuery()
+    const connection = yield this.queryBuilder.connect()
+    const collection = connection.collection(this.queryBuilder.HostModel.collection)
+    const $match = this.queryBuilder.modelQueryBuilder._conditions
+    const $group = {
+      _id: '$' + groupBy,
+      max: {$max: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      debug('max', this.queryBuilder.HostModel.collection, $match, $group)
+      collection.aggregate([{$match}, {$group}], (err, result) => {
+        if (err) reject(err)
+        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].max))
+      })
+    })
+  }
+
+  /**
+   * Aggregate min
+   *
+   * @return {Number|Collection}
+   *
+   * @public
+   */
+  * min (key, groupBy) {
+    this._decorateQuery()
+    const connection = yield this.queryBuilder.connect()
+    const collection = connection.collection(this.queryBuilder.HostModel.collection)
+    const $match = this.queryBuilder.modelQueryBuilder._conditions
+    const $group = {
+      _id: '$' + groupBy,
+      min: {$min: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      debug('min', this.queryBuilder.HostModel.collection, $match, $group)
+      collection.aggregate([{$match}, {$group}], (err, result) => {
+        if (err) reject(err)
+        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].min))
+      })
+    })
+  }
+
+  /**
+   * Aggregate sum
+   *
+   * @return {Number|Collection}
+   *
+   * @public
+   */
+  * sum (key, groupBy) {
+    this._decorateQuery()
+    const connection = yield this.queryBuilder.connect()
+    const collection = connection.collection(this.queryBuilder.HostModel.collection)
+    const $match = this.queryBuilder.modelQueryBuilder._conditions
+    const $group = {
+      _id: '$' + groupBy,
+      sum: {$sum: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      debug('sum', this.queryBuilder.HostModel.collection, $match, $group)
+      collection.aggregate([{$match}, {$group}], (err, result) => {
+        if (err) reject(err)
+        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].sum))
+      })
+    })
+  }
+
+  /**
+   * Aggregate avg
+   *
+   * @return {Number|Collection}
+   *
+   * @public
+   */
+  * avg (key, groupBy) {
+    this._decorateQuery()
+    const connection = yield this.queryBuilder.connect()
+    const collection = connection.collection(this.queryBuilder.HostModel.collection)
+    const $match = this.queryBuilder.modelQueryBuilder._conditions
+    const $group = {
+      _id: '$' + groupBy,
+      avg: {$avg: '$' + key}
+    }
+    return new Promise((resolve, reject) => {
+      debug('avg', this.queryBuilder.HostModel.collection, $match, $group)
+      collection.aggregate([{$match}, {$group}], (err, result) => {
+        if (err) reject(err)
+        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].avg))
+      })
+    })
   }
 
 }
