@@ -7,85 +7,14 @@
 [![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=develop)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
 [![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/master.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=master)
 [![Downloads](https://img.shields.io/npm/dt/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
-> :pray: This repository is forked of adonis-lucid to connect with mongodb.
+> :pray: This repository is base on adonis-lucid. This package only work with mongodb.
 
-Adonis-lucid is a database query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories.
-
-But it not support MongoDB. So I've forked and make new repository adonis-lucid-mongo because adonis has no plan to support mongodb in core framework
+Adonis-lucid-mongodb is a mongo query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories as Adonis-lucid.
 
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
 You can see example here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
 
-## <a name="getting-started"></a>Getting Started
-
-To setup this package
-
-```bash
-$ npm i --save adonis-lucid-mongodb
-```
-
-and then register lucid providers inside the your `bootstrap/app.js` file.
-
-```javascript
-const providers = [
-  // ...
-  'adonis-lucid-mongodb/providers/DatabaseProvider',
-  'adonis-lucid-mongodb/providers/LucidMongoProvider',
-  'adonis-lucid-mongodb/providers/FactoryProvider',
-]
-
-const aceProviders = [
-  // ...
-  'adonis-lucid-mongodb/providers/CommandsProvider',
-  'adonis-lucid-mongodb/providers/MigrationsProvider',
-  'adonis-lucid-mongodb/providers/SchemaProvider',
-  'adonis-lucid-mongodb/providers/SeederProvider',
-]
-```
-
-setting up aliases inside `bootstrap/app.js` file.
-
-```javascript
-const aliases = {
-  Database: 'Adonis/Src/Database',
-  LucidMongo: 'Adonis/Src/LucidMongo',
-  Schema: 'Adonis/Src/Schema'
-  Migrations: 'Adonis/Src/Migrations',
-  Factory: 'Adonis/Src/Factory'
-}
-```
-
-add config to `config/database.js` file
-
-```javascript
-module.exports = {
-
-  /*
-  |--------------------------------------------------------------------------
-  | Default Connection
-  |--------------------------------------------------------------------------
-  |
-  | Connection defines the default connection settings to be used while
-  | interacting with SQL databases.
-  |
-  */
-  connection: Env.get('DB_CONNECTION', 'mongodb'),
-  /*-------------------------------------------------------------------------*/
-
-  mongodb: {
-    client: 'mongodb',
-    connection: {
-      host: Env.get('DB_HOST', 'localhost'),
-      port: Env.get('DB_PORT', 27017),
-      user: Env.get('DB_USER', 'root'),
-      password: Env.get('DB_PASSWORD', ''),
-      database: Env.get('DB_DATABASE', 'adonis')
-    }
-  }
-
-}
-```
 ## Usage
 The usage of LucidMongo is similar to Lucid
 
@@ -94,6 +23,8 @@ The usage of LucidMongo is similar to Lucid
 ### Query
 
 ```js
+const users =  yield User.all()
+
 const users =  yield User.where('name', 'peter').fetch()
 
 const users =  yield User.where({name: 'peter'}).limit(10).fetch()
@@ -111,18 +42,17 @@ const images = yield Image.({location: {near: {lat: 1, lng: 1}, maxDistance: 5}}
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
-### Query logs
-To show query logs run this command:
-- Linux, MacOS `DEBUG=mquery && npm run dev`
-- Windows `setx DEBUG mquery && npm run dev`
-
 ### Aggregation
 ```js
-  const max = yield Employee.query().max('age')
+  const count = yield Customer.count()
 
-  const total = yield Employee.where(active, true).sum('salary', '$department_id')
+  const count = yield Customer.where({invited: {$exist: true}}).count('position')
 
-  const avg = yield Employee.where(active, true).avg('salary', {department: '$department_id', role: '$role_id'})
+  const max = yield Employee.max('age')
+
+  const total = yield Employee.where(active, true).sum('salary', 'department_id')
+
+  const avg = yield Employee.where(active, true).avg('salary', {department: 'department_id', role: '$role_id'})
 ```
 
 ### Relations
@@ -203,6 +133,11 @@ class Bill extends Model {
 
 ```
 
+### Query logging
+To show query logs run this command:
+- Linux, MacOS `DEBUG=mquery npm run dev`
+- Windows `setx DEBUG mquery && npm run dev`
+
 ### Migration
 Current only support create, drop, rename collection and index
 ```js
@@ -270,6 +205,76 @@ Result:
 After get from db it will be retransformed to 
 ```js
 {lat: 1, lng: 1}
+```
+
+## <a name="getting-started"></a>Installation
+
+To setup this package
+
+```bash
+$ npm i --save adonis-lucid-mongodb
+```
+
+and then register lucid providers inside the your `bootstrap/app.js` file.
+
+```javascript
+const providers = [
+  // ...
+  'adonis-lucid-mongodb/providers/DatabaseProvider',
+  'adonis-lucid-mongodb/providers/LucidMongoProvider',
+  'adonis-lucid-mongodb/providers/FactoryProvider',
+]
+
+const aceProviders = [
+  // ...
+  'adonis-lucid-mongodb/providers/CommandsProvider',
+  'adonis-lucid-mongodb/providers/MigrationsProvider',
+  'adonis-lucid-mongodb/providers/SchemaProvider',
+  'adonis-lucid-mongodb/providers/SeederProvider',
+]
+```
+
+setting up aliases inside `bootstrap/app.js` file.
+
+```javascript
+const aliases = {
+  Database: 'Adonis/Src/Database',
+  LucidMongo: 'Adonis/Src/LucidMongo',
+  Schema: 'Adonis/Src/Schema'
+  Migrations: 'Adonis/Src/Migrations',
+  Factory: 'Adonis/Src/Factory'
+}
+```
+
+add config to `config/database.js` file
+
+```javascript
+module.exports = {
+
+  /*
+  |--------------------------------------------------------------------------
+  | Default Connection
+  |--------------------------------------------------------------------------
+  |
+  | Connection defines the default connection settings to be used while
+  | interacting with SQL databases.
+  |
+  */
+  connection: Env.get('DB_CONNECTION', 'mongodb'),
+  /*-------------------------------------------------------------------------*/
+
+  mongodb: {
+    client: 'mongodb',
+    connection: {
+      host: Env.get('DB_HOST', 'localhost'),
+      port: Env.get('DB_PORT', 27017),
+      user: Env.get('DB_USER', 'root'),
+      password: Env.get('DB_PASSWORD', ''),
+      database: Env.get('DB_DATABASE', 'adonis')
+    }
+  }
+
+}
 ```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
