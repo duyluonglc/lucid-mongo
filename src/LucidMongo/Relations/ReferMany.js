@@ -123,7 +123,7 @@ class ReferMany extends Relation {
    * @return {Array}
    */
   * fetch () {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent[this.toKey] || []).fetch()
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).fetch()
   }
 
   /**
@@ -134,7 +134,7 @@ class ReferMany extends Relation {
    * @return {Object}
    */
   * find (id) {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent[this.toKey] || []).find(id)
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).find(id)
   }
 
   /**
@@ -145,7 +145,18 @@ class ReferMany extends Relation {
    * @return {Object}
    */
   * first () {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent[this.toKey] || []).first()
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).first()
+  }
+
+  /**
+   * fetch
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * update (values) {
+    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).update(values)
   }
 
   /**
@@ -311,7 +322,7 @@ class ReferMany extends Relation {
     if (reference instanceof related) {
       return yield reference.delete()
     } else {
-      return yield this.relatedQuery.where(this.fromKey, reference).delete()
+      return yield this.relatedQuery.whereIn(this.fromKey, reference).delete()
     }
   }
 
