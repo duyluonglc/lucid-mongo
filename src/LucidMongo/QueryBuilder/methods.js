@@ -729,10 +729,6 @@ methods.where = function (target) {
           target.modelQueryBuilder[key](queries)
         } else if (_.isPlainObject(conditions)) {
           _.forEach(conditions, (c, k) => {
-            if (!_.isFunction(target.modelQueryBuilder[k])) {
-              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
-            }
-
             if (k === 'near' || k === 'nearSphere') {
               let point = {center: [c.lng, c.lat]}
               if (target.HostModel.geoFields && _(target.HostModel.geoFields).includes(key)) {
@@ -744,6 +740,8 @@ methods.where = function (target) {
               target.modelQueryBuilder.where(key)[k](point)
             } else if (_(supportMethods).includes(k)) {
               target.modelQueryBuilder.where(key)[k](c)
+            } else {
+              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
             }
           })
         } else {

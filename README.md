@@ -5,7 +5,7 @@
 [![Version](https://img.shields.io/npm/v/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 [![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=develop)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
-[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/master.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=master)
+[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/develop.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=develop)
 [![Downloads](https://img.shields.io/npm/dt/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
 > :pray: This repository is base on adonis-lucid. This package only work with mongodb.
 
@@ -38,7 +38,8 @@ const users =  yield User.where('age').gt(18).paginate(20)
 const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 
 // to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
-const images = yield Image.({location: {near: {lat: 1, lng: 1}, maxDistance: 5}}).fetch()
+const images = yield Image.({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
+const images = yield Image.({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
@@ -142,8 +143,6 @@ To show query logs run this command:
 Current only support create, drop, rename collection and index
 ```js
 up () {
-
-  user
 
   this.create('articles', (collection) => {
     collection.index('title_index', {title: 1})
