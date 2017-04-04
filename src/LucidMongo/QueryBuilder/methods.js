@@ -715,7 +715,9 @@ methods.where = function (target) {
         'mod',
         'slice',
         'intersects',
-        'regex'
+        'regex',
+        'maxDistance',
+        'minDistance'
       ]
       _.forEach(arguments[0], (conditions, key) => {
         if (key === 'and' || key === 'or' || key === 'nor') {
@@ -737,9 +739,14 @@ methods.where = function (target) {
               if (conditions.maxDistance) {
                 point.maxDistance = conditions.maxDistance
               }
-              target.modelQueryBuilder.where(key)[k](point)
+              if (conditions.minDistance) {
+                point.minDistance = conditions.minDistance
+              }
+              target.modelQueryBuilder.where(key).near(point)
             } else if (_(supportMethods).includes(k)) {
-              target.modelQueryBuilder.where(key)[k](c)
+              if (k !== 'maxDistance' && k !== 'minDistance') {
+                target.modelQueryBuilder.where(key)[k](c)
+              }
             } else {
               throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
             }
