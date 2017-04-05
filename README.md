@@ -38,8 +38,9 @@ const users =  yield User.where('age').gt(18).paginate(20)
 const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 
 // to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
-const images = yield Image.({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
-const images = yield Image.({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
+const images = yield Image.where({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
+
+const images = yield Image.where({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
