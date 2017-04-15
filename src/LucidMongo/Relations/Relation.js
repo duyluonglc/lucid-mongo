@@ -23,8 +23,11 @@ class Relation {
   constructor (parent, related) {
     this.parent = parent
     this.related = this._resolveModel(related)
-    this.relatedQuery = this.related.query()
     return new Proxy(this, proxyHandler)
+  }
+
+  get relatedQuery () {
+    return this.related.query()
   }
 
   /**

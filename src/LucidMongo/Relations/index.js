@@ -16,6 +16,7 @@ module.exports = {
   HasManyThrough: require('./HasManyThrough'),
   HasOne: require('./HasOne'),
   MorphMany: require('./MorphMany'),
+  MorphTo: require('./MorphTo'),
   EmbedsOne: require('./EmbedsOne'),
   EmbedsMany: require('./EmbedsMany'),
   ReferMany: require('./ReferMany'),

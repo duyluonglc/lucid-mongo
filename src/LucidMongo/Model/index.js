@@ -1175,6 +1175,23 @@ class Model {
   }
 
   /**
+   * returns morphTo instance for a given model. Later
+   * returned instance will be responsible for
+   * resolving relations
+   *
+   * @param  {String}  modelPath
+   * @param  {String}  discriminator
+   * @param  {String}  [primaryKey]
+   * @param  {String}  [foreignKey]
+   * @return {Object}
+   *
+   * @public
+   */
+  morphTo (modelPath, discriminator, primaryKey, foreignKey) {
+    return new Relations.MorphTo(this, modelPath, discriminator, primaryKey, foreignKey)
+  }
+
+  /**
    * returns embedsOne instance for a given model. Later
    * returned instance will be responsible for
    * resolving relations

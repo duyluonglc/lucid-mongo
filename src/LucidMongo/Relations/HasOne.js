@@ -94,9 +94,9 @@ class HasOne extends Relation {
     if (typeof (scopeMethod) === 'function') {
       scopeMethod(this.relatedQuery)
     }
-    const results = yield this.relatedQuery.where(this.toKey, value).first()
+    const result = yield this.relatedQuery.where(this.toKey, value).first()
     const response = {}
-    response[value] = results
+    response[value] = result
     return response
   }
 
