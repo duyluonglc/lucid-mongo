@@ -91,7 +91,7 @@ FieldTypes.parsePersistance = function (values) {
     if (_.includes(this.constructor.boolFields, key)) {
       this.attributes[key] = !!value
     } else if (this.getTimestampKey(key) || _.includes(this.constructor.dateFields, key)) {
-      this.attributes[key] = value ? moment(value) : value
+      this.attributes[key] = value ? moment.utc(value) : value
     } else if (_.includes(this.constructor.geoFields, key) && _.isObject(value) && _.isArray(value.coordinates)) {
       this.attributes[key] = new GeoPoint(value.coordinates[1], value.coordinates[0])
     } else {
