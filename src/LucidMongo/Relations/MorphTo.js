@@ -114,6 +114,26 @@ class MorphMany extends Relation {
   paginate () {
     throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
   }
+
+  /**
+   *
+   * @public
+   *
+   */
+  * first () {
+    const determiner = this.parent[this.determiner]
+    const relatedModel = this._resolveModel(this.modelPath + '/' + determiner)
+    return yield relatedModel.where(this.fromKey, this.parent[this.toKey]).first()
+  }
+
+  /**
+   *
+   * @public
+   *
+   */
+  fetch () {
+    return this.first()
+  }
 }
 
 module.exports = MorphMany

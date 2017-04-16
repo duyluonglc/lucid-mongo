@@ -12,6 +12,7 @@
 const Relation = require('./Relation')
 const CE = require('../../Exceptions')
 const helpers = require('../QueryBuilder/helpers')
+const _ = require('lodash')
 
 class HasManyThrough extends Relation {
 
@@ -25,49 +26,44 @@ class HasManyThrough extends Relation {
   }
 
   /**
-   * makes join query to be used by select methods
+   * getAlternate
    *
    * @private
    */
-  _makeJoinQuery (ignoreSelections) {
-    var self = this
-    const selectionKeys = [`${this.related.collection}.*`, `${this.through.collection}.${this.toKey}`]
-
-    if (!ignoreSelections) {
-      this.relatedQuery.select.apply(this.relatedQuery, selectionKeys)
-    }
-
-    this.relatedQuery.innerJoin(`${this.through.collection}`, function () {
-      this.on(`${self.through.collection}.${self.viaKey}`, `${self.related.collection}.${self.viaForeignKey}`)
-    })
+  * _getAlternateIds () {
+    const alternates = yield this.relatedQuery.select([this.fromKey, this.toKey])
+      .where(this.toKey, this.parent[this.fromKey]).fetch()
+    return alternates.map(this.viaKey).value()
   }
 
   /**
    * decorates the current query chain before execution
    */
-  _decorateRead () {
-    this._makeJoinQuery()
-    this.relatedQuery.where(`${this.through.collection}.${this.toKey}`, this.parent[this.fromKey])
+  _getThroughQuery (alternateIds) {
+    return this.through.whereIn(this.viaForeignKey, alternateIds)
   }
 
+
   /**
-   * Returns a clone of related query by removing
-   * the selections from the join. It is mainly
-   * used by the pagination methods.
+   * Fetch over the related rows
    *
    * @return {Object}
    */
-  _getAlternateQuery () {
-    const self = this
-    const queryClone = this.relatedQuery.clone()
+  * fetch () {
+    this._validateRead()
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).fetch()
+  }
 
-    queryClone
-    .innerJoin(`${this.through.collection}`, function () {
-      this.on(`${self.through.collection}.${self.viaKey}`, `${self.related.collection}.${self.viaForeignKey}`)
-    })
-    .where(`${this.through.collection}.${this.toKey}`, this.parent[this.fromKey])
-
-    return queryClone
+  /**
+   * Fetch first over the related rows
+   *
+   * @return {Object}
+   */
+  * first () {
+    this._validateRead()
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).first()
   }
 
   /**
@@ -78,49 +74,15 @@ class HasManyThrough extends Relation {
    *
    * @return {Object}
    */
-  paginate (page, perPage) {
+  * paginate (page, perPage) {
     this._validateRead()
     /**
      * creating the query clone to be used as countByQuery,
-     * since selecting fields in countby requires unwanted
+     * since selecting fields in countBy requires unwanted
      * groupBy clauses.
      */
-    const countByQuery = this._getAlternateQuery().count(`${this.through.collection}.${this.toKey} as total`)
-
-    this._decorateRead()
-    return this.relatedQuery.paginate(page, perPage, countByQuery)
-  }
-
-  /**
-   * Returns the existence query to be used when main
-   * query is dependent upon childs.
-   *
-   * @param  {Function} [callback]
-   * @return {Object}
-   */
-  exists (callback) {
-    this._makeJoinQuery(true)
-    this.relatedQuery.whereRaw(`${this.through.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
-    if (typeof (callback) === 'function') {
-      callback(this.relatedQuery)
-    }
-    return this.relatedQuery.modelQueryBuilder
-  }
-
-  /**
-   * Returns the existence query to be used when main
-   * query is dependent upon childs.
-   *
-   * @param  {Function} [callback]
-   * @return {Object}
-   */
-  counts (callback) {
-    this._makeJoinQuery(true)
-    this.relatedQuery.count('*').whereRaw(`${this.through.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
-    if (typeof (callback) === 'function') {
-      callback(this.relatedQuery)
-    }
-    return this.relatedQuery.modelQueryBuilder
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).paginate(page, perPage)
   }
 
   /**
@@ -130,9 +92,10 @@ class HasManyThrough extends Relation {
    *
    * @return {Array}
    */
-  count (expression) {
+  * count (expression) {
     this._validateRead()
-    return this._getAlternateQuery().count(expression)
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).count(expression)
   }
 
   /**
@@ -142,9 +105,10 @@ class HasManyThrough extends Relation {
    *
    * @return {Array}
    */
-  avg (column) {
+  * avg (column) {
     this._validateRead()
-    return this._getAlternateQuery().avg(column)
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).avg(column)
   }
 
   /**
@@ -154,9 +118,10 @@ class HasManyThrough extends Relation {
    *
    * @return {Array}
    */
-  min (column) {
+  * min (column) {
     this._validateRead()
-    return this._getAlternateQuery().min(column)
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).min(column)
   }
 
   /**
@@ -166,25 +131,10 @@ class HasManyThrough extends Relation {
    *
    * @return {Array}
    */
-  max (column) {
+  * max (column) {
     this._validateRead()
-    return this._getAlternateQuery().max(column)
-  }
-
-  /**
-   * Throws exception since update should be
-   * done after getting the instance.
-   */
-  increment () {
-    throw CE.ModelRelationException.unSupportedMethod('increment', 'HasManyThrough')
-  }
-
-  /**
-   * Throws exception since update should be
-   * done after getting the instance.
-   */
-  decrement () {
-    throw CE.ModelRelationException.unSupportedMethod('decrement', 'HasManyThrough')
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).max(column)
   }
 
   /**
@@ -200,13 +150,17 @@ class HasManyThrough extends Relation {
    *
    */
   * eagerLoad (values, scopeMethod) {
+    const viaQuery = this.through.query()
     if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
+      scopeMethod(viaQuery)
     }
-    this._makeJoinQuery()
-    const results = yield this.relatedQuery.whereIn(`${this.through.collection}.${this.toKey}`, values).fetch()
+    const relates = yield this.relatedQuery.select([this.toKey, this.fromKey])
+      .whereIn(this.toKey, values).fetch()
+    const viaIds = _(relates).map(this.fromKey).value()
+    const results = yield viaQuery.whereIn(this.viaForeignKey, viaIds).fetch()
     return results.groupBy((item) => {
-      return item[`${this.toKey}`]
+      const relate = relates.find(relate => String(relate[this.viaKey]) === String(item[this.viaForeignKey]))
+      return relate[this.toKey]
     }).mapValues(function (value) {
       return helpers.toCollection(value)
     })
@@ -227,11 +181,14 @@ class HasManyThrough extends Relation {
    *
    */
   * eagerLoadSingle (value, scopeMethod) {
+    const viaQuery = this.through.query()
     if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
+      scopeMethod(viaQuery)
     }
-    this._makeJoinQuery()
-    const results = yield this.relatedQuery.where(`${this.through.collection}.${this.toKey}`, value).fetch()
+    const relates = yield this.relatedQuery.select([this.toKey, this.fromKey])
+      .where(this.toKey, value).fetch()
+    const viaIds = _(relates).map(this.fromKey).value()
+    const results = yield viaQuery.whereIn(this.viaForeignKey, viaIds).fetch()
     const response = {}
     response[value] = results
     return response

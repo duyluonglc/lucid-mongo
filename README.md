@@ -62,6 +62,7 @@ This package support relations like adonis-lucid:
 - hasOne
 - belongsTo
 - hasMany
+- hasManyThrough
 - belongsToMany
 
 [More Documentation of adonis relationships](http://adonisjs.com/docs/3.2/relationships)
@@ -74,7 +75,7 @@ mongodb has no join query so this package has no query like: `has`, `whereHas`, 
 class Author extends Model {
 
   pictures () {
-    return this.morphMany('App/Models/Picture', 'pictureableType', 'pictureableId')
+    return this.morphMany('App/Model/Picture', 'pictureableType', 'pictureableId')
   }
 
 }
@@ -82,7 +83,15 @@ class Author extends Model {
 class Reader extends Model {
 
   pictures () {
-    return this.morphMany('App/Models/Picture', 'pictureableType', 'pictureableId')
+    return this.morphMany('App/Model/Picture', 'pictureableType', 'pictureableId')
+  }
+
+}
+
+class Picture extends Model {
+
+  imageable () {
+    return this.morphTo('App/Model', 'pictureableType', 'pictureableId')
   }
 
 }
@@ -92,7 +101,7 @@ class Reader extends Model {
 class Customer extends Model {
 
   billingAddress () {
-    return this.embedsOne('App/Models/Address', '_id', 'billingAddress')
+    return this.embedsOne('App/Model/Address', '_id', 'billingAddress')
   }
 
 }
@@ -102,7 +111,7 @@ class Customer extends Model {
 class Customer extends Model {
 
   emails () {
-    return this.embedsMany('App/Models/Email', '_id', 'emails')
+    return this.embedsMany('App/Model/Email', '_id', 'emails')
   }
 
 }
@@ -112,7 +121,7 @@ class Customer extends Model {
 class Bill extends Model {
 
   items () {
-    return this.referMany('App/Models/Item', '_id', 'items')
+    return this.referMany('App/Model/Item', '_id', 'items')
   }
 
 }

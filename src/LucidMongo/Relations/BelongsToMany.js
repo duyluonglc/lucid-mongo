@@ -107,7 +107,6 @@ class BelongsToMany extends Relation {
    * decorates the current query chain before execution
    */
   _decorateRead () {
-    this._makeJoinQuery()
     this.relatedQuery.where(`${this.pivotCollection}.${this.pivotLocalKey}`, this.parent[this.fromKey])
   }
 
@@ -164,12 +163,6 @@ class BelongsToMany extends Relation {
    */
   paginate (page, perPage) {
     this._validateRead()
-    /**
-     * creating the query clone to be used as countByQuery,
-     * since selecting fields in countby requires unwanted
-     * groupBy clauses.
-     */
-    const countByQuery = this._getAlternateQuery().count(`${this.pivotCollection}.${this.pivotLocalKey} as total`)
 
     /**
      * It is important to decorate the actual query
@@ -183,23 +176,7 @@ class BelongsToMany extends Relation {
      * calling the paginate method on proxies query builder
      * which optionally accepts a countByQuery
      */
-    return this.relatedQuery.paginate(page, perPage, countByQuery)
-  }
-
-  /**
-   * Returns the existence query to be used when main
-   * query is dependent upon childs.
-   *
-   * @param  {Function} [callback]
-   * @return {Object}
-   */
-  exists (callback) {
-    this._makeJoinQuery(true)
-    this.relatedQuery.whereRaw(`${this.pivotCollection}.${this.pivotLocalKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
-    if (typeof (callback) === 'function') {
-      callback(this.relatedQuery)
-    }
-    return this.relatedQuery.modelQueryBuilder
+    return this.relatedQuery.paginate(page, perPage)
   }
 
   /**
