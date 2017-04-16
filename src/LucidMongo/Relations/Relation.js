@@ -23,11 +23,8 @@ class Relation {
   constructor (parent, related) {
     this.parent = parent
     this.related = this._resolveModel(related)
+    this.relatedQuery = this.related ? this.related.query() : null
     return new Proxy(this, proxyHandler)
-  }
-
-  get relatedQuery () {
-    return this.related.query()
   }
 
   /**
@@ -126,35 +123,6 @@ class Relation {
     this._validateRead()
     this._decorateRead()
     return this.relatedQuery.paginate(page, perPage)
-  }
-
-  /**
-   * Returns the existence query to be used when main
-   * query is dependent upon childs.
-   *
-   * @param  {Function} [callback]
-   * @return {Object}
-   */
-  exists (callback) {
-    const relatedQuery = this.relatedQuery.whereRaw(`${this.related.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
-    if (typeof (callback) === 'function') {
-      callback(relatedQuery)
-    }
-    return relatedQuery.modelQueryBuilder
-  }
-
-  /**
-   * Returns the counts query for a given relation
-   *
-   * @param  {Function} [callback]
-   * @return {Object}
-   */
-  counts (callback) {
-    const relatedQuery = this.relatedQuery.count('*').whereRaw(`${this.related.collection}.${this.toKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
-    if (typeof (callback) === 'function') {
-      callback(relatedQuery)
-    }
-    return relatedQuery.modelQueryBuilder
   }
 
   /**
