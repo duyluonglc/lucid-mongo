@@ -7,6 +7,7 @@
 [![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=develop)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
 [![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/develop.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=develop)
 [![Downloads](https://img.shields.io/npm/dt/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
+[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/adonis-lucid-mongodb.svg)](https://greenkeeper.io/)
 > :pray: This repository is base on adonis-lucid. This package only work with mongodb.
 
 Adonis-lucid-mongodb is a mongo query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories as Adonis-lucid.

@@ -18,7 +18,6 @@ const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')
 
 class EmbedOne extends Relation {
-
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey

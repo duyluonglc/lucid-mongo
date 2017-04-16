@@ -19,7 +19,6 @@ const CE = require('../../Exceptions')
 const _ = require('lodash')
 
 class Relation {
-
   constructor (parent, related) {
     this.parent = parent
     this.related = this._resolveModel(related)
@@ -269,7 +268,6 @@ class Relation {
     this._decorateRead()
     return yield this.relatedQuery.update(values)
   }
-
 }
 
 module.exports = Relation

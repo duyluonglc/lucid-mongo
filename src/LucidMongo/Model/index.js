@@ -72,7 +72,6 @@ const validHookTypes = [
  * @class
  */
 class Model {
-
   constructor (values) {
     if (_.isArray(values)) {
       throw CE.InvalidArgumentException.bulkInstantiate(this.constructor.name)
@@ -1067,7 +1066,7 @@ class Model {
       throw CE.InvalidArgumentException.invalidParameter('createMany expects an array of values')
     }
     const self = this
-    return cf.map(function* (values) {
+    return cf.map(function * (values) {
       return yield self.create(values)
     }, arrayOfValues)
   }

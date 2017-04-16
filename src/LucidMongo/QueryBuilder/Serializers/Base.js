@@ -14,7 +14,6 @@ const helpers = require('../helpers')
 const debug = require('debug')('mquery')
 
 class BaseSerializer {
-
   constructor (queryBuilder, proxyScope) {
     /**
      * this is the reference to the proxied query builder.
@@ -270,7 +269,6 @@ class BaseSerializer {
       })
     })
   }
-
 }
 
 module.exports = BaseSerializer

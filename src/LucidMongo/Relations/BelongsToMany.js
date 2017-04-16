@@ -19,7 +19,6 @@ const logger = new CatLog('adonis:lucid')
 const ObjectID = require('mongodb').ObjectID
 
 class BelongsToMany extends Relation {
-
   constructor (parent, related, pivotCollection, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
     super(parent, related)
     this.pivotPrefix = '_pivot_'
@@ -505,7 +504,6 @@ class BelongsToMany extends Relation {
     this.withPivot(this.parent.constructor.createTimestamp, this.parent.constructor.updateTimestamp)
     return this
   }
-
 }
 
 module.exports = BelongsToMany

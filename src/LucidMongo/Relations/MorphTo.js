@@ -14,7 +14,6 @@ const CE = require('../../Exceptions')
 const _ = require('lodash')
 
 class MorphMany extends Relation {
-
   /**
    * Creates an instance of MorphMany.
    *

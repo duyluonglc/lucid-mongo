@@ -15,7 +15,6 @@ const helpers = require('../QueryBuilder/helpers')
 const _ = require('lodash')
 
 class HasManyThrough extends Relation {
-
   constructor (parent, related, through, primaryKey, foreignKey, throughPrimaryKey, throughForeignKey) {
     super(parent, related)
     this.through = this._resolveModel(through)
@@ -265,7 +264,6 @@ class HasManyThrough extends Relation {
     const alternateIds = yield this._getAlternateIds()
     return yield this._getThroughQuery(alternateIds).update(values)
   }
-
 }
 
 module.exports = HasManyThrough

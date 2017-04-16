@@ -453,7 +453,7 @@ describe('LucidMongo', function () {
       user.fill({username: 'bana'})
       yield user.save()
       expect(user.isNew()).to.equal(false)
-      expect(user.id).to.exist
+      expect(user.id).to.exist()
     })
 
     it('should call setters when making use of fill method', function * () {
@@ -476,7 +476,7 @@ describe('LucidMongo', function () {
         }
       }
       const user = yield User.create({username: 'dukki'})
-      expect(user.created_at).to.exist
+      expect(user.created_at).to.exist()
       user.fill({firstname: 'foo', lastname: 'bar'})
       yield user.save()
       const reFetchUser = yield User.find(user.id)
@@ -1925,9 +1925,9 @@ describe('LucidMongo', function () {
     it('should consider model as new even when primary key is provided in advance', function () {
       class User extends Model {}
       const user = new User()
-      expect(user.isNew()).to.be.true
+      expect(user.isNew()).to.be(true)
       user.id = 10
-      expect(user.isNew()).to.be.true
+      expect(user.isNew()).to.be(true)
     })
 
     it('should make use of existing primary key when primary key defined when saving model', function * () {

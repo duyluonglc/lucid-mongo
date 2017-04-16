@@ -17,7 +17,6 @@ const logger = new CatLog('adonis:lucid')
 const objectId = require('mongodb').ObjectID
 
 class ReferMany extends Relation {
-
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey
@@ -341,7 +340,6 @@ class ReferMany extends Relation {
     yield this.detach()
     return yield this.relatedQuery.whereIn(this.fromKey, references).delete()
   }
-
 }
 
 module.exports = ReferMany

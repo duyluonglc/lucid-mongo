@@ -16,7 +16,6 @@ const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')
 
 class MorphMany extends Relation {
-
   /**
    * Creates an instance of MorphMany.
    *

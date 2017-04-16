@@ -39,7 +39,6 @@ class QueryBuilder {
     this.modelQueryBuilder.collection(collection)
     return connection
   }
-
 }
 
 module.exports = QueryBuilder
