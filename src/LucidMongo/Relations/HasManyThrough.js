@@ -23,6 +23,8 @@ class HasManyThrough extends Relation {
     this.toKey = foreignKey || this.parent.constructor.foreignKey // country_id
     this.viaKey = throughPrimaryKey || this.through.primaryKey // authors.id
     this.viaForeignKey = throughForeignKey || this.through.foreignKey // author_id
+    this.relatedQuery = this.through.query()
+    this.alternateQuery = this.related.query()
   }
 
   /**
@@ -31,7 +33,7 @@ class HasManyThrough extends Relation {
    * @private
    */
   * _getAlternateIds () {
-    const alternates = yield this.relatedQuery.select([this.fromKey, this.toKey])
+    const alternates = yield this.alternateQuery.select([this.fromKey, this.toKey])
       .where(this.toKey, this.parent[this.fromKey]).fetch()
     return alternates.map(this.viaKey).value()
   }
@@ -40,9 +42,8 @@ class HasManyThrough extends Relation {
    * decorates the current query chain before execution
    */
   _getThroughQuery (alternateIds) {
-    return this.through.whereIn(this.viaForeignKey, alternateIds)
+    return this.relatedQuery.whereIn(this.viaForeignKey, alternateIds)
   }
-
 
   /**
    * Fetch over the related rows
@@ -88,53 +89,70 @@ class HasManyThrough extends Relation {
   /**
    * Returns count of rows for the related row
    *
-   * @param  {String} expression
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  * count (expression) {
+  * count (groupBy) {
     this._validateRead()
     const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).count(expression)
+    return yield this._getThroughQuery(alternateIds).count(groupBy)
   }
 
   /**
-   * Returns avg for a given column
+   * Returns sum for a given key
    *
-   * @param  {String} column
+   * @param  {String} key
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  * avg (column) {
+  * sum (key, groupBy) {
     this._validateRead()
     const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).avg(column)
+    return yield this._getThroughQuery(alternateIds).sum(key, groupBy)
   }
 
   /**
-   * Return min value for a column
+   * Returns avg for a given key
    *
-   * @param  {String} column
+   * @param  {String} key
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  * min (column) {
+  * avg (key, groupBy) {
     this._validateRead()
     const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).min(column)
+    return yield this._getThroughQuery(alternateIds).avg(key, groupBy)
   }
 
   /**
-   * Return max value for a column
+   * Returns min for a given key
    *
-   * @param  {String} column
+   * @param  {String} key
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  * max (column) {
+  * min (key, groupBy) {
     this._validateRead()
     const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).max(column)
+    return yield this._getThroughQuery(alternateIds).min(key, groupBy)
+  }
+
+  /**
+   * Returns max for a given key
+   *
+   * @param  {String} key
+   * @param  {String} groupBy
+   *
+   * @return {Array}
+   */
+  * max (key, groupBy) {
+    this._validateRead()
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).max(key, groupBy)
   }
 
   /**
@@ -233,6 +251,19 @@ class HasManyThrough extends Relation {
    */
   * delete () {
     throw CE.ModelRelationException.unSupportedMethod('delete', this.constructor.name)
+  }
+
+  /**
+   * update
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * update (values) {
+    this._validateRead()
+    const alternateIds = yield this._getAlternateIds()
+    return yield this._getThroughQuery(alternateIds).update(values)
   }
 
 }

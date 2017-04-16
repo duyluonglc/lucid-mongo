@@ -76,34 +76,6 @@ class BelongsToMany extends Relation {
   }
 
   /**
-   * makes the join query to be used by other
-   * methods.
-   *
-   * @param {Boolean} ignoreSelect
-   *
-   * @public
-   */
-  _makeJoinQuery (ignoreSelect) {
-    const self = this
-    const selectionKeys = [
-      `${this.related.collection}.*`,
-      `${this.pivotCollection}.${this.pivotLocalKey} as ${this.pivotPrefix}${this.pivotLocalKey}`,
-      `${this.pivotCollection}.${this.pivotOtherKey} as ${this.pivotPrefix}${this.pivotOtherKey}`
-    ]
-    _.each(this.pivotItems, (item) => {
-      selectionKeys.push(`${this.pivotCollection}.${item} as ${this.pivotPrefix}${item}`)
-    })
-
-    if (!ignoreSelect) {
-      this.relatedQuery.select.apply(this.relatedQuery, selectionKeys)
-    }
-
-    this.relatedQuery.innerJoin(this.pivotCollection, function () {
-      this.on(`${self.related.collection}.${self.toKey}`, `${self.pivotCollection}.${self.pivotOtherKey}`)
-    })
-  }
-
-  /**
    * decorates the current query chain before execution
    */
   _decorateRead () {
@@ -129,134 +101,141 @@ class BelongsToMany extends Relation {
     return timestamps
   }
 
+  * _getPivotQuery () {
+    const query = this.relatedQuery.clone()
+    const connection = yield query.connect()
+    query.queryBuilder.collection(connection.collection(this.pivotCollection))
+    return query
+  }
+
   /**
-   * Returns a cloned query with the join statement to be
-   * used for fetching aggregates or paginate results.
-   *
-   * @param   {String} expression
-   *
-   * @return  {Object}
+   * getAlternate
    *
    * @private
    */
-  _getAlternateQuery (expression) {
-    const self = this
-    const countByQuery = this.relatedQuery.clone()
-
-    countByQuery.innerJoin(this.pivotCollection, function () {
-      this.on(`${self.related.collection}.${self.toKey}`, `${self.pivotCollection}.${self.pivotOtherKey}`)
-    }).where(`${this.pivotCollection}.${this.pivotLocalKey}`, this.parent[this.fromKey])
-
-    return countByQuery
+  * _pivotOtherKeys () {
+    const query = this.relatedQuery.clone()
+    const connection = yield query.connect()
+    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
+    const pivots = yield pivotQuery.where(this.pivotLocalKey, this.parent[this.fromKey]).find()
+    return _.map(pivots, this.pivotOtherKey)
   }
 
   /**
-   * paginates over a set of results based upon current page
-   * and values to be fetched per page.
-   *
-   * @method paginate
-   *
-   * @param  {Number} page
-   * @param  {Number} perPage
-   *
-   * @return {Array}
+   * decorates the current query chain before execution
    */
-  paginate (page, perPage) {
-    this._validateRead()
-
-    /**
-     * It is important to decorate the actual query
-     * builder after fetching the alternate query
-     * since fresh query builder is required
-     * to return alternate query
-     */
-    this._decorateRead()
-
-    /**
-     * calling the paginate method on proxies query builder
-     * which optionally accepts a countByQuery
-     */
-    return this.relatedQuery.paginate(page, perPage)
+  _getThroughQuery (pivotOtherKeys) {
+    return this.relatedQuery.whereIn(this.toKey, pivotOtherKeys)
   }
 
   /**
-   * Returns the existence query to be used when main
-   * query is dependent upon childs.
+   * Fetch over the related rows
    *
-   * @param  {Function} [callback]
    * @return {Object}
    */
-  counts (callback) {
-    this._makeJoinQuery(true)
-    this.relatedQuery.count('*').whereRaw(`${this.pivotCollection}.${this.pivotLocalKey} = ${this.parent.constructor.collection}.${this.fromKey}`)
-    if (typeof (callback) === 'function') {
-      callback(this.relatedQuery)
-    }
-    return this.relatedQuery.modelQueryBuilder
+  * fetch () {
+    this._validateRead()
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).fetch()
+  }
+
+  /**
+   * Fetch first over the related rows
+   *
+   * @return {Object}
+   */
+  * first () {
+    this._validateRead()
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).first()
+  }
+
+  /**
+   * Paginates over the related rows
+   *
+   * @param  {Number} page
+   * @param  {Number} [perPage=20]
+   *
+   * @return {Object}
+   */
+  * paginate (page, perPage) {
+    this._validateRead()
+    /**
+     * creating the query clone to be used as countByQuery,
+     * since selecting fields in countBy requires unwanted
+     * groupBy clauses.
+     */
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).paginate(page, perPage)
   }
 
   /**
    * Returns count of rows for the related row
    *
-   * @param  {String} expression
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  count (expression) {
+  * count (groupBy) {
     this._validateRead()
-    return this._getAlternateQuery().count(expression)
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).count(groupBy)
   }
 
   /**
-   * Returns avg for a given column
+   * Returns sum for a given key
    *
-   * @param  {String} column
+   * @param  {String} key
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  avg (column) {
+  * sum (key, groupBy) {
     this._validateRead()
-    return this._getAlternateQuery().avg(column)
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).sum(key, groupBy)
   }
 
   /**
-   * Return min value for a column
+   * Returns avg for a given key
    *
-   * @param  {String} column
+   * @param  {String} key
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  min (column) {
+  * avg (key, groupBy) {
     this._validateRead()
-    return this._getAlternateQuery().min(column)
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).avg(key, groupBy)
   }
 
   /**
-   * Return max value for a column
+   * Returns min for a given key
    *
-   * @param  {String} column
+   * @param  {String} key
+   * @param  {String} groupBy
    *
    * @return {Array}
    */
-  max (column) {
+  * min (key, groupBy) {
     this._validateRead()
-    return this._getAlternateQuery().max(column)
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).min(key, groupBy)
   }
 
   /**
-   * Throws exception since update should be
-   * done after getting the instance.
+   * Returns max for a given key
+   *
+   * @param  {String} key
+   * @param  {String} groupBy
+   *
+   * @return {Array}
    */
-  increment () {
-    throw CE.ModelRelationException.unSupportedMethod('increment', 'BelongsToMany')
-  }
-
-  /**
-   * Throws exception since update should be
-   * done after getting the instance.
-   */
-  decrement () {
-    throw CE.ModelRelationException.unSupportedMethod('decrement', 'BelongsToMany')
+  * max (key, groupBy) {
+    this._validateRead()
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).max(key, groupBy)
   }
 
   /**
@@ -467,6 +446,19 @@ class BelongsToMany extends Relation {
    */
   * delete () {
     throw new CE.ModelRelationException('delete is not supported by BelongsToMany, use detach instead')
+  }
+
+  /**
+   * update
+   *
+   * @public
+   *
+   * @return {Object}
+   */
+  * update (values) {
+    this._validateRead()
+    const pivotOtherKeys = yield this._pivotOtherKeys()
+    return yield this._getThroughQuery(pivotOtherKeys).update(values)
   }
 
   /**
