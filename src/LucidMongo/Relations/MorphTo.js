@@ -10,10 +10,7 @@
 */
 
 const Relation = require('./Relation')
-const helpers = require('../QueryBuilder/helpers')
 const CE = require('../../Exceptions')
-const CatLog = require('cat-log')
-const logger = new CatLog('adonis:lucid')
 const _ = require('lodash')
 
 class MorphMany extends Relation {
