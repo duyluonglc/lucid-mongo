@@ -217,6 +217,16 @@ After get from db it will be retransformed to
 {lat: 1, lng: 1}
 ```
 
+### Get the mongodb drive
+You can get the instance of mongodb drive to execute raw query
+```js
+  const Database = use('Database')
+  const mongo = yield Database.connection('mongodb')
+  const users = yield mongo.collection('users').find().toArray()
+  const phone = yield mongo.collection('phones').findOne({userId: user._id})
+```
+[More document about mongo drive here](http://mongodb.github.io/node-mongodb-native/2.2/api/index.html)
+
 ## <a name="getting-started"></a>Installation
 
 To setup this package

@@ -134,20 +134,26 @@ Database._resolveConnectionKey = function (connection) {
  * Database.connection('mysql')
  * Database.connection('sqlite')
  */
-Database.connection = function * (connection) {
+Database.connection = function (connection) {
   connection = Database._resolveConnectionKey(connection)
-
-  if (!connectionPools[connection]) {
-    const config = ConfigProvider.get(`database.${connection}`)
-    if (!config) {
-      throw CE.InvalidArgumentException.missingConfig(`Unable to get database client configuration for ${connection}`)
+  return new Promise(function (resolve, reject) {
+    if (!connectionPools[connection]) {
+      const config = ConfigProvider.get(`database.${connection}`)
+      if (!config) {
+        throw CE.InvalidArgumentException.missingConfig(`Unable to get database client configuration for ${connection}`)
+      }
+      const security = (process.env.DB_USER && process.env.DB_PASSWORD)
+        ? `${process.env.DB_USER}:${process.env.DB_PASSWORD}@`
+        : (process.env.DB_USER ? `${process.env.DB_USER}@` : '')
+      const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
+      MongoClient.connect(connectionString).then(dbConnection => {
+        connectionPools[connection] = dbConnection
+        resolve(connectionPools[connection])
+      })
+    } else {
+      resolve(connectionPools[connection])
     }
-    const security = (process.env.DB_USER && process.env.DB_PASSWORD) ? `${process.env.DB_USER}:${process.env.DB_PASSWORD}@` : (process.env.DB_USER ? `${process.env.DB_USER}@` : '')
-    const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
-    const dbConnection = yield MongoClient.connect(connectionString)
-    connectionPools[connection] = dbConnection
-  }
-  return connectionPools[connection]
+  })
 }
 
 /**
