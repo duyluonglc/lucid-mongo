@@ -23,7 +23,10 @@ FieldTypes.setValueWithType = function (key, value) {
   } else if (_.includes(this.constructor.geoFields, key)) {
     return new GeoPoint(value.lat, value.lng)
   } else if (_.includes(this.constructor.objectIdFields, key)) {
-    return value instanceof objectId ? value : objectId(value)
+    if (_.isArray(value)) {
+      return _.map(value, val => FieldTypes.setValueWithType(key, val))
+    }
+    return _.isString(value) ? objectId(value) : value
   }
   return value
 }
