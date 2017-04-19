@@ -773,7 +773,7 @@ methods.where = function (target) {
         }
       })
     } else {
-      target.modelQueryBuilder.where(arguments[0], arguments[1])
+      target.modelQueryBuilder.where(arguments[0], _formatValue(target.HostModel, arguments[0], arguments[1]))
     }
     return this
   }
