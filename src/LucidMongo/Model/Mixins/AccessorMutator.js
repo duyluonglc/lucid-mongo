@@ -71,7 +71,7 @@ AccessortMutator.initializeComputedProperties = function () {
  */
 AccessortMutator.mutateProperty = function (property, value) {
   // transform field with type
-  value = this.getValueWithType(property, value)
+  value = this.setValueWithType(property, value)
   const setter = util.makeSetterName(property)
   if (typeof (this[setter]) === 'function') {
     value = this[setter](value)

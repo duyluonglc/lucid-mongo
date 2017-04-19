@@ -3,24 +3,27 @@
 const FieldTypes = exports = module.exports = {}
 const moment = require('moment')
 const GeoPoint = require('geopoint')
+const objectId = require('mongodb').ObjectID
 const _ = require('lodash')
 
 /**
  *
- * @method getValueWithType
+ * @method setValueWithType
  *
  * @param  {Object}           values
  * @return {Object}
  *
  * @public
  */
-FieldTypes.getValueWithType = function (key, value) {
+FieldTypes.setValueWithType = function (key, value) {
   if (_.includes(this.constructor.boolFields, key)) {
     return !!value
   } else if (_.includes(this.constructor.dateFields, key)) {
-    return moment(value)
+    return moment.utc(value)
   } else if (_.includes(this.constructor.geoFields, key)) {
     return new GeoPoint(value.lat, value.lng)
+  } else if (_.includes(this.constructor.objectIdFields, key)) {
+    return key instanceof objectId ? key : objectId(key)
   }
   return value
 }
@@ -44,6 +47,8 @@ FieldTypes.getFormatedField = function (key, value) {
       lat: value.latitude(),
       lng: value.longitude()
     }
+  } else if (value instanceof objectId) {
+    return String(value)
   }
   return value
 }

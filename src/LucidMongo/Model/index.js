@@ -539,6 +539,17 @@ class Model {
   }
 
   /**
+   * ObjectId fields will auto convert to mongodb.ObjectID
+   *
+   * @return {Array}
+   *
+   * @public
+   */
+  static get objectIdFields () {
+    return [this.primaryKey]
+  }
+
+  /**
    * created at field getter method, by default
    * it returns an instance of moment js.
    *

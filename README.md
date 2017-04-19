@@ -30,13 +30,13 @@ const users =  yield User.where('name', 'peter').fetch()
 
 const users =  yield User.where({name: 'peter'}).limit(10).fetch()
 
+const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 const user =  yield User.where('name').eq('peter').where('age').gt(18).lte(60).sort('-age').first()
 
 const users =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
 
 const users =  yield User.where('age').gt(18).paginate(20)
 
-const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 
 // to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
 const images = yield Image.where({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
@@ -178,22 +178,39 @@ up () {
 ```
 
 ### Field type
+> Type of `mongodb.ObjectID`
+The objectId fields will be converted to mongodb.ObjectID before save to db.
+```js
+class Article extends LucidMongo {
+  static get objectIdFields() { return ['_id', 'categoryId'] } //default return ['_id']
+}
+```
+The where query conditions will be converted to objectId too
+```js
+const article = yield Article.find('58ccb403f895502b84582c63')
+const articles = yield Article.where({department_id: {in: ['58ccb403f895502b84582c63', '58ccb403f895502b84582c63']}}).fetch()
+```
+
 > Type of `date`
 ```js
 class Staff extends LucidMongo {
   static get dateFields() { return ['dob'] }
 }
 ```
-The field declare as date will convert to moment js object after get from db
+The field declare as date will be converted to moment js object after get from db
 ```js
 const staff = yield Staff.first()
 const yearAgo = staff.dob.fromNow()
 ```
-You can set attribute of model as moment js object
+You can set attribute of model as moment js object, field will be converted to date before save to db
 ```js
 staff.dob = moment(request.input('dob'))
 ```
-
+The where query conditions will be converted to date too
+```js
+const user = yield User.where({created_at: {gte: '2017-01-01'}}).fetch()
+```
+Date type is UTC timezone
 > Type of `geometry`
 ```js
 class Image extends LucidMongo {

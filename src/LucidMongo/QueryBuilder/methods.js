@@ -12,7 +12,8 @@
 const _ = require('lodash')
 // const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
-const ObjectID = require('mongodb').ObjectID
+const objectId = require('mongodb').ObjectID
+const moment = require('moment')
 const debug = require('debug')('mquery')
 const methods = exports = module.exports = {}
 
@@ -484,6 +485,21 @@ methods.scope = function (target) {
 }
 
 /**
+ * pluck one field from the db query and return
+ * them as an array.
+ *
+ * @param  {Object} target
+ *
+ * @return {Function}
+ */
+methods.pluck = function (target) {
+  return function * (field) {
+    const values = yield this.select(field).fetch()
+    return values.map(field).value()
+  }
+}
+
+/**
  * pluck primary keys from the SQL query and return
  * them as an array.
  *
@@ -493,7 +509,7 @@ methods.scope = function (target) {
  */
 methods.ids = function (target) {
   return function () {
-    return target.modelQueryBuilder.select(target.HostModel.primaryKey).pluck(target.HostModel.primaryKey)
+    return this.pluck(target.HostModel.primaryKey)
   }
 }
 
@@ -526,7 +542,7 @@ methods.pair = function (target) {
 methods.pluckFirst = function (target) {
   return function * (field) {
     yield target.connect()
-    const firstRow = yield target.modelQueryBuilder.select(field).findOne()
+    const firstRow = yield target.modelQueryBuilder.select(field).first()
     return firstRow ? firstRow[field] : null
   }
 }
@@ -593,7 +609,7 @@ methods.pickInverse = function (target) {
  */
 methods.whereIn = function (target) {
   return function (key, values) {
-    target.modelQueryBuilder.where(key).in(values)
+    target.modelQueryBuilder.where(key).in(_formatValue(target.HostModel, key, values))
     return this
   }
 }
@@ -631,7 +647,7 @@ methods.select = function (target) {
  */
 methods.find = function (target) {
   return function * (id) {
-    return yield this.where('_id', ObjectID(id)).first()
+    return yield this.where(target.HostModel.primaryKey, id).first()
   }
 }
 
@@ -745,6 +761,7 @@ methods.where = function (target) {
               target.modelQueryBuilder.where(key).near(point)
             } else if (_(supportMethods).includes(k)) {
               if (k !== 'maxDistance' && k !== 'minDistance') {
+                c = _formatValue(target.HostModel, key, c)
                 target.modelQueryBuilder.where(key)[k](c)
               }
             } else {
@@ -752,7 +769,7 @@ methods.where = function (target) {
             }
           })
         } else {
-          target.modelQueryBuilder.where(key, conditions)
+          target.modelQueryBuilder.where(key, _formatValue(conditions))
         }
       })
     } else {
@@ -760,6 +777,23 @@ methods.where = function (target) {
     }
     return this
   }
+}
+
+function _formatValue (model, key, value) {
+  if (_.isArray(value)) {
+    return _.map(value, v => _formatValue(model, key, v))
+  }
+  if (_.includes(model.boolFields, key)) {
+    return !!value
+  } else if (_.includes(model.dateFields, key) && _.isString(value)) {
+    return value instanceof Date ? value : moment.utc(value).toDate()
+  } else if ((key === model.createTimestamp || key === model.updateTimestamp || key === model.deleteTimestamp) && _.isString(value)) {
+    return value instanceof Date ? value : moment.utc(value).toDate()
+  } else if (_.includes(model.objectIdFields, key) && _.isString(value)) {
+    return objectId(value)
+  }
+
+  return value
 }
 
 /**
