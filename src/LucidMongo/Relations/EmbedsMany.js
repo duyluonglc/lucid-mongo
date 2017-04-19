@@ -11,9 +11,9 @@
 
 const Relation = require('./Relation')
 const helpers = require('../QueryBuilder/helpers')
-const inflect = use('inflect')
-const uuid = use('uuid')
-const _ = use('lodash')
+const inflect = require('inflect')
+const uuid = require('uuid')
+const _ = require('lodash')
 const CE = require('../../Exceptions')
 const CatLog = require('cat-log')
 const logger = new CatLog('adonis:lucid')

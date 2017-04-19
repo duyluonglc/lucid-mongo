@@ -769,7 +769,7 @@ methods.where = function (target) {
             }
           })
         } else {
-          target.modelQueryBuilder.where(key, _formatValue(conditions))
+          target.modelQueryBuilder.where(key, _formatValue(target.HostModel, key, conditions))
         }
       })
     } else {

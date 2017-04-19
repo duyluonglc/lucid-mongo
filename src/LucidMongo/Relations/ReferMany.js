@@ -38,7 +38,7 @@ class ReferMany extends Relation {
     if (typeof (scopeMethod) === 'function') {
       scopeMethod(this.relatedQuery)
     }
-    const referValues = _(results).map(result => result[this.toKey]).flatten().value()
+    const referValues = _(results).filter(this.toKey).map(this.toKey).flatten().value()
     const relatedResults = yield this.relatedQuery.whereIn(this.fromKey, referValues).fetch()
 
     const response = {}
