@@ -29,7 +29,7 @@ Persistance.insert = function * () {
    * and will be called there itself.
    */
   const insertHandler = function * () {
-    const values = this.getPersistanceFormat(this.attributes)
+    const values = this.attributes
     if (!values || _.size(values) < 1) {
       throw CE.ModelException.invalidState(`Cannot save empty ${this.constructor.name} model`)
     }
@@ -65,7 +65,7 @@ Persistance.update = function * () {
   const updateHandler = function * () {
     const query = this.constructor.query()
     // yield query.connect()
-    let dirtyValues = this.getPersistanceFormat(this.$dirty)
+    let dirtyValues = this.$dirty
     if (!_.size(dirtyValues) && !this.unsetFields.length) {
       return 0
     }

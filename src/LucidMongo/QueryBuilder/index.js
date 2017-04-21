@@ -29,6 +29,7 @@ class QueryBuilder {
     this.modelQueryBuilder = mquery()
     this.avoidTrashed = false
     this.eagerLoad = new EagerLoad()
+    this.replaceMethods()
     return new Proxy(this, proxyHandler)
   }
 
@@ -38,6 +39,32 @@ class QueryBuilder {
     const collection = connection.collection(this.HostModel.collection)
     this.modelQueryBuilder.collection(collection)
     return connection
+  }
+
+  replaceMethods () {
+    const conditionMethods = [
+      'eq',
+      'ne',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'nin',
+      'all',
+      'intersects'
+    ]
+    const queryBuilder = this.modelQueryBuilder
+    const model = this.HostModel
+    for (let name of conditionMethods) {
+      let originMethod = this.modelQueryBuilder[name]
+      this.modelQueryBuilder[name] = function (param) {
+        const key = queryBuilder._path
+        param = model.prototype.getPersistanceValue(key, param)
+        originMethod.apply(queryBuilder, [param])
+        return this
+      }
+    }
   }
 }
 

@@ -58,31 +58,41 @@ FieldTypes.getFormatedField = function (key, value) {
 
 /**
  *
- * @method getPersistanceFormat
+ * @method getPersistanceValues
  *
  * @param  {Object}           values
  * @return {Object}
  *
  * @public
  */
-FieldTypes.getPersistanceFormat = function (values) {
+FieldTypes.getPersistanceValues = function (values) {
   return _(values).transform((result, value, key) => {
-    if (_.includes(this.constructor.boolFields, key)) {
-      result[key] = !!value
-    } else if (this.getTimestampKey(key) || _.includes(this.constructor.dateFields, key)) {
-      result[key] = moment.isMoment(value) ? value.toDate() : value
-    } else if (_.includes(this.constructor.geoFields, key) && value instanceof GeoPoint) {
-      result[key] = {
-        type: 'Point',
-        coordinates: [
-          value.longitude(),
-          value.latitude()
-        ]
-      }
-    } else {
-      result[key] = value
-    }
+    result[key] = this.getPersistanceValue(key, value)
   }).value()
+}
+
+FieldTypes.getPersistanceValue = function (key, value) {
+  const self = this
+  if (_.isArray(value)) {
+    return _.map(value, val => self.getPersistanceValue(key, val))
+  }
+  if (_.includes(this.constructor.boolFields, key)) {
+    return !!value
+  } else if (this.getTimestampKey(key) || _.includes(this.constructor.dateFields, key)) {
+    return moment.isMoment(value) ? value.toDate() : value
+  } else if (_.includes(this.constructor.geoFields, key) && value instanceof GeoPoint) {
+    return {
+      type: 'Point',
+      coordinates: [
+        value.longitude(),
+        value.latitude()
+      ]
+    }
+  } else if (_.includes(this.constructor.objectIdFields, key)) {
+    return _.isString(value) ? objectId(value) : value
+  } else {
+    return value
+  }
 }
 
 /**

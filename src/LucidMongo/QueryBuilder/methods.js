@@ -84,6 +84,7 @@ methods.insertAttributes = function (target) {
   return function * (values) {
     values = target.HostModel.prototype.setCreateTimestamp(values)
     values = target.HostModel.prototype.setUpdateTimestamp(values)
+    values = target.HostModel.prototype.getPersistanceValues(values)
     yield target.connect()
     debug('insert', target.HostModel.collection, values)
     return yield target.modelQueryBuilder._collection.collection.insert(values)
@@ -102,6 +103,7 @@ methods.insertAttributes = function (target) {
 methods.updateAttributes = function (target) {
   return function * (values) {
     values = target.HostModel.prototype.setUpdateTimestamp(values)
+    values = target.HostModel.prototype.getPersistanceValues(values)
     yield target.connect()
     return yield target.modelQueryBuilder.setOptions({ multi: true }).update(values)
   }
@@ -609,7 +611,7 @@ methods.pickInverse = function (target) {
  */
 methods.whereIn = function (target) {
   return function (key, values) {
-    target.modelQueryBuilder.where(key).in(_formatValue(target.HostModel, key, values))
+    target.modelQueryBuilder.where(key).in(values)
     return this
   }
 }
@@ -761,7 +763,6 @@ methods.where = function (target) {
               target.modelQueryBuilder.where(key).near(point)
             } else if (_(supportMethods).includes(k)) {
               if (k !== 'maxDistance' && k !== 'minDistance') {
-                c = _formatValue(target.HostModel, key, c)
                 target.modelQueryBuilder.where(key)[k](c)
               }
             } else {
@@ -769,32 +770,28 @@ methods.where = function (target) {
             }
           })
         } else {
-          target.modelQueryBuilder.where(key, _formatValue(target.HostModel, key, conditions))
+          const value = target.HostModel.prototype.getPersistanceValue(key, conditions)
+          target.modelQueryBuilder.where(key, value)
         }
       })
     } else {
-      target.modelQueryBuilder.where(arguments[0], _formatValue(target.HostModel, arguments[0], arguments[1]))
+      if (arguments.length === 2) {
+        const key = arguments[0]
+        const value = target.HostModel.prototype.getPersistanceValue(arguments[0], arguments[1])
+        target.modelQueryBuilder.where(key, value)
+      } else {
+        target.modelQueryBuilder.where(arguments[0])
+      }
     }
     return this
   }
 }
 
-function _formatValue (model, key, value) {
-  if (_.isArray(value)) {
-    return _.map(value, v => _formatValue(model, key, v))
-  }
-  if (_.includes(model.boolFields, key)) {
-    return !!value
-  } else if (_.includes(model.dateFields, key) && _.isString(value)) {
-    return value instanceof Date ? value : moment.utc(value).toDate()
-  } else if ((key === model.createTimestamp || key === model.updateTimestamp || key === model.deleteTimestamp) && _.isString(value)) {
-    return value instanceof Date ? value : moment.utc(value).toDate()
-  } else if (_.includes(model.objectIdFields, key) && _.isString(value)) {
-    return objectId(value)
-  }
-
-  return value
-}
+// function _formatValue (model, key, value) {
+//   const values = {}
+//   values[key] = value
+//   return model.prototype.getPersistanceValues(values)[key]
+// }
 
 /**
  * Aggregate count

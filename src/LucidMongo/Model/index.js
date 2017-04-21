@@ -111,6 +111,7 @@ class Model {
    */
   fill (values) {
     this.setJSON(values)
+    return this
   }
 
   /**
