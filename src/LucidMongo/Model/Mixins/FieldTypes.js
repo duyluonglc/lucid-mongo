@@ -26,7 +26,7 @@ FieldTypes.setValueWithType = function (key, value) {
     if (_.isArray(value)) {
       return _.map(value, val => FieldTypes.setValueWithType(key, val))
     }
-    return _.isString(value) ? objectId(value) : value
+    return _.isString(value) && objectId.isValid(value) ? objectId(value) : value
   }
   return value
 }
@@ -79,7 +79,7 @@ FieldTypes.getPersistanceValue = function (key, value) {
   if (_.includes(this.constructor.boolFields, key)) {
     return !!value
   } else if (this.getTimestampKey(key) || _.includes(this.constructor.dateFields, key)) {
-    return moment.isMoment(value) ? value.toDate() : value
+    return moment.isMoment(value) ? value.toDate() : moment.utc(value).toDate()
   } else if (_.includes(this.constructor.geoFields, key) && value instanceof GeoPoint) {
     return {
       type: 'Point',
@@ -89,7 +89,7 @@ FieldTypes.getPersistanceValue = function (key, value) {
       ]
     }
   } else if (_.includes(this.constructor.objectIdFields, key)) {
-    return _.isString(value) ? objectId(value) : value
+    return _.isString(value) && objectId.isValid(value) ? objectId(value) : value
   } else {
     return value
   }

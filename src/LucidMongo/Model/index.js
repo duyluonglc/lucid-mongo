@@ -25,7 +25,7 @@ const BaseSerializer = require('../QueryBuilder/Serializers/Base')
 const Ioc = require('adonis-fold').Ioc
 const Resolver = require('adonis-binding-resolver')
 const resolver = new Resolver(Ioc)
-const ObjectID = require('mongodb').ObjectID
+const objectId = require('mongodb').ObjectID
 const moment = require('moment')
 const GeoPoint = require('geopoint')
 
@@ -649,7 +649,7 @@ class Model {
    * @public
    */
   static * findBy (key, value) {
-    return yield this.query().where(key, ObjectID(value)).first()
+    return yield this.query().where(key, value).first()
   }
 
   /**
@@ -900,7 +900,7 @@ class Model {
       if (typeof (this.original[key]) === 'undefined') {
         return true
       }
-      if (this.original[key] instanceof ObjectID) {
+      if (this.original[key] instanceof objectId) {
         return String(this.original[key]) !== String(value)
       }
       if (this.getTimestampKey(key) || _.find(this.constructor.dateFields, field => field === key)) {

@@ -16,7 +16,6 @@ const helpers = require('../QueryBuilder/helpers')
 const CatLog = require('cat-log')
 const util = require('../../../lib/util')
 const logger = new CatLog('adonis:lucid')
-const ObjectID = require('mongodb').ObjectID
 
 class BelongsToMany extends Relation {
   constructor (parent, related, pivotCollection, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
@@ -288,7 +287,7 @@ class BelongsToMany extends Relation {
     const query = this.relatedQuery.clone()
     const connection = yield query.connect()
     const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
-    const pivots = yield pivotQuery.where(this.pivotLocalKey, ObjectID(value)).find()
+    const pivots = yield pivotQuery.where(this.pivotLocalKey, value).find()
     const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
     const results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
     const response = {}
@@ -334,8 +333,8 @@ class BelongsToMany extends Relation {
 
     const values = _.map(references, (reference, value) => {
       let result = {}
-      result[this.pivotOtherKey] = ObjectID(value)
-      result[this.pivotLocalKey] = ObjectID(this.parent[this.fromKey])
+      result[this.pivotOtherKey] = value
+      result[this.pivotLocalKey] = this.parent[this.fromKey]
       result = _.merge(result, reference)
       return result
     })
