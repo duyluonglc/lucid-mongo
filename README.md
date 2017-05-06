@@ -28,14 +28,20 @@ const users =  yield User.all()
 
 const users =  yield User.where('name', 'peter').fetch()
 
-const users =  yield User.where({name: 'peter'}).limit(10).fetch()
+const users =  yield User.where({name: 'peter'}).limit(10).skip(20).fetch()
 
 const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
 const user =  yield User.where('name').eq('peter').where('age').gt(18).lte(60).sort('-age').first()
 
 const users =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
 
-const users =  yield User.where('age').gt(18).paginate(20)
+const users =  yield User.where('age', '>=', 18).fetch()
+
+const users =  yield User.where('age').gt(18).paginate(2, 100)
+
+const users =  yield User.where(function() {
+  this.where('age', '>=', 18)
+}).fetch()
 
 
 // to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
