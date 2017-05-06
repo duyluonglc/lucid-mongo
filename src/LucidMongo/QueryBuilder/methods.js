@@ -772,11 +772,33 @@ methods.where = function (target) {
           target.modelQueryBuilder.where(key, value)
         }
       })
+    } else if (_.isFunction(arguments[0])) {
+      arguments[0].bind(this).call()
     } else {
       if (arguments.length === 2) {
         const key = arguments[0]
         const value = target.HostModel.prototype.getPersistanceValue(arguments[0], arguments[1])
         target.modelQueryBuilder.where(key, value)
+      } else if (arguments.length === 3) {
+        switch (arguments[1]) {
+          case '=':
+            target.modelQueryBuilder.where(arguments[0]).eq(arguments[2])
+            break
+          case '>':
+            target.modelQueryBuilder.where(arguments[0]).gt(arguments[2])
+            break
+          case '>=':
+            target.modelQueryBuilder.where(arguments[0]).gte(arguments[2])
+            break
+          case '<':
+            target.modelQueryBuilder.where(arguments[0]).lt(arguments[2])
+            break
+          case '<=':
+            target.modelQueryBuilder.where(arguments[0]).lte(arguments[2])
+            break
+          default:
+            throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
+        }
       } else {
         target.modelQueryBuilder.where(arguments[0])
       }
