@@ -275,7 +275,7 @@ Database.forPage = function (page, perPage) {
   util.validatePage(page)
   perPage = perPage || 20
   const offset = util.returnOffset(page, perPage)
-  return this.skip(offset).limit(perPage)
+  return this.skip(offset).limit(perPage).find()
 }
 
 /**

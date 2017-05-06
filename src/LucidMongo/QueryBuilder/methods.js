@@ -60,9 +60,9 @@ methods.clone = function (target) {
  * @public
  */
 methods.paginate = function (target) {
-  return function * (page, perPage, countByQuery) {
+  return function (page, perPage, countByQuery) {
     const serializer = new target.HostModel.QuerySerializer(target, this)
-    return yield serializer.paginate(page, perPage, countByQuery)
+    return serializer.paginate(page, perPage, countByQuery)
   }
 }
 
