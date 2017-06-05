@@ -1186,6 +1186,23 @@ class Model {
   }
 
   /**
+   * returns morphOne instance for a given model. Later
+   * returned instance will be responsible for
+   * resolving relations
+   *
+   * @param  {Object}  related
+   * @param  {String}  discriminator
+   * @param  {String}  [primaryKey]
+   * @param  {String}  [foreignKey]
+   * @return {Object}
+   *
+   * @public
+   */
+  morphOne (related, discriminator, primaryKey, foreignKey) {
+    return new Relations.MorphOne(this, related, discriminator, primaryKey, foreignKey)
+  }
+
+  /**
    * returns morphTo instance for a given model. Later
    * returned instance will be responsible for
    * resolving relations
