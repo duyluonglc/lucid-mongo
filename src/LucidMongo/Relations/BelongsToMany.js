@@ -29,6 +29,26 @@ class BelongsToMany extends Relation {
   }
 
   /**
+   * Add pivot keys
+   *
+   * @param  {Array} results
+   * @param  {Array} pivots
+   *
+   * @return {Array}
+   */
+  _addPivotKeys (results, pivots) {
+    return results.map((result) => {
+      const pivotData = _.find(pivots, pivot => {
+        return String(pivot[this.pivotOtherKey]) === String(result._id)
+      })
+      _.each(this.pivotItems, (item) => {
+        result.attributes[`${this.pivotPrefix}${item}`] = _.get(pivotData, item)
+      })
+      return result
+    })
+  }
+
+  /**
    * helper method to query the pivot collection. One
    * can also do it manually by prefixing the
    * pivot collection name.
@@ -257,7 +277,8 @@ class BelongsToMany extends Relation {
     const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
     const pivots = yield pivotQuery.where(this.pivotLocalKey).in(values).find()
     const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
-    const results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
+    let results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
+    results = this._addPivotKeys(results, pivots)
     return results.groupBy((result) => {
       return _.find(pivots, pivot => {
         return String(pivot[this.pivotOtherKey]) === String(result._id)
@@ -289,7 +310,8 @@ class BelongsToMany extends Relation {
     const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
     const pivots = yield pivotQuery.where(this.pivotLocalKey, value).find()
     const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
-    const results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
+    let results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
+    results = this._addPivotKeys(results, pivots)
     const response = {}
     response[value] = results
     return response
