@@ -609,6 +609,7 @@ methods.pickInverse = function (target) {
  */
 methods.whereIn = function (target) {
   return function (key, values) {
+    values = target.HostModel.prototype.getPersistanceValue(key, values)
     target.modelQueryBuilder.where(key).in(values)
     return this
   }
