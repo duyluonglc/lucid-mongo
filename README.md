@@ -16,6 +16,8 @@ You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.
 
 You can see example here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
 
+> Note: If you decided use this package you need replace all setting of adonis-lucid by this package. See [install](https://github.com/duyluonglc/adonis-lucid-mongodb#installation) steps for more detail
+
 ## Usage
 The usage of LucidMongo is similar to Lucid
 
@@ -259,10 +261,14 @@ $ npm i --save adonis-lucid-mongodb
 ```
 
 and then register lucid providers inside the your `bootstrap/app.js` file.
+you should complete replace all setting of `adonis-lucid` with `adonis-lucid-mongodb`
 
 ```javascript
 const providers = [
   // ...
+  // 'adonis-lucid/providers/DatabaseProvider',
+  // 'adonis-lucid/providers/LucidMongoProvider',
+  // 'adonis-lucid/providers/FactoryProvider'  
   'adonis-lucid-mongodb/providers/DatabaseProvider',
   'adonis-lucid-mongodb/providers/LucidMongoProvider',
   'adonis-lucid-mongodb/providers/FactoryProvider',
@@ -270,6 +276,10 @@ const providers = [
 
 const aceProviders = [
   // ...
+  // 'adonis-lucid/providers/CommandsProvider',
+  // 'adonis-lucid/providers/MigrationsProvider',
+  // 'adonis-lucid/providers/SchemaProvider',
+  // 'adonis-lucid/providers/SeederProvider',  
   'adonis-lucid-mongodb/providers/CommandsProvider',
   'adonis-lucid-mongodb/providers/MigrationsProvider',
   'adonis-lucid-mongodb/providers/SchemaProvider',
@@ -282,7 +292,7 @@ setting up aliases inside `bootstrap/app.js` file.
 ```javascript
 const aliases = {
   Database: 'Adonis/Src/Database',
-  LucidMongo: 'Adonis/Src/LucidMongo',
+  Lucid: 'Adonis/Src/LucidMongo',
   Schema: 'Adonis/Src/Schema'
   Migrations: 'Adonis/Src/Migrations',
   Factory: 'Adonis/Src/Factory'
@@ -300,7 +310,7 @@ module.exports = {
   |--------------------------------------------------------------------------
   |
   | Connection defines the default connection settings to be used while
-  | interacting with SQL databases.
+  | interacting with Mongodb databases.
   |
   */
   connection: Env.get('DB_CONNECTION', 'mongodb'),
