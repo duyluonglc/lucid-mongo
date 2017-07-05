@@ -522,11 +522,12 @@ methods.ids = function (target) {
  * @return {Function}
  */
 methods.pair = function (target) {
-  return function (lhs, rhs) {
-    return target.modelQueryBuilder.select(lhs, rhs).reduce(function (result, row) {
+  return function * (lhs, rhs) {
+    const result = yield this.select([lhs, rhs]).fetch()
+    return result.transform(function (result, row) {
       result[row[lhs]] = row[rhs]
       return result
-    }, {})
+    }, {}).value()
   }
 }
 
@@ -807,11 +808,7 @@ methods.where = function (target) {
   }
 }
 
-// function _formatValue (model, key, value) {
-//   const values = {}
-//   values[key] = value
-//   return model.prototype.getPersistanceValues(values)[key]
-// }
+methods.andWhere = methods.where
 
 /**
  * Aggregate count
