@@ -1277,7 +1277,7 @@ class Model {
    * @public
    */
   get (key) {
-    return this.accessProperty(key, this.attributes[key])
+    return this.accessProperty(key, this.attributes[key]) || this.relations[key]
   }
 
   /**
