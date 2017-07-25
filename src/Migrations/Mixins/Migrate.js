@@ -242,7 +242,8 @@ Migrate._mapMigrationsToActions = function (migrationsList, direction) {
  */
 Migrate._getMigratedFiles = function * () {
   const db = yield this.database.connection('default')
-  return mquery().collection(db.collection(this.migrationsCollection)).find().select('name').sort('name')
+  const migratedFiles = yield mquery().collection(db.collection(this.migrationsCollection)).find().select('name').sort('name')
+  return _.map(migratedFiles, 'name')
 }
 
 /**
