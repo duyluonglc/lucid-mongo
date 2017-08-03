@@ -1,17 +1,16 @@
 {
-  "name": "adonis-lucid-mongodb",
+  "name": "adonis-mongodb",
   "description": "AdonisJs Mongodb ORM",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "version": "1.0.46",
+  "version": "2.0.0",
   "scripts": {
     "lint": "standard",
-    "fix": "standard --fix",
-    "test:all": "DB=mongodb npm run test",
-    "coverage": "npm run lint && node ./bin/coverage",
-    "test": "npm run lint && FORCE_COLOR=true node ./bin/test"
+    "pretest": "npm run lint",
+    "posttest": "npm run coverage",
+    "test:local": "FORCE_COLOR=true DB=mongodb node bin/index.js --local",
+    "test": "nyc npm run test:local",
+    "test:win": "set FORCE_COLOR=true DB=mongodb && node bin/index.js --win",
+    "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
   "standard": {
     "global": [
@@ -25,51 +24,46 @@
       "beforeEach"
     ]
   },
-  "author": "adonisjs + LuongND",
+  "author": "LuongND",
   "license": "MIT",
+  "dependencies": {
+    "@adonisjs/generic-exceptions": "^1.0.0",
+    "debug": "^2.6.8",
+    "geopoint": "^1.0.1",
+    "lodash": "^4.17.4",
+    "moment": "^2.18.1",
+    "mongodb": "^2.2.30",
+    "mquery": "^2.3.1",
+    "pluralize": "^6.0.0",
+    "require-all": "^2.2.0",
+    "uuid": "^3.1.0"
+  },
   "devDependencies": {
-    "adonis-ace": "^3.0.6",
-    "adonis-fold": "^3.0.3",
-    "bluebird": "^3.4.7",
-    "chai": "^4.0.2",
-    "co-fs-extra": "^1.2.1",
-    "co-mocha": "^1.2.0",
-    "coveralls": "^2.11.16",
+    "@adonisjs/ace": "^4.0.0",
+    "@adonisjs/fold": "^4.0.1",
+    "@adonisjs/sink": "^1.0.11",
+    "chance": "^1.0.10",
+    "coveralls": "^2.13.1",
     "cz-conventional-changelog": "^2.0.0",
-    "istanbul": "^0.4.5",
-    "mocha": "^3.2.0",
-    "mocha-lcov-reporter": "^1.3.0",
-    "semantic-release": "^6.3.2",
-    "semver": "^5.3.0",
-    "shelljs": "^0.7.6",
-    "standard": "^10.0.2",
-    "test-console": "^1.0.0"
+    "fs-extra": "^4.0.1",
+    "japa": "^1.0.3",
+    "japa-cli": "^1.0.1",
+    "nyc": "^11.1.0",
+    "standard": "^10.0.2"
   },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
-    },
-    "flags": "--harmony_proxies"
+    }
   },
-  "dependencies": {
-    "adonis-binding-resolver": "^1.0.1",
-    "cat-log": "^1.0.2",
-    "chance": "^1.0.6",
-    "co": "^4.6.0",
-    "co-functional": "^0.2.1",
-    "es6-class-mixin": "^1.0.5",
-    "geopoint": "^1.0.1",
-    "harmony-reflect": "^1.5.1",
-    "inflect": "^0.4.0",
-    "lodash": "^4.17.4",
-    "moment": "^2.17.1",
-    "mongodb": "^2.2.22",
-    "mquery": "^2.2.3",
-    "node-exceptions": "^2.0.1",
-    "pretty-hrtime": "^1.0.3",
-    "require-all": "^2.2.0",
-    "uuid": "^3.0.1"
-
+  "nyc": {
+    "include": [
+      "src",
+      "lib"
+    ],
+    "exclude": [
+      "src/Logger/index.js"
+    ]
   },
   "repository": {
     "type": "git",

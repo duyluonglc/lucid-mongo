@@ -9,10 +9,11 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
+const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
 
-class HasOne extends Relation {
+class HasOne extends BaseRelation {
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey

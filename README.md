@@ -12,11 +12,26 @@
 
 Adonis-lucid-mongodb is a mongo query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories as Adonis-lucid.
 
+## Features?
+
+Apart from being just a query builder, Lucid has following features.
+
+1. ES6 classes based data Models.
+2. Model Hooks
+3. Associations
+4. Serializers ( Vanilla and JSON API )
+5. Migrations
+6. Factories and Seeds
+
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
 You can see example here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
 
 > Note: If you decided use this package you need replace all setting of adonis-lucid by this package. See [install](https://github.com/duyluonglc/adonis-lucid-mongodb#installation) steps for more detail
+
+## Node/OS Target
+
+This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=7.0`
 
 ## Usage
 The usage of LucidMongo is similar to Lucid

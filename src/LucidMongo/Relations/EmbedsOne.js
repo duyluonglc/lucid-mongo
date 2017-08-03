@@ -9,15 +9,12 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
-const inflect = require('inflect')
-const uuid = require('uuid')
 const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
+const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
-const CatLog = require('cat-log')
-const logger = new CatLog('adonis:lucid')
 
-class EmbedOne extends Relation {
+class EmbedOne extends BaseRelation {
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.fromKey = primaryKey || this.parent.constructor.primaryKey

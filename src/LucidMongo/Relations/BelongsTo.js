@@ -9,12 +9,11 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
+const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
-const CatLog = require('cat-log')
-const logger = new CatLog('adonis:lucid')
 
-class BelongsTo extends Relation {
+class BelongsTo extends BaseRelation {
   constructor (parent, related, primaryKey, foreignKey) {
     super(parent, related)
     this.toKey = primaryKey || this.related.primaryKey

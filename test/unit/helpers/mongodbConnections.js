@@ -10,33 +10,27 @@ module.exports = {
   default: {
     client: 'mongodb',
     connection: {
-      host: '127.0.0.1',
-      port: 27017,
-      user: 'user',
-      password: 'test',
-      database: 'db_test'
+      user: 'admin',
+      password: '',
+      database: 'default'
     }
   },
 
   alternateConnection: {
     client: 'mongodb',
     connection: {
-      host: '127.0.0.1',
-      port: 27017,
-      user: 'user',
-      password: 'test',
-      database: 'db_test_alternate'
+      user: 'admin',
+      password: '',
+      database: 'alternate'
     }
   },
 
   defaultPrefix: {
     client: 'mongodb',
     connection: {
-      host: '127.0.0.1',
-      port: 27017,
-      user: 'user',
-      password: 'test',
-      database: 'db_test'
+      user: 'admin',
+      password: '',
+      database: 'default'
     },
     prefix: 'ad_'
   }

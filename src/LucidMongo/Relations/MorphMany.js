@@ -9,13 +9,11 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
-const helpers = require('../QueryBuilder/helpers')
+const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
-const CatLog = require('cat-log')
-const logger = new CatLog('adonis:lucid')
 
-class MorphMany extends Relation {
+class MorphMany extends BaseRelation {
   /**
    * Creates an instance of MorphMany.
    *

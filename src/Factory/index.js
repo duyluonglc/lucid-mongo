@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,107 +9,114 @@
  * file that was distributed with this source code.
 */
 
-const Factory = exports = module.exports = {}
+const GE = require('@adonisjs/generic-exceptions')
 const ModelFactory = require('./ModelFactory')
 const DatabaseFactory = require('./DatabaseFactory')
-const CE = require('../Exceptions')
-let blueprints = {}
 
 /**
- * defines a new factory blueprint mapped on a given
- * key. Later callback is called and passed the
- * faker object.
+ * Factory class is used to define blueprints
+ * and then get model or database factory
+ * instances to seed the database.
  *
- * @method define
+ * @binding Adonis/Src/Factory
+ * @singleton
+ * @alias Factory
+ * @group Database
  *
- * @param  {String}   key
- * @param  {Function} callback
- *
- * @public
+ * @class Factory
+ * @constructor
  */
-Factory.blueprint = function (key, callback) {
-  if (typeof (callback) !== 'function') {
-    throw CE.InvalidArgumentException.invalidParameter('Factory blueprint expects callback to be a function')
+class Factory {
+  constructor () {
+    this._blueprints = []
   }
-  blueprints[key] = callback
-}
 
-/**
- * returns all registered blueprints inside a factory
- * @method blueprints
- *
- * @return {Object}
- *
- * @public
- */
-Factory.blueprints = function () {
-  return blueprints
-}
-
-/**
- * clears all registered blueprints
- *
- * @method clear
- *
- * @public
- */
-Factory.clear = function () {
-  blueprints = {}
-}
-
-/**
- * resolves callback for a given key.
- *
- * @method _resolve
- *
- * @param  {String} key
- * @param {Function} callback
- *
- * @return {Function}
- *
- * @private
- */
-Factory._resolve = function (key, callback) {
-  const factoryClosure = blueprints[key]
-  if (!factoryClosure) {
-    callback()
-    return
+  /**
+   * Register a new blueprint with model or table name
+   * and callback to be called to return the fake data
+   * for model instance of table insert query.
+   *
+   * @method blueprint
+   *
+   * @param  {String}   name
+   * @param  {Function} callback
+   *
+   * @chainable
+   *
+   * @example
+   * ```js
+   * Factory.blueprint('App/Model/User', (fake) => {
+   *   return {
+   *     username: fake.username(),
+   *     password: async () => {
+   *       return await Hash.make('secret')
+   *     }
+   *   }
+   * })
+   * ```
+   */
+  blueprint (name, callback) {
+    if (typeof (callback) !== 'function') {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('Factory.blueprint expects a callback as 2nd parameter', callback)
+    }
+    this._blueprints.push({ name, callback })
+    return this
   }
-  return factoryClosure
+
+  /**
+   * Returns the blueprint map with the map
+   * and the callback.
+   *
+   * @method getBlueprint
+   *
+   * @param  {String}     name
+   *
+   * @return {Object}
+   */
+  getBlueprint (name) {
+    return this._blueprints.find((blueprint) => blueprint.name === name)
+  }
+
+  /**
+   * Get model factory for a registered blueprint.
+   *
+   * @method model
+   *
+   * @param  {String} name
+   *
+   * @return {ModelFactory}
+   */
+  model (name) {
+    const blueprint = this.getBlueprint(name)
+    return new ModelFactory(blueprint.name, blueprint.callback)
+  }
+
+  /**
+   * Get database factory instance for a registered blueprint
+   *
+   * @method get
+   *
+   * @param  {String} name
+   *
+   * @return {DatabaseFactory}
+   */
+  get (name) {
+    const blueprint = this.getBlueprint(name)
+    return new DatabaseFactory(blueprint.name, blueprint.callback)
+  }
+
+  /**
+   * Clear all the registered blueprints.
+   *
+   * @method clear
+   *
+   * @return {void}
+   */
+  clear () {
+    this._blueprints = []
+  }
 }
 
-/**
- * returns instance of model factory and pass it
- * the blueprint defination.
- *
- * @method model
- *
- * @param  {String} key
- * @return {Object}
- *
- * @public
- */
-Factory.model = function (key) {
-  const factoryClosure = Factory._resolve(key, () => {
-    throw CE.RuntimeException.modelFactoryNotFound(key)
-  })
-  return new ModelFactory(key, factoryClosure)
-}
-
-/**
- * returns instance of database factory and pass it
- * the blueprint defination.
- *
- * @method get
- *
- * @param  {String} key
- * @return {Object}
- *
- * @public
- */
-Factory.get = function (key) {
-  const factoryClosure = Factory._resolve(key, () => {
-    throw CE.RuntimeException.databaseFactoryNotFound(key)
-  })
-  return new DatabaseFactory(key, factoryClosure)
-}
+module.exports = new Factory()

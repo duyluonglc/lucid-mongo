@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,62 +9,507 @@
  * file that was distributed with this source code.
 */
 
-require('harmony-reflect')
-const Ioc = require('adonis-fold').Ioc
-const EagerLoad = require('../Relations').EagerLoad
-const proxyHandler = require('./proxyHandler')
-const mquery = require('mquery')
+const _ = require('lodash')
 
-/**
- * Query builder instance will be used for creating fluent queries.
- * It is database provider with couple of extra methods on top
- * of it.
- *
- * @class
- */
-class QueryBuilder {
-  constructor (HostModel) {
-    this.HostModel = HostModel
-    this.queryBuilder = mquery()
-    this.modelQueryBuilder = mquery()
-    this.avoidTrashed = false
-    this.eagerLoad = new EagerLoad()
-    this.replaceMethods()
-    return new Proxy(this, proxyHandler)
-  }
+const EagerLoad = require('../EagerLoad')
+const RelationsParser = require('../Relations/Parser')
+const CE = require('../../Exceptions')
 
-  * connect () {
-    const Database = Ioc.use('Adonis/Src/Database')
-    const connection = yield Database.connection(this.HostModel.connection)
-    const collection = connection.collection(this.HostModel.collection)
-    this.modelQueryBuilder.collection(collection)
-    return connection
-  }
+const proxyGet = require('../../../lib/proxyGet')
+const util = require('../../../lib/util')
+const { ioc } = require('../../../lib/iocResolver')
 
-  replaceMethods () {
-    const conditionMethods = [
-      'eq',
-      'ne',
-      'gt',
-      'gte',
-      'lt',
-      'lte',
-      'in',
-      'nin',
-      'all',
-      'intersects'
-    ]
-    const queryBuilder = this.modelQueryBuilder
-    const model = this.HostModel
-    for (let name of conditionMethods) {
-      let originMethod = this.modelQueryBuilder[name]
-      this.modelQueryBuilder[name] = function (param) {
-        const key = queryBuilder._path
-        param = model.prototype.getPersistanceValue(key, param)
-        originMethod.apply(queryBuilder, [param])
+const proxyHandler = {
+  get: proxyGet('query', false, function (target, name) {
+    const queryScope = util.makeScopeName(name)
+
+    /**
+     * if value is a local query scope and a function, please
+     * execute it
+     */
+    if (typeof (target.Model[queryScope]) === 'function') {
+      return function (...args) {
+        target.Model[queryScope](this, ...args)
         return this
       }
     }
+  })
+}
+
+/**
+ * Query builder for the lucid models extended
+ * by the @ref('Database') class.
+ *
+ * @class QueryBuilder
+ * @constructor
+ */
+class QueryBuilder {
+  constructor (Model, connection) {
+    this.Model = Model
+    const collection = this.Model.prefix ? `${this.Model.prefix}${this.Model.collection}` : this.Model.collection
+
+    /**
+     * Reference to database provider
+     */
+    this.db = ioc.use('Adonis/Src/Database').connection(connection)
+
+    /**
+     * Reference to query builder with pre selected collection
+     */
+    this.query = this.db.collection(collection)
+
+    /**
+     * Scopes to be ignored at runtime
+     *
+     * @type {Array}
+     *
+     * @private
+     */
+    this._ignoreScopes = []
+
+    /**
+     * Relations to be eagerloaded
+     *
+     * @type {Object}
+     */
+    this._eagerLoads = {}
+
+    /**
+     * The sideloaded data for this query
+     *
+     * @type {Array}
+     */
+    this._sideLoaded = []
+
+    return new Proxy(this, proxyHandler)
+  }
+
+  /**
+   * This method will apply all the global query scopes
+   * to the query builder
+   *
+   * @method applyScopes
+   *
+   * @private
+   */
+  _applyScopes () {
+    if (this._ignoreScopes.indexOf('*') > -1) {
+      return this
+    }
+
+    _(this.Model.$globalScopes)
+    .filter((scope) => this._ignoreScopes.indexOf(scope.name) <= -1)
+    .each((scope) => {
+      scope.callback(this)
+    })
+
+    return this
+  }
+
+  /**
+   * Maps all rows to model instances
+   *
+   * @method _mapRowsToInstances
+   *
+   * @param  {Array}            rows
+   *
+   * @return {Array}
+   *
+   * @private
+   */
+  _mapRowsToInstances (rows) {
+    return rows.map((row) => this._mapRowToInstance(row))
+  }
+
+  /**
+   * Maps a single row to model instance
+   *
+   * @method _mapRowToInstance
+   *
+   * @param  {Object}          row
+   *
+   * @return {Model}
+   */
+  _mapRowToInstance (row) {
+    const modelInstance = new this.Model()
+
+    /**
+     * The omitBy function is used to remove sideLoaded data
+     * from the actual values and set them as $sideLoaded
+     * property on models
+     */
+    modelInstance.newUp(_.omitBy(row, (value, field) => {
+      if (this._sideLoaded.indexOf(field) > -1) {
+        modelInstance.$sideLoaded[field] = value
+        return true
+      }
+    }))
+
+    return modelInstance
+  }
+
+  /**
+   * Eagerload relations for all model instances
+   *
+   * @method _eagerLoad
+   *
+   * @param  {Array}   modelInstance
+   *
+   * @return {void}
+   *
+   * @private
+   */
+  async _eagerLoad (modelInstances) {
+    if (_.size(modelInstances)) {
+      await new EagerLoad(this._eagerLoads).load(modelInstances)
+    }
+  }
+
+  /**
+   * Instruct query builder to ignore all global
+   * scopes.
+   *
+   * Passing `*` will ignore all scopes or you can
+   * pass an array of scope names.
+   *
+   * @param {Array} [scopes = ['*']]
+   *
+   * @method ignoreScopes
+   *
+   * @chainable
+   */
+  ignoreScopes (scopes) {
+    /**
+     * Don't do anything when array is empty or value is not
+     * an array
+     */
+    const scopesToIgnore = scopes instanceof Array === true ? scopes : ['*']
+    this._ignoreScopes = this._ignoreScopes.concat(scopesToIgnore)
+    return this
+  }
+
+  /**
+   * Execute the query builder chain by applying global scopes
+   *
+   * @method fetch
+   * @async
+   *
+   * @return {Serializer} Instance of model serializer
+   */
+  async fetch () {
+    /**
+     * Apply all the scopes before fetching
+     * data
+     */
+    this._applyScopes()
+
+    /**
+     * Execute query
+     */
+    const rows = await this.query.find()
+
+    /**
+     * Convert to an array of model instances
+     */
+    const modelInstances = this._mapRowsToInstances(rows)
+    await this._eagerLoad(modelInstances)
+
+    /**
+     * Return an instance of active model serializer
+     */
+    return new this.Model.Serializer(modelInstances)
+  }
+
+  /**
+   * Returns the first row from the database.
+   *
+   * @method first
+   * @async
+   *
+   * @return {Model|Null}
+   */
+  async first () {
+    /**
+     * Apply all the scopes before fetching
+     * data
+     */
+    this._applyScopes()
+
+    const row = await this.query.first()
+    if (!row) {
+      return null
+    }
+
+    const modelInstance = this._mapRowToInstance(row)
+
+    /**
+     * Eagerload relations when defined on query
+     */
+    if (_.size(this._eagerLoads)) {
+      await modelInstance.loadMany(this._eagerLoads)
+    }
+
+    this.Model.$hooks.after.exec('find', modelInstance)
+    return modelInstance
+  }
+
+  /**
+   * Throws an exception when unable to find the first
+   * row for the built query
+   *
+   * @method firstOrFail
+   * @async
+   *
+   * @return {Model}
+   *
+   * @throws {ModelNotFoundException} If unable to find first row
+   */
+  async firstOrFail () {
+    const returnValue = await this.first()
+    if (!returnValue) {
+      throw CE.ModelNotFoundException.raise(this.Model.name)
+    }
+
+    return returnValue
+  }
+
+  /**
+   * Paginate records, same as fetch but returns a
+   * collection with pagination info
+   *
+   * @method paginate
+   * @async
+   *
+   * @param  {Number} [page = 1]
+   * @param  {Number} [limit = 20]
+   *
+   * @return {Serializer}
+   */
+  async paginate (page = 1, limit = 20) {
+    /**
+     * Apply all the scopes before fetching
+     * data
+     */
+    this._applyScopes()
+    const result = await this.query.paginate(page, limit)
+
+    /**
+     * Convert to an array of model instances
+     */
+    const modelInstances = this._mapRowsToInstances(result.data)
+    await this._eagerLoad(modelInstances)
+
+    /**
+     * Return an instance of active model serializer
+     */
+    return new this.Model.Serializer(modelInstances, _.omit(result, ['data']))
+  }
+
+  /**
+   * Bulk update data from query builder. This method will also
+   * format all dates and set `updated_at` column
+   *
+   * @method update
+   * @async
+   *
+   * @param  {Object} values
+   *
+   * @return {Promise}
+   */
+  update (values) {
+    const valuesCopy = _.clone(values)
+    const fakeModel = new this.Model()
+    fakeModel._setUpdatedAt(valuesCopy)
+    fakeModel._formatDateFields(valuesCopy)
+
+    /**
+     * Apply all the scopes before update
+     */
+    this._applyScopes()
+    return this.query.update(valuesCopy)
+  }
+
+  /**
+   * Deletes the rows from the database.
+   *
+   * @method delete
+   * @async
+   *
+   * @return {Promise}
+   */
+  delete () {
+    this._applyScopes()
+    return this.query.delete()
+  }
+
+  /**
+   * Returns an array of primaryKeys
+   *
+   * @method ids
+   * @async
+   *
+   * @return {Array}
+   */
+  async ids () {
+    const rows = await this.query.find()
+    return rows.map((row) => row[this.Model.primaryKey])
+  }
+
+  /**
+   * Returns a pair of lhs and rhs. This method will not
+   * eagerload relationships.
+   *
+   * @method pair
+   * @async
+   *
+   * @param  {String} lhs
+   * @param  {String} rhs
+   *
+   * @return {Object}
+   */
+  async pair (lhs, rhs) {
+    const collection = await this.fetch()
+    return _.transform(collection.rows, (result, row) => {
+      result[row[lhs]] = row[rhs]
+      return result
+    }, {})
+  }
+
+  /**
+   * Same as `pick` but inverse
+   *
+   * @method pickInverse
+   * @async
+   *
+   * @param  {Number}    [limit = 1]
+   *
+   * @return {Collection}
+   */
+  pickInverse (limit = 1) {
+    this.query.orderBy(this.Model.primaryKey, 'desc').limit(limit)
+    return this.fetch()
+  }
+
+  /**
+   * Pick x number of rows from the database
+   *
+   * @method pick
+   * @async
+   *
+   * @param  {Number} [limit = 1]
+   *
+   * @return {Collection}
+   */
+  pick (limit = 1) {
+    this.query.orderBy(this.Model.primaryKey, 'asc').limit(limit)
+    return this.fetch()
+  }
+
+  /**
+   * Eagerload relationships when fetching the parent
+   * record
+   *
+   * @method with
+   *
+   * @param  {String}   relation
+   * @param  {Function} [callback]
+   *
+   * @chainable
+   */
+  with (relation, callback) {
+    this._eagerLoads[relation] = callback
+    return this
+  }
+
+  /**
+   * Returns count of a relationship
+   *
+   * @method withCount
+   *
+   * @param  {String}   relation
+   * @param  {Function} callback
+   *
+   * @chainable
+   *
+   * @example
+   * ```js
+   * query().withCount('profile')
+   * query().withCount('profile as userProfile')
+   * ```
+   */
+  withCount (relation, callback) {
+    let { name, nested } = RelationsParser.parseRelation(relation)
+    if (nested) {
+      throw CE.RuntimeException.cannotNestRelation(_.first(_.keys(nested)), name, 'withCount')
+    }
+
+    /**
+     * Since user can set the `count as` statement, we need
+     * to parse them properly.
+     */
+    const tokens = name.match(/as\s(\w+)/)
+    let asStatement = `${name}_count`
+    if (_.size(tokens)) {
+      asStatement = tokens[1]
+      name = name.replace(tokens[0], '').trim()
+    }
+
+    RelationsParser.validateRelationExistence(this.Model.prototype, name)
+    const relationInstance = RelationsParser.getRelatedInstance(this.Model.prototype, name)
+
+    /**
+     * Call the callback with relationship instance
+     * when callback is defined
+     */
+    if (typeof (callback) === 'function') {
+      callback(relationInstance)
+    }
+
+    const columns = []
+
+    /**
+     * Add `*` to columns only when there are no existing columns selected
+     */
+    if (!_.find(this.query._statements, (statement) => statement.grouping === 'columns')) {
+      columns.push('*')
+    }
+    columns.push(relationInstance.relatedWhere(true).as(asStatement))
+
+    /**
+     * Saving reference of count inside _sideloaded
+     * so that we can set them later to the
+     * model.$sideLoaded
+     */
+    this._sideLoaded.push(asStatement)
+
+    /**
+     * Clear previously selected columns and set new
+     */
+    this.query.select(columns)
+
+    return this
+  }
+
+  /**
+   * Returns the sql representation of query
+   *
+   * @method toSQL
+   *
+   * @return {Object}
+   */
+  toSQL () {
+    return this.query.toSQL()
+  }
+
+  /**
+   * Returns string representation of query
+   *
+   * @method toString
+   *
+   * @return {String}
+   */
+  toString () {
+    return this.query.toString()
   }
 }
 

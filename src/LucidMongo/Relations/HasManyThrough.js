@@ -9,12 +9,11 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
-const CE = require('../../Exceptions')
-const helpers = require('../QueryBuilder/helpers')
 const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
+const CE = require('../../Exceptions')
 
-class HasManyThrough extends Relation {
+class HasManyThrough extends BaseRelation {
   constructor (parent, related, through, primaryKey, foreignKey, throughPrimaryKey, throughForeignKey) {
     super(parent, related)
     this.through = this._resolveModel(through)

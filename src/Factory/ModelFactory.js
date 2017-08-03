@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,120 +9,151 @@
  * file that was distributed with this source code.
 */
 
-const cf = require('co-functional')
 const _ = require('lodash')
-const Ioc = require('adonis-fold').Ioc
-const fake = require('./fake')
+const chancejs = require('chance').Chance()
+const { ioc } = require('../../lib/iocResolver')
 
+/**
+ * Model factory to seed database using Lucid
+ * models
+ *
+ * @class ModelFactory
+ * @constructor
+ */
 class ModelFactory {
-  constructor (binding, callback) {
-    this.binding = Ioc.use(binding)
-    this.callback = callback
-    this.instances = []
+  constructor (Model, dataCallback) {
+    this.Model = Model
+    this.dataCallback = dataCallback
   }
 
   /**
-   * makes instance of a given model
+   * New up a model with attributes
    *
-   * @param  {Object}      values
-   * @return {Object}
+   * @method _newup
    *
-   * @private
-   */
-  _makeInstance (values) {
-    const Model = this.binding
-    return new Model(values)
-  }
-
-  /**
-   * calls blueprint and passed fake instance
-   * to it.
-   *
-   * @param {Number} iterator
-   * @param {Mixed} values
+   * @param  {Object} attributes
    *
    * @return {Object}
    *
    * @private
    */
-  _callBlueprint (iterator, values) {
-    return this.callback(fake, iterator, values)
+  _newup (attributes) {
+    const modelInstance = new (ioc.use(this.Model))()
+    modelInstance.fill(attributes)
+    return modelInstance
   }
 
   /**
-   * returns a model instace by calling the blueprint
-   * and setting values on model instance
+   * Make a single instance of blueprint for a given
+   * index. This method will evaluate the functions
+   * in the return payload from blueprint.
    *
-   * @param  {Number} [count=1] - Number of instances to return
-   * @param {Mixed} values
+   * @method _makeOne
+   * @async
+   *
+   * @param  {Number} index
+   * @param  {Object} data
    *
    * @return {Object}
    *
-   * @public
+   * @private
    */
-  make (rows, values) {
-    if (!rows || rows === 1) {
-      return this._makeInstance(this._callBlueprint(1, values))
-    }
+  async _makeOne (index, data) {
+    const hash = this.dataCallback(chancejs, index, data)
+    const keys = _.keys(hash)
 
-    return _(rows)
-    .range()
-    .map((iterator) => {
-      return this._makeInstance(this._callBlueprint(iterator + 1, values))
-    })
-    .value()
+    /**
+     * Evaluate all values
+     */
+    const values = await Promise.all(_.map(_.values(hash), (val) => {
+      return typeof (val) === 'function' ? Promise.resolve(val()) : val
+    }))
+
+    /**
+     * Pair them back in same order
+     */
+    return _.transform(keys, (result, key, index) => {
+      result[key] = values[index]
+      return result
+    }, {})
   }
 
   /**
-   * creates rows inside the database by calling create
-   * method on the given model
+   * Make a single model instance with attributes
+   * from blueprint fake values
+   *
+   * @method make
+   * @async
+   *
+   * @param  {Object} data
+   * @param  {Number} [index = 0]
+   *
+   * @return {Object}
+   */
+  async make (data = {}, index = 0) {
+    const attributes = await this._makeOne(index, data)
+    return this._newup(attributes)
+  }
+
+  /**
+   * Make x number of model instances with
+   * fake data
+   *
+   * @method makeMany
+   * @async
+   *
+   * @param  {Number} instances
+   * @param  {Object} [data = {}]
+   *
+   * @return {Array}
+   */
+  async makeMany (instances, data = {}) {
+    return Promise.all(_.map(_.range(instances), (index) => this.make(data, index)))
+  }
+
+  /**
+   * Create model instance and persist to database
+   * and then return it back
    *
    * @method create
+   * @async
    *
-   * @param  {Number} rows
-   * @param {Mixed} values
+   * @param  {Object} data
    *
-   * @return {Object}      reference to this
-   *
-   * @public
+   * @return {Object}
    */
-  * create (rows, values) {
-    rows = rows || 1
-    const self = this
-    const range = _.range(rows)
-    this.instances = yield cf.mapSerial(function * (iterator) {
-      return yield self.binding.create(self._callBlueprint(iterator + 1, values))
-    }, range)
-    return this
+  async create (data = {}) {
+    const modelInstance = await this.make(data)
+    await modelInstance.save()
+    return modelInstance
   }
 
   /**
-   * loops through all the created instances and
-   * executes a callback with support for
-   * calling generators
+   * Persist multiple model instances to database and get
+   * them back as an array
    *
-   * @method each
+   * @method createMany
+   * @async
    *
-   * @param  {Function} callback
+   * @param  {Number}   numberOfRows
+   * @param  {Object}   [data = {}]
    *
-   * @public
+   * @return {Array}
    */
-  each (callback) {
-    return cf.forEach(function * (instance) {
-      yield callback(instance)
-    }, this.instances)
+  async createMany (numberOfRows, data = {}) {
+    return Promise.all(_.map(_.range(numberOfRows), (index) => this.create(data, index)))
   }
 
   /**
-   * will reset the given model by calling
-   * truncate method on it.
+   * Truncate the database table
+   *
+   * @method reset
+   * @async
    *
    * @return {Number}
-   *
-   * @public
    */
-  reset () {
-    return this.binding.query().truncate()
+  async reset () {
+    return ioc.use(this.Model).query().truncate()
   }
 }
 

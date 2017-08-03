@@ -9,12 +9,11 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
+const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
-const CatLog = require('cat-log')
-const logger = new CatLog('adonis:lucid')
 
-class MorphOne extends Relation {
+class MorphOne extends BaseRelation {
   /**
    * Creates an instance of MorphOne.
    *

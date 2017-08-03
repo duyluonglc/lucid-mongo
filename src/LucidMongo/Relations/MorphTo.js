@@ -9,11 +9,11 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
-const CE = require('../../Exceptions')
 const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
+const CE = require('../../Exceptions')
 
-class MorphMany extends Relation {
+class MorphMany extends BaseRelation {
   /**
    * Creates an instance of MorphMany.
    *

@@ -9,501 +9,352 @@
  * file that was distributed with this source code.
 */
 
-/**
- * to have scollection support for proxies
- * we need harmony-reflect
- */
-require('harmony-reflect')
-
-const MongoClient = require('mongodb').MongoClient
+const { MongoClient } = require('mongodb')
 const mquery = require('mquery')
-const util = require('../../lib/util')
-const co = require('co')
 const CE = require('../Exceptions')
-const _ = require('lodash')
+// const _ = require('lodash')
 
-/**
- * Database provider to build sql queries
- * @module Database
- */
-const Database = {}
-
-/**
- * here we store connection pools, created by database provider. It is
- * required to re-use old connections as database provider has support
- * for using multiple connections on runtime, and spwaning a new
- * connection everytime will blow up things.
- *
- *
- * @type {Object}
- *
- * @private
- */
-let connectionPools = {}
-
-/**
- * reference to config provider, since we do
- * not require providers and instead get
- * them from IOC container.
- *
- * @type {Object}
- *
- * @private
- */
-let ConfigProvider = {}
-
-/**
- * emits sql event on query builder instance with
- * formatted sql statement and time taken by a
- * given query.
- *
- * @method emitSql
- *
- * @param  {Object} query
- *
- * @private
- */
-// const _emitSql = function (builder) {
-//   const hrstart = process.hrtime()
-//   builder.once('query', (query) => {
-//     const sql = this.client._formatQuery(query.sql, query.bindings, query.tz)
-//     builder.once('end', () => {
-//       this.emit('sql', `+ ${util.timeDiff(hrstart)} : ${sql}`)
-//     })
-//   })
-// }
-
-/**
- * Following attributes should be removed from the
- * paginate count query since things like orderBy
- * is not required when fetching the count.
- *
- * @type {Array}
- */
-const excludeAttrFromCount = ['order']
-
-/**
- * sets the config provider for database module
- * It is set while registering it inside the
- * IOC container. So no one will ever to
- * deal with it manaully.
- *
- * @method _setConfigProvider.
- *
- * @param  {Object}           Config
- *
- * @private
- */
-Database._setConfigProvider = function (Config) {
-  ConfigProvider = Config
-}
-
-/**
- * Resolves a connection key to be used for fetching database
- * connection config. If key is defined to default, it
- * will make use the value defined next to
- * database.connection key.
- *
- * @method _resolveConnectionKey
- *
- * @param  {String}  connection
- * @return {Object}
- *
- * @private
- */
-Database._resolveConnectionKey = function (connection) {
-  if (connection === 'default') {
-    connection = ConfigProvider.get('database.connection')
-    if (!connection) {
-      throw CE.InvalidArgumentException.missingConfig('Make sure to define a connection inside the database config file')
-    }
-  }
-  return connection
-}
-
-/**
- * returns MongoClient instance for a given connection if it
- * does not exists, a pool is created and returned.
- *
- * @method connection
- *
- * @param  {String}      connection
- * @return {Object}
- *
- * @example
- * Database.connection('mysql')
- * Database.connection('sqlite')
- */
-Database.connection = function (connection) {
-  connection = Database._resolveConnectionKey(connection)
-  return new Promise(function (resolve, reject) {
-    if (!connectionPools[connection]) {
-      const config = ConfigProvider.get(`database.${connection}`)
-      if (!config) {
-        throw CE.InvalidArgumentException.missingConfig(`Unable to get database client configuration for ${connection}`)
-      }
-      const security = (process.env.DB_USER && process.env.DB_PASSWORD)
-        ? `${process.env.DB_USER}:${process.env.DB_PASSWORD}@`
-        : (process.env.DB_USER ? `${process.env.DB_USER}@` : '')
-      const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
-      MongoClient.connect(connectionString).then(dbConnection => {
-        connectionPools[connection] = dbConnection
-        resolve(connectionPools[connection])
-      })
-    } else {
-      resolve(connectionPools[connection])
-    }
-  })
-}
-
-/**
- * returns list of connection pools created
- * so far.
- *
- * @method getConnectionPools
- *
- * @return {Object}
- * @public
- */
-Database.getConnectionPools = function () {
-  return connectionPools
-}
-
-/**
- * closes database connection by destroying the client
- * and remove it from the pool.
- *
- * @method close
- *
- * @param {String} [connection] name of the connection to close, if not provided
- *                               all connections will get closed.
- * @return {void}
- *
- * @public
- */
-Database.close = function (connection) {
-  connection = connection ? Database._resolveConnectionKey(connection) : null
-  if (connection && connectionPools[connection]) {
-    connectionPools[connection].close()
-    delete connectionPools[connection]
-    return
-  }
-
-  _.each(connectionPools, (pool) => {
-    pool.close()
-  })
-  connectionPools = {}
-}
-
-/**
- * beginTransaction is used for doing manual commit and
- * rollback. Errors emitted from this method are voided.
- *
- * @method beginTransaction
- *
- * @param  {Function}    clientTransaction original transaction method from MongoClient instance
- * @return {Function}
- *
- * @example
- * const trx = yield Database.beginTransaction()
- * yield Database.collection('users').transacting(trx)
- * trx.commit()
- * trx.rollback()
- *
- * @public
- */
-Database.beginTransaction = function (clientTransaction) {
-  return function () {
-    return new Promise(function (resolve, reject) {
-      clientTransaction(function (trx) {
-        resolve(trx)
-      })
-        .catch(function () {
-          /**
-           * adding a dummy handler to avoid exceptions from getting thrown
-           * as this method does not need a handler
-           */
-        })
-    })
-  }
-}
-
-/**
- * overrides the actual transaction method on MongoClient
- * to have a transaction method with support for
- * generator methods
- * @method transaction
- * @param  {Function}    clientTransaction original transaction method from MongoClient instance
- * @return {Function}
- *
- * @example
- * Database.transaction(function * (trx) {
- *   yield trx.collection('users')
- * })
- *
- * @public
- */
-Database.transaction = function (clientTransaction) {
-  return function (cb) {
-    return clientTransaction(function (trx) {
-      co(function * () {
-        return yield cb(trx)
-      })
-        .then(trx.commit)
-        .catch(trx.rollback)
-    })
-  }
-}
-
-/**
- * sets offset and limit on query chain using
- * current page and perpage params
- *
- * @method forPage
- *
- * @param  {Number} page
- * @param  {Number} [perPage=20]
- * @return {Object}
- *
- * @example
- * Database.collection('users').forPage(1)
- * Database.collection('users').forPage(1, 30)
- *
- * @public
- */
-Database.forPage = function (page, perPage) {
-  util.validatePage(page)
-  perPage = perPage || 20
-  const offset = util.returnOffset(page, perPage)
-  return this.skip(offset).limit(perPage).find()
-}
-
-/**
- * gives paginated results for a given
- * query.
- *
- * @method paginate
- *
- * @param  {Number} page
- * @param  {Number} [perPage=20]
- * @param  {Object} [countByQuery]
- * @return {Array}
- *
- * @example
- * Database.collection('users').paginate(1)
- * Database.collection('users').paginate(1, 30)
- *
- * @public
- */
-Database.paginate = function * (page, perPage, countByQuery) {
-  const parsedPerPage = _.toSafeInteger(perPage) || 20
-  const parsedPage = _.toSafeInteger(page)
-  util.validatePage(parsedPage)
-  /**
-   * first we count the total rows before making the actual
-   * query for getting results
-   */
-  countByQuery = countByQuery || _.clone(this).count()
-
-  /**
-   * Filter unnecessary statements from the cloned query
-   */
-  countByQuery._statements = _.filter(countByQuery._statements, (statement) => excludeAttrFromCount.indexOf(statement.grouping) < 0)
-
-  const count = yield countByQuery
-
-  if (!count || parseInt(count, 10) === 0) {
-    return util.makePaginateMeta(0, parsedPage, parsedPerPage)
-  }
-
-  /**
-   * here we fetch results and set meta data for paginated
-   * results
-   */
-  const results = yield this.forPage(parsedPage, parsedPerPage)
-  const resultSet = util.makePaginateMeta(parseInt(count, 10), parsedPage, parsedPerPage)
-  resultSet.data = results
-  return resultSet
-}
-
-/**
- * returns chunk of data under a defined limit of results, and
- * invokes a callback, everytime there are results.
- *
- * @method *chunk
- *
- * @param  {Number}   limit
- * @param  {Function} cb
- * @param  {Number}   [page=1]
- *
- * @example
- * Database.collection('users').chunk(200, function (users) {
- *
- * })
- *
- * @public
- */
-Database.chunk = function * (limit, cb, page) {
-  page = page || 1
-  const result = yield this.forPage(page, limit)
-  if (result.length) {
-    cb(result)
-    page++
-    yield this.chunk(limit, cb, page)
-  }
-}
-
-/**
- * Overriding the orginal MongoClient.collection method to prefix
- * the collection name based upon the prefix option
- * defined in the config
- *
- * @param  {String} collectionName
- *
- * @return {Object}
- */
-Database.collection = function (collectionName) {
-  const prefix = this._instancePrefix || this.client.config.prefix
-  const prefixedCollectionName = (prefix && !this._skipPrefix) ? `${prefix}${collectionName}` : collectionName
-  this._originalCollection(prefixedCollectionName)
-  return this
-}
-
-/**
- * Skipping the prefix for a single query
- *
- * @return {Object}
- */
-Database.withoutPrefix = function () {
-  this._skipPrefix = true
-  return this
-}
-
-/**
- * Changing the prefix for a given query
- *
- * @param  {String} prefix
- *
- * @return {Object}
- */
-Database.withPrefix = function (prefix) {
-  this._instancePrefix = prefix
-  return this
-}
-
-Database.pluckAll = function (fields) {
-  const args = _.isArray(fields) ? fields : _.toArray(arguments)
-  return this.select.apply(this, args)
-}
-
-Database.schema = {
-  createCollection: function * (collectionName, callback) {
-    const db = yield Database.connection('default')
-    const collection = yield db.createCollection(collectionName)
-    const schemaBuilder = new SchemaBuilder(collection)
-    callback(schemaBuilder)
-    return yield schemaBuilder.build()
-  },
-
-  createCollectionIfNotExists: function * (collectionName, callback) {
-    const db = yield Database.connection('default')
-    const collection = yield db.createCollection(collectionName)
-    const schemaBuilder = new SchemaBuilder(collection)
-    callback(schemaBuilder)
-    return yield schemaBuilder.build()
-  },
-
-  dropCollection: function * (collectionName) {
-    const db = yield Database.connection('default')
-    return yield db.dropCollection(collectionName)
-  },
-
-  dropIfExists: function * (collectionName) {
-    const db = yield Database.connection('default')
-    return yield db.dropCollection(collectionName)
-  },
-
-  renameCollection: function * (collectionName, target) {
-    const db = yield Database.connection('default')
-    return yield db.collection(collectionName).rename(target)
-  }
-}
-
-function SchemaBuilder (collection) {
-  this.collection = collection
-  this.createIndexes = []
-  this.dropIndexes = []
-
-  this.increments = function () {}
-  this.timestamps = function () {}
-  this.softDeletes = function () {}
-  this.string = function () {}
-  this.timestamp = function () {}
-  this.boolean = function () {}
-  this.integer = function () {}
-  this.double = function () {}
-  this.index = function (name, keys, options) {
-    if (!name) {
-      throw new CE.InvalidArgumentException(`param name is required to create index`)
-    }
-    if (!keys || !_.size(keys)) {
-      throw new CE.InvalidArgumentException(`param keys is required to create index`)
-    }
-    options = options || {}
-    options['name'] = name
-    this.createIndexes.push({keys, options})
-  }
-  this.dropIndex = function (name) {
-    this.dropIndexes.push(name)
-  }
-  this.build = function * () {
-    for (var i in this.createIndexes) {
-      var createIndex = this.createIndexes[i]
-      yield this.collection.createIndex(createIndex.keys, createIndex.options)
-    }
-    for (var j in this.dropIndexes) {
-      var dropIndex = this.dropIndexes[j]
-      yield this.collection.dropIndex(dropIndex.keys, dropIndex.options)
-    }
-  }
-}
-
-/**
- * these methods are not proxied and instead actual implementations
- * are returned
- *
- * @type {Array}
- *
- * @private
- */
-const customImplementations = ['_resolveConnectionKey', '_setConfigProvider', 'getConnectionPools', 'connection', 'close', 'schema']
-
-mquery.prototype.forPage = Database.forPage
-mquery.prototype.paginate = Database.paginate
-mquery.prototype.chunk = Database.chunk
-mquery.prototype._originalCollection = mquery.prototype.dbCollection
-mquery.prototype.dbCollection = Database.collection
-mquery.prototype.from = Database.collection
-mquery.prototype.into = Database.collection
-mquery.prototype.withPrefix = Database.withPrefix
-mquery.prototype.withoutPrefix = Database.withoutPrefix
-mquery.prototype.pluckAll = Database.pluckAll
-
-/**
- * Proxy handler to proxy methods and send
- * them to MongoClient directly.
- *
- * @type {Object}
- *
- * @private
- */
-const DatabaseProxy = {
-  get: function (target, name) {
-    if (customImplementations.indexOf(name) > -1) {
+const proxyHandler = {
+  get (target, name) {
+    if (typeof (name) === 'symbol' || name === 'inspect') {
       return target[name]
     }
-    return Database.connection('default')[name]
+
+    if (typeof (target[name]) !== 'undefined') {
+      return target[name]
+    }
+
+    const queryBuilder = target.query()
+    if (typeof (queryBuilder[name]) !== 'function') {
+      throw new Error(`Database.${name} is not a function`)
+    }
+
+    /**
+     * Attach transacting to all the database
+     * queries if global transactions are on
+     */
+    if (target._globalTrx) {
+      queryBuilder.transacting(target._globalTrx)
+    }
+
+    return queryBuilder[name].bind(queryBuilder)
   }
 }
 
-module.exports = new Proxy(Database, DatabaseProxy)
+/**
+ * The database class is a reference to mquery for a single
+ * connection. It has couple of extra methods over mquery.
+ *
+ * Note: You don't instantiate this class directly but instead
+ * make use of @ref('DatabaseManager')
+ *
+ * @class Database
+ * @constructor
+ * @group Database
+ */
+class Database {
+  constructor (config) {
+    if (config.client !== 'mongodb') {
+      throw new CE.RuntimeException('invalid connection type')
+    }
+    const security = (config.connection.user && config.connection.password)
+      ? `${config.connection.user}:${config.connection.password}@`
+      : (config.connection.user ? `${config.connection.user}@` : '')
+    this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
+    this.mquery = mquery()
+    this.connection = null
+    this._globalTrx = null
+    this.collectionName = null
+    return new Proxy(this, proxyHandler)
+  }
+
+  async connect () {
+    if (!this.connection) {
+      this.connection = await MongoClient.connect(this.connectionString)
+    }
+    return Promise.resolve(this.connection)
+  }
+
+  collection (collectionName) {
+    // this.query().collection(this.connection.collection(collectionName))
+    this.collectionName = collectionName
+    return this
+  }
+
+  /**
+   * The schema builder instance to be used
+   * for creating database schema.
+   *
+   * You should obtain a new schema instance for every
+   * database operation and should never use stale
+   * instances. For example
+   *
+   * @example
+   * ```js
+   * // WRONG
+   * const schema = Database.schema
+   * schema.createTable('users')
+   * schema.createTable('profiles')
+   * ```
+   *
+   * ```js
+   * // RIGHT
+   * Database.schema.createTable('users')
+   * Database.schema.createTable('profiles')
+   * ```
+   *
+   * @attribute schema
+   *
+   * @return {Object}
+   */
+  get schema () {
+    return this.mquery.schema
+  }
+
+  /**
+   * Returns the fn from mquery instance
+   *
+   * @method fn
+   *
+   * @return {Object}
+   */
+  get fn () {
+    return this.mquery.fn
+  }
+
+  /**
+   * Method to construct raw database queries.
+   *
+   * @method raw
+   *
+   * @param  {...Spread} args
+   *
+   * @return {String}
+   */
+  raw (...args) {
+    return this.mquery.raw(...args)
+  }
+
+  /**
+   * Returns a trx object to be used for running queries
+   * under transaction.
+   *
+   * @method beginTransaction
+   * @async
+   *
+   * @return {Object}
+   *
+   * @example
+   * ```js
+   * const trx = await Database.beginTransaction()
+   * await trx
+   *   .table('users')
+   *   .insert({ username: 'virk' })
+   *
+   * // or
+   * Database
+   *   .table('users')
+   *   .transacting(trx)
+   *   .insert({ username: 'virk' })
+   * ```
+   */
+  beginTransaction () {
+    return new Promise((resolve, reject) => {
+      this
+        .mquery
+        .transaction(function (trx) {
+          resolve(trx)
+        }).catch(() => { })
+    })
+  }
+
+  /**
+   * Starts a global transaction, where all query builder
+   * methods will be part of transaction automatically.
+   *
+   * Note: You must not use it in real world apart from when
+   * writing tests.
+   *
+   * @method beginGlobalTransaction
+   * @async
+   *
+   * @return {void}
+   */
+  async beginGlobalTransaction () {
+    this._globalTrx = await this.beginTransaction()
+  }
+
+  /**
+   * Rollbacks global transaction.
+   *
+   * @method rollbackGlobalTransaction
+   *
+   * @return {void}
+   */
+  rollbackGlobalTransaction () {
+    this._globalTrx.rollback()
+    this._globalTrx = null
+  }
+
+  /**
+   * Commits global transaction.
+   *
+   * @method commitGlobalTransaction
+   *
+   * @return {void}
+   */
+  commitGlobalTransaction () {
+    this._globalTrx.commit()
+    this._globalTrx = null
+  }
+
+  /**
+   * Return a new instance of query builder
+   *
+   * @method query
+   *
+   * @return {Object}
+   */
+  query () {
+    return this.mquery
+  }
+
+  /**
+   *
+   * @method query
+   *
+   * @return {Object}
+   */
+  on (event, callback) {
+
+  }
+
+  /**
+   * Closes the database connection. No more queries
+   * can be made after this.
+   *
+   * @method close
+   *
+   * @return {Promise}
+   */
+  close () {
+    return this.mquery.close()
+  }
+
+  /**
+   * Return a collection
+   *
+   * @method find
+   *
+   * @return {Object}
+   */
+  async find () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.mquery.collection(collection).find()
+  }
+
+  /**
+   * Return a document
+   *
+   * @method findOne
+   *
+   * @return {Object}
+   */
+  async findOne () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.mquery.collection(collection).findOne()
+  }
+
+  /**
+   * Return a document
+   *
+   * @method first
+   *
+   * @return {Object}
+   */
+  async first () {
+    return this.findOne()
+  }
+
+  /**
+   * Update collections
+   *
+   * @method update
+   *
+   * @return {Object}
+   */
+  async update () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.mquery.collection(collection).update(...arguments)
+  }
+
+  /**
+   * Remove collections
+   *
+   * @method delete
+   *
+   * @return {Object}
+   */
+  async delete () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.mquery.collection(collection).remove(...arguments)
+  }
+
+  /**
+   * Count collections
+   *
+   * @method count
+   *
+   * @return {Object}
+   */
+  async count () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.mquery.collection(collection).count(...arguments)
+  }
+
+  /**
+   * Query pagination
+   *
+   * @method paginate
+   *
+   * @return {Object}
+   */
+  async paginate (page, limit) {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.mquery.collection(collection).limit(limit).skip((page || 1) * limit).find()
+  }
+
+  /**
+   * Insert document
+   *
+   * @method insert
+   *
+   * @return {Object}
+   */
+  async insert () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return collection.insert(...arguments)
+  }
+
+  /**
+   * Aggregation
+   *
+   * @method paginate
+   *
+   * @return {Object}
+   */
+  async aggregate () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return collection.aggregate(...arguments)
+  }
+}
+
+module.exports = Database

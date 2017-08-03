@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,96 +9,201 @@
  * file that was distributed with this source code.
 */
 
-const cf = require('co-functional')
 const _ = require('lodash')
-const Ioc = require('adonis-fold').Ioc
-const fake = require('./fake')
+const chancejs = require('chance').Chance()
+const { ioc } = require('../../lib/iocResolver')
 
+/**
+ * Model factory to seed database using Lucid
+ * models
+ *
+ * @class DatabaseFactory
+ * @constructor
+ */
 class DatabaseFactory {
-  constructor (binding, callback) {
-    this.collection = binding
-    this.callback = callback
-    this.binding = Ioc.use('Adonis/Src/Database')
-    this.returningField = '_id'
+  constructor (tableName, dataCallback) {
+    this.tableName = tableName
+    this.dataCallback = dataCallback
+    this._returningColumn = null
+    this._connection = null
   }
 
   /**
-   * calls blueprint and passed fake instance
-   * to it.
+   * Returns the query builder instance for
+   * a given connection
    *
-   * @param {Number} iterator
-   * @param {Mixed} values
+   * @method _getQueryBuilder
    *
    * @return {Object}
    *
    * @private
    */
-  _callBlueprint (iterator, values) {
-    return this.callback(fake, iterator, values)
+  _getQueryBuilder () {
+    return (this._connection
+    ? ioc.use('Adonis/Src/Database').connection(this._connection)
+    : ioc.use('Adonis/Src/Database')).collection(this.collectionName)
   }
 
   /**
-   * sets collection name to be used by the query
-   * builder
+   * Make a single instance of blueprint for a given
+   * index. This method will evaluate the functions
+   * in the return payload from blueprint.
    *
-   * @param  {String} collectionName
-   * @return {Object}           reference to this
+   * @method _makeOne
+   * @async
    *
-   * @public
+   * @param  {Number} index
+   * @param  {Object} data
+   *
+   * @return {Object}
+   *
+   * @private
    */
-  collection (collectionName) {
-    this.collection = collectionName
+  async _makeOne (index, data) {
+    const hash = this.dataCallback(chancejs, index, data)
+    const keys = _.keys(hash)
+
+    /**
+     * Evaluate all values
+     */
+    const values = await Promise.all(_.map(_.values(hash), (val) => {
+      return typeof (val) === 'function' ? Promise.resolve(val()) : val
+    }))
+
+    /**
+     * Pair them back in same order
+     */
+    return _.transform(keys, (result, key, index) => {
+      result[key] = values[index]
+      return result
+    }, {})
+  }
+
+  /**
+   * Set table to used for the database
+   * operations
+   *
+   * @method table
+   *
+   * @param  {String} tableName
+   *
+   * @chainable
+   */
+  table (tableName) {
+    this.tableName = tableName
     return this
   }
 
   /**
-   * defines the returning field to be used
-   * when doing insert statement
+   * Specify the returning column from the insert
+   * query
    *
-   * @param  {String}  field
-   * @return {Object}        reference to this
+   * @method returning
    *
-   * @public
+   * @param  {String}  column
+   *
+   * @chainable
    */
-  returning (field) {
-    this.returningField = field
+  returning (column) {
+    this._returningColumn = column
     return this
   }
 
   /**
-   * creates rows inside the database by calling insert
-   * method on database query builder
+   * Specify the connection to be used on
+   * the query builder
+   *
+   * @method connection
+   *
+   * @param  {String}   connection
+   *
+   * @chainable
+   */
+  connection (connection) {
+    this._connection = connection
+    return this
+  }
+
+  /**
+   * Make a single model instance with attributes
+   * from blueprint fake values
+   *
+   * @method make
+   * @async
+   *
+   * @param  {Object} data
+   * @param  {Number} [index = 0]
+   *
+   * @return {Object}
+   */
+  async make (data = {}, index = 0) {
+    return this._makeOne(index, data)
+  }
+
+  /**
+   * Make x number of model instances with
+   * fake data
+   *
+   * @method makeMany
+   * @async
+   *
+   * @param  {Number} instances
+   * @param  {Object} [data = {}]
+   *
+   * @return {Array}
+   */
+  async makeMany (instances, data = {}) {
+    return Promise.all(_.map(_.range(instances), (index) => this.make(data, index)))
+  }
+
+  /**
+   * Create model instance and persist to database
+   * and then return it back
    *
    * @method create
+   * @async
    *
-   * @param  {Number} rows
-   * @param {Mixed} values
+   * @param  {Object} data
    *
-   * @return {Arrays}      Array of inserted ids
-   *
-   * @public
+   * @return {Object}
    */
-  * create (rows, values) {
-    const self = this
-    const binding = this.binding.collection(this.collection)
-    rows = rows || 1
-    const range = _.range(rows)
-    const ids = yield cf.mapSerial(function * (iterator) {
-      return yield binding.insert(self._callBlueprint(iterator + 1, values)).returning(self.returningField)
-    }, range)
-    return _.flatten(ids)
+  async create (data = {}) {
+    const attributes = await this.make(data)
+    const query = this._getQueryBuilder()
+
+    if (this._returningColumn) {
+      query.returning(this._returningColumn)
+    }
+
+    return query.insert(attributes)
   }
 
   /**
-   * will reset the given collection by calling
-   * truncate method on it.
+   * Persist multiple model instances to database and get
+   * them back as an array
+   *
+   * @method createMany
+   * @async
+   *
+   * @param  {Number}   numberOfRows
+   * @param  {Object}   [data = {}]
+   *
+   * @return {Array}
+   */
+  async createMany (numberOfRows, data = {}) {
+    return Promise.all(_.map(_.range(numberOfRows), (index) => this.create(data, index)))
+  }
+
+  /**
+   * Truncate the database table
+   *
+   * @method reset
+   * @async
    *
    * @return {Number}
-   *
-   * @public
    */
-  reset () {
-    return this.binding.collection(this.collection).truncate()
+  async reset () {
+    return this._getQueryBuilder().truncate()
   }
 }
 
