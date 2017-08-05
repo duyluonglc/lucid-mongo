@@ -81,6 +81,11 @@ class QueryBuilder {
      */
     this._sideLoaded = []
 
+    /**
+     * Replace some methods
+     */
+    this.replaceMethods()
+
     return new Proxy(this, proxyHandler)
   }
 
@@ -499,6 +504,131 @@ class QueryBuilder {
      */
     this.query.select(columns)
 
+    return this
+  }
+
+  static get conditionMethods () {
+    return [
+      'eq',
+      'ne',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'nin',
+      'all',
+      'intersects'
+    ]
+  }
+
+  replaceMethods () {
+    for (let name of this.constructor.conditionMethods) {
+      let originMethod = this.query[name]
+      this.query[name] = (param) => {
+        const key = this.query.mquery._path
+        param = this.Model.formatField(key, param)
+        originMethod.apply(this.query, [param])
+        return this
+      }
+    }
+  }
+
+  static get supportMethods () {
+    return [
+      'all',
+      'exists',
+      'elemMatch',
+      'eq',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'ne',
+      'nin',
+      'nor',
+      'regex',
+      'size',
+      'mod',
+      'slice',
+      'intersects',
+      'regex',
+      'maxDistance',
+      'minDistance'
+    ]
+  }
+
+  where () {
+    if (_.isPlainObject(arguments[0])) {
+      _.forEach(arguments[0], (conditions, key) => {
+        if (key === 'and' || key === 'or' || key === 'nor') {
+          if (!_.isArray(conditions)) {
+            throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
+          }
+          let queries = []
+          _.forEach(conditions, (condition) => {
+            queries.push(this.query.clone().where(condition)._conditions)
+          })
+          this.query[key](queries)
+        } else if (_.isPlainObject(conditions)) {
+          _.forEach(conditions, (c, k) => {
+            if (k === 'near' || k === 'nearSphere') {
+              let point = { center: [c.lng, c.lat] }
+              if (this.Model.geometries && this.Model.geometries.includes(key)) {
+                point = { center: { type: 'Point', coordinates: [c.lng, c.lat], spherical: k === 'nearSphere' } }
+              }
+              if (conditions.maxDistance) {
+                point.maxDistance = conditions.maxDistance
+              }
+              if (conditions.minDistance) {
+                point.minDistance = conditions.minDistance
+              }
+              this.query.where(key).near(point)
+            } else if (this.constructor.supportMethods.includes(k)) {
+              if (k !== 'maxDistance' && k !== 'minDistance') {
+                this.query.where(key)[k](c)
+              }
+            } else {
+              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
+            }
+          })
+        } else {
+          const value = this.Model.formatField(key, conditions)
+          this.query.where(key, value)
+        }
+      })
+    } else if (_.isFunction(arguments[0])) {
+      arguments[0].bind(this).call()
+    } else {
+      if (arguments.length === 2) {
+        const key = arguments[0]
+        const value = this.Model.formatField(arguments[0], arguments[1])
+        this.query.where(key, value)
+      } else if (arguments.length === 3) {
+        switch (arguments[1]) {
+          case '=':
+            this.query.where(arguments[0]).eq(arguments[2])
+            break
+          case '>':
+            this.query.where(arguments[0]).gt(arguments[2])
+            break
+          case '>=':
+            this.query.where(arguments[0]).gte(arguments[2])
+            break
+          case '<':
+            this.query.where(arguments[0]).lt(arguments[2])
+            break
+          case '<=':
+            this.query.where(arguments[0]).lte(arguments[2])
+            break
+          default:
+            throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
+        }
+      } else {
+        this.query.where(arguments[0])
+      }
+    }
     return this
   }
 

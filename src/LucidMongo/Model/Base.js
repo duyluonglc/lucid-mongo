@@ -58,7 +58,7 @@ class BaseModel {
    * @static
    */
   static get objectIDs () {
-    return [this.constructor.primaryKey]
+    return [this.primaryKey]
   }
 
   /**
@@ -139,6 +139,24 @@ class BaseModel {
    */
   static get connection () {
     return ''
+  }
+
+  static formatField (key, value) {
+    if (this.dates.includes(key)) {
+      return this.formatDates(key, value)
+    }
+    console.log(this.objectIDs)
+    if (this.objectIDs.includes(key)) {
+      return this.formatObjectID(key, value)
+    }
+    if (this.geometries.includes(key)) {
+      return this.formatGeometry(key, value)
+    }
+    if (this.booleans.includes(key)) {
+      return this.formatBoolean(key, value)
+    }
+
+    return value
   }
 
   /**
@@ -274,7 +292,7 @@ class BaseModel {
    * @param {any} value
    * @returns {any}
    */
-  boolField (key, value) {
+  _convertFieldToObjectInstance (key, value) {
     if (this.constructor.dates.includes(key)) {
       return this.constructor.parseDates(key, value)
     }

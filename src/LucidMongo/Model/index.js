@@ -557,7 +557,7 @@ class Model extends BaseModel {
     if (typeof (this[setterName]) === 'function') {
       return this[setterName](value)
     }
-    return this.boolField(key, value)
+    return this._convertFieldToObjectInstance(key, value)
   }
 
   /**
