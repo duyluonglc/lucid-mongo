@@ -320,7 +320,7 @@ class QueryBuilder {
     const valuesCopy = _.clone(values)
     const fakeModel = new this.Model()
     fakeModel._setUpdatedAt(valuesCopy)
-    fakeModel._formatDateFields(valuesCopy)
+    fakeModel._formatFields(valuesCopy)
 
     /**
      * Apply all the scopes before update
@@ -340,6 +340,18 @@ class QueryBuilder {
   delete () {
     this._applyScopes()
     return this.query.delete()
+  }
+
+  /**
+   * Insert row.
+   *
+   * @method insert
+   * @async
+   *
+   * @return {Promise}
+   */
+  insert () {
+    return this.query.insert(...arguments)
   }
 
   /**

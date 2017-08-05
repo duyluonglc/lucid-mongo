@@ -11,6 +11,8 @@
 
 const _ = require('lodash')
 const moment = require('moment')
+const GeoPoint = require('geopoint')
+const ObjectID = require('mongodb').ObjectID
 const VanillaSerializer = require('../Serializers/Vanilla')
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
@@ -43,6 +45,44 @@ class BaseModel {
     if (this.createdAtColumn) { dates.push(this.createdAtColumn) }
     if (this.updatedAtColumn) { dates.push(this.updatedAtColumn) }
     return dates
+  }
+
+  /**
+   * The attributes to be considered as ObjectID.
+   * By default ['_id'] are considered as ObjectID.
+   *
+   * @attribute objectIDs
+   *
+   * @return {Array}
+   *
+   * @static
+   */
+  static get objectIDs () {
+    return [this.constructor.primaryKey]
+  }
+
+  /**
+   * The attributes to be considered as location. By default [] are considered as location.
+   *
+   * @attribute geometries
+   *
+   * @return {Array}
+   *
+   * @static
+   */
+  static get geometries () {
+    return []
+  }
+
+  /**
+   * Boolean fields will auto convert to boolean
+   *
+   * @return {Array}
+   *
+   * @public
+   */
+  static get booleans () {
+    return []
   }
 
   /**
@@ -117,7 +157,55 @@ class BaseModel {
    * @return {String}
    */
   static formatDates (key, value) {
-    return moment(value).format(DATE_FORMAT)
+    return moment(value).toDate()
+  }
+
+  /**
+   * Format objectID fields
+   *
+   * @method formatObjectID
+   *
+   * @param  {String}    key
+   * @param  {String|ObjectID}    value
+   *
+   * @return {String}
+   */
+  static formatObjectID (key, value) {
+    return value instanceof ObjectID ? value : ObjectID(value)
+  }
+
+  /**
+   * Format boolean fields
+   *
+   * @method formatBooleans
+   *
+   * @param  {String}    key
+   * @param  {Any}    value
+   *
+   * @return {String}
+   */
+  static formatBoolean (key, value) {
+    return !!value
+  }
+
+  /**
+   * Format geometry fields
+   *
+   * @method formatGeometry
+   *
+   * @param  {String}    key
+   * @param  {Object|Geometry}    value
+   *
+   * @return {String}
+   */
+  static formatGeometry (key, value) {
+    return value instanceof GeoPoint ? {
+      type: 'Point',
+      coordinates: [
+        value.longitude(),
+        value.latitude()
+      ]
+    } : value
   }
 
   /**
@@ -140,6 +228,143 @@ class BaseModel {
    */
   static castDates (key, value) {
     return value.format(DATE_FORMAT)
+  }
+
+  /**
+   * This method is executed when toJSON is called on a
+   * model or collection of models.
+   *
+   * @method castObjectID
+   *
+   * @param  {String}  key
+   * @param  {Moment}  value
+   *
+   * @return {String}
+   *
+   * @static
+   */
+  static castObjectID (key, value) {
+    return String(value)
+  }
+
+  /**
+   * This method is executed when toJSON is called on a
+   * model or collection of models.
+   *
+   * @method castGeometry
+   *
+   * @param  {String}  key
+   * @param  {Moment}  value
+   *
+   * @return {String}
+   *
+   * @static
+   */
+  static castGeometry (key, value) {
+    return value instanceof GeoPoint ? {
+      latitude: value.latitude(),
+      longitude: value.longitude()
+    } : value
+  }
+
+  /**
+   * This method is executed when set value of attribute.
+   *
+   * @param {String} key
+   * @param {any} value
+   * @returns {any}
+   */
+  boolField (key, value) {
+    if (this.constructor.dates.includes(key)) {
+      return this.constructor.parseDates(key, value)
+    }
+    if (this.constructor.objectIDs.includes(key)) {
+      return this.constructor.parseObjectID(key, value)
+    }
+    if (this.constructor.geometries.includes(key)) {
+      return this.constructor.parseGeometry(key, value)
+    }
+    if (this.constructor.booleans.includes(key)) {
+      return this.constructor.parseBoolean(key, value)
+    }
+
+    return value
+  }
+
+  /**
+   * This method is executed when set value of attribute.
+   *
+   * @method parseDates
+   *
+   * @param  {String}  key
+   * @param  {String|Moment}  value
+   *
+   * @return {String}
+   *
+   * @static
+   */
+  static parseDates (key, value) {
+    return moment.isMoment(value) || !value ? value : moment(value)
+  }
+
+  /**
+   * This method is executed when set value of attribute.
+   *
+   * @method parseObjectID
+   *
+   * @param  {String}  key
+   * @param  {String|ObjectID}  value
+   *
+   * @return {ObjectID}
+   *
+   * @static
+   */
+  static parseObjectID (key, value) {
+    return value instanceof ObjectID || !value ? value : ObjectID(value)
+  }
+
+  /**
+   * This method is executed when set value of attribute.
+   *
+   * @method parseGeometry
+   *
+   * @param  {String}  key
+   * @param  {Object}  value
+   *
+   * @return {GeoPoint}
+   *
+   * @static
+   */
+  static parseGeometry (key, value) {
+    if (value instanceof GeoPoint) {
+      return value
+    }
+
+    if (typeof value === 'object' && value.latitude !== undefined && value.longitude !== undefined) {
+      return new GeoPoint(value.latitude, value.longitude)
+    }
+
+    if (typeof value === 'object' && value.type === 'Point' && value.coordinates !== undefined) {
+      return new GeoPoint(value.coordinates[1], value.coordinates[0])
+    }
+
+    return value
+  }
+
+  /**
+   * This method is executed when set value of attribute.
+   *
+   * @method parseBoolean
+   *
+   * @param  {String}  key
+   * @param  {any}  value
+   *
+   * @return {bool}
+   *
+   * @static
+   */
+  static parseBoolean (key, value) {
+    return !!value
   }
 
   /**
@@ -181,6 +406,7 @@ class BaseModel {
   _instantiate () {
     this.__setters__ = [
       '$attributes',
+      '$unsetAttributes',
       '$persisted',
       'primaryKeyValue',
       '$originalAttributes',
@@ -191,6 +417,7 @@ class BaseModel {
     ]
 
     this.$attributes = {}
+    this.$unsetAttributes = {}
     this.$persisted = false
     this.$originalAttributes = {}
     this.$relations = {}
@@ -200,9 +427,18 @@ class BaseModel {
   }
 
   /**
+   * Unset attribute
+   *
+   * @param {string} key
+   */
+  unset (key) {
+    this.$unsetAttributes[key] = true
+  }
+
+  /**
    * Set attributes on model instance in bulk.
    *
-   * NOTE: Calling this method will remove the existing attributes.
+   * NOTE: Calling this method will remove the existing attributes. <= removed
    *
    * @method fill
    *
@@ -211,7 +447,7 @@ class BaseModel {
    * @return {void}
    */
   fill (attributes) {
-    this.$attributes = {}
+    // this.$attributes = {} // <= removed
     _.each(attributes, (value, key) => this.set(key, value))
   }
 

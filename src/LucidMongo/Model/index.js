@@ -11,6 +11,8 @@
 
 const _ = require('lodash')
 const moment = require('moment')
+const GeoPoint = require('geopoint')
+const ObjectID = require('mongodb').ObjectID
 const { resolver } = require('../../../lib/iocResolver')
 const GE = require('@adonisjs/generic-exceptions')
 const BaseModel = require('./Base')
@@ -78,7 +80,7 @@ class Model extends BaseModel {
    * @static
    */
   static get primaryKey () {
-    return 'id'
+    return '_id'
   }
 
   /**
@@ -97,7 +99,7 @@ class Model extends BaseModel {
    * ``
    */
   static get foreignKey () {
-    return util.makeForeignKey(this.name)
+    return util.makeForeignKey(this.name, this.nameConvention === 'camel')
   }
 
   /**
@@ -148,6 +150,15 @@ class Model extends BaseModel {
   }
 
   /**
+   * Naming convention of Collections and Fields are snake or camel case
+   *
+   * @readonly
+   */
+  get nameConvention () {
+    return 'snake'
+  }
+
+  /**
    * The collection name for the model. It is dynamically generated
    * from the Model name by pluralizing it and converting it
    * to lowercase.
@@ -168,7 +179,7 @@ class Model extends BaseModel {
    * ```
    */
   static get collection () {
-    return util.makeCollectionName(this.name)
+    return util.makeCollectionName(this.name, this.nameConvention === 'camel')
   }
 
   /**
@@ -497,7 +508,7 @@ class Model extends BaseModel {
    * any part of your application doesn't want mutations
    * then pass a cloned copy of object
    *
-   * @method _formatDateFields
+   * @method _formatFields
    *
    * @param  {Object}          values
    *
@@ -505,12 +516,26 @@ class Model extends BaseModel {
    *
    * @private
    */
-  _formatDateFields (values) {
+  _formatFields (values) {
+    // dates
     _(this.constructor.dates)
-    .filter((date) => {
-      return values[date] && typeof (this[util.getSetterName(date)]) !== 'function'
-    })
-    .each((date) => { values[date] = this.constructor.formatDates(date, values[date]) })
+      .filter((key) => values[key] && typeof (this[util.getSetterName(key)]) !== 'function')
+      .each((key) => { values[key] = this.constructor.formatDates(key, values[key]) })
+
+    // objectID
+    _(this.constructor.objectIDs)
+      .filter((key) => values[key] && typeof (this[util.getSetterName(key)]) !== 'function')
+      .each((key) => { values[key] = this.constructor.formatObjectID(key, values[key]) })
+
+    // geometry
+    _(this.constructor.geometries)
+      .filter((key) => values[key] && typeof (this[util.getSetterName(key)]) !== 'function')
+      .each((key) => { values[key] = this.constructor.formatGeometry(key, values[key]) })
+
+    // bool
+    _(this.constructor.booleans)
+      .filter((key) => values[key] !== undefined && typeof (this[util.getSetterName(key)]) !== 'function')
+      .each((key) => { values[key] = this.constructor.formatBoolean(key, values[key]) })
   }
 
   /**
@@ -529,7 +554,10 @@ class Model extends BaseModel {
    */
   _getSetterValue (key, value) {
     const setterName = util.getSetterName(key)
-    return typeof (this[setterName]) === 'function' ? this[setterName](value) : value
+    if (typeof (this[setterName]) === 'function') {
+      return this[setterName](value)
+    }
+    return this.boolField(key, value)
   }
 
   /**
@@ -629,11 +657,10 @@ class Model extends BaseModel {
      */
     this._setCreatedAt(this.$attributes)
     this._setUpdatedAt(this.$attributes)
-    this._formatDateFields(this.$attributes)
+    this._formatFields(this.$attributes)
 
     const result = await this.constructor
       .query()
-      .returning(this.constructor.primaryKey)
       .insert(this.$attributes)
 
     /**
@@ -641,7 +668,7 @@ class Model extends BaseModel {
      * set to true on model
      */
     if (this.constructor.incrementing) {
-      this.primaryKeyValue = result[0]
+      this.primaryKeyValue = result.insertedIds[0]
     }
 
     this.$persisted = true
@@ -674,7 +701,14 @@ class Model extends BaseModel {
     await this.constructor.$hooks.before.exec('update', this)
     let affected = 0
 
-    if (this.isDirty) {
+    if (this.isDirty || _.size(this.$unsetAttributes)) {
+      const dirty = this.dirty
+      /**
+       * Unset attributes
+       */
+      if (_.size(this.$unsetAttributes)) {
+        dirty['$unset'] = this.$unsetAttributes
+      }
       /**
        * Set proper timestamps
        */
@@ -682,7 +716,7 @@ class Model extends BaseModel {
         .query()
         .where(this.constructor.primaryKey, this.primaryKeyValue)
         .ignoreScopes()
-        .update(this.dirty)
+        .update(dirty)
       /**
        * Sync originals to find a diff when updating for next time
        */
@@ -697,20 +731,35 @@ class Model extends BaseModel {
   }
 
   /**
-   * Converts all date fields to moment objects, so
+   * Converts all fields to objects: moment, ObjectID, GeoPoint, so
    * that you can transform them into something
    * else.
    *
-   * @method _convertDatesToMomentInstances
+   * @method _convertFieldToObjectInstances
    *
    * @return {void}
    *
    * @private
    */
-  _convertDatesToMomentInstances () {
+  _convertFieldToObjectInstances () {
     this.constructor.dates.forEach((field) => {
       if (this.$attributes[field]) {
-        this.$attributes[field] = moment(this.$attributes[field])
+        this.$attributes[field] = this.constructor.parseDates(field, this.$attributes[field])
+      }
+    })
+    this.constructor.objectIDs.forEach((field) => {
+      if (this.$attributes[field]) {
+        this.$attributes[field] = this.constructor.parseObjectID(field, this.$attributes[field])
+      }
+    })
+    this.constructor.geometries.forEach((field) => {
+      if (this.$attributes[field]) {
+        this.$attributes[field] = this.constructor.parseGeometry(field, this.$attributes[field])
+      }
+    })
+    this.constructor.booleans.forEach((field) => {
+      if (this.$attributes[field]) {
+        this.$attributes[field] = this.constructor.parseBoolean(field, this.$attributes[field])
       }
     })
   }
@@ -750,6 +799,10 @@ class Model extends BaseModel {
        */
       if (value instanceof moment && typeof (this[util.getGetterName(key)]) !== 'function') {
         result[key] = this.constructor.castDates(key, value)
+      } else if (value instanceof ObjectID && typeof (this[util.getGetterName(key)]) !== 'function') {
+        result[key] = this.constructor.castObjectID(key, value)
+      } else if (value instanceof GeoPoint && typeof (this[util.getGetterName(key)]) !== 'function') {
+        result[key] = this.constructor.castGeometry(key, value)
       } else {
         result[key] = this._getGetterValue(key, value)
       }
@@ -838,7 +891,7 @@ class Model extends BaseModel {
   newUp (row) {
     this.$persisted = true
     this.$attributes = row
-    this._convertDatesToMomentInstances()
+    this._convertFieldToObjectInstances()
     this._syncOriginals()
   }
 
