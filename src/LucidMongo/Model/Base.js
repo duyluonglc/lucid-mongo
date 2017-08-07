@@ -145,7 +145,6 @@ class BaseModel {
     if (this.dates.includes(key)) {
       return this.formatDates(key, value)
     }
-    console.log(this.objectIDs)
     if (this.objectIDs.includes(key)) {
       return this.formatObjectID(key, value)
     }

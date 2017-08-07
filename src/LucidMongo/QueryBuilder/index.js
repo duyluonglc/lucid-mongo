@@ -279,6 +279,26 @@ class QueryBuilder {
   }
 
   /**
+   * Find record by primary key
+   *
+   * @method find
+   * @async
+   *
+   * @param  {string} id
+   *
+   * @return {Model|null}
+   */
+  find (id) {
+    /**
+     * Apply all the scopes before fetching
+     * data
+     */
+    this._applyScopes()
+
+    return this.where(this.Model.primaryKey, id).first()
+  }
+
+  /**
    * Paginate records, same as fetch but returns a
    * collection with pagination info
    *
