@@ -61,7 +61,6 @@ class Database {
       ? `${config.connection.user}:${config.connection.password}@`
       : (config.connection.user ? `${config.connection.user}@` : '')
     this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
-    this.mquery = mquery()
     this.connection = null
     this._globalTrx = null
     this.collectionName = null
@@ -78,6 +77,7 @@ class Database {
   collection (collectionName) {
     // this.query().collection(this.connection.collection(collectionName))
     this.collectionName = collectionName
+    this.mquery = mquery()
     return this
   }
 
