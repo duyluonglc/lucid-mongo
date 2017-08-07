@@ -160,7 +160,7 @@ class EagerLoad {
          * Find the actual value of the relationship for that model instances
          */
         const value = relationGroups.values.find((group) => {
-          return group.identity === modelInstance[relationGroups.key]
+          return String(group.identity) === String(modelInstance[relationGroups.key])
         }) || { value: relationGroups.defaultValue }
 
         /**
