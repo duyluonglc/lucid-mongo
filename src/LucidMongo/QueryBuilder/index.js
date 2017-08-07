@@ -682,6 +682,7 @@ class QueryBuilder {
    */
   whereNull (key) {
     this.query.where(key).exists(false)
+    return this
   }
 
   /**
@@ -694,6 +695,7 @@ class QueryBuilder {
    */
   whereNotNull (key) {
     this.query.where(key).exists()
+    return this
   }
 
   /**
@@ -709,6 +711,7 @@ class QueryBuilder {
       arg = arguments[0]
     }
     this.query.select(arg)
+    return this
   }
 
   /**
@@ -724,7 +727,8 @@ class QueryBuilder {
     } else {
       arg = arguments[0]
     }
-    return this.query.sort(arg)
+    this.query.sort(arg)
+    return this
   }
 
   /**
