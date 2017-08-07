@@ -289,12 +289,6 @@ class QueryBuilder {
    * @return {Model|null}
    */
   find (id) {
-    /**
-     * Apply all the scopes before fetching
-     * data
-     */
-    this._applyScopes()
-
     return this.where(this.Model.primaryKey, id).first()
   }
 
@@ -388,6 +382,7 @@ class QueryBuilder {
    * @return {Array}
    */
   async ids () {
+    this._applyScopes()
     const rows = await this.query.find()
     return rows.map((row) => row[this.Model.primaryKey])
   }
@@ -527,6 +522,13 @@ class QueryBuilder {
     return this
   }
 
+  /**
+   * Condition Methods
+   *
+   * @readonly
+   * @static
+   * @memberof QueryBuilder
+   */
   static get conditionMethods () {
     return [
       'eq',
@@ -542,6 +544,11 @@ class QueryBuilder {
     ]
   }
 
+  /**
+   * replace condition methods of mquery
+   *
+   * @memberof QueryBuilder
+   */
   replaceMethods () {
     for (let name of this.constructor.conditionMethods) {
       let originMethod = this.query[name]
@@ -554,6 +561,13 @@ class QueryBuilder {
     }
   }
 
+  /**
+   * Support Methods
+   *
+   * @readonly
+   * @static
+   * @memberof QueryBuilder
+   */
   static get supportMethods () {
     return [
       'all',
@@ -579,6 +593,12 @@ class QueryBuilder {
     ]
   }
 
+  /**
+   * Replace where method
+   *
+   * @returns {this}
+   * @memberof QueryBuilder
+   */
   where () {
     if (_.isPlainObject(arguments[0])) {
       _.forEach(arguments[0], (conditions, key) => {
@@ -653,6 +673,121 @@ class QueryBuilder {
   }
 
   /**
+   * Where field is not exists
+   *
+   * @param {String} key
+   * @param {Mixed} [value]
+   *
+   * @chainable
+   */
+  whereNull (key) {
+    this.query.where(key).exists(false)
+  }
+
+  /**
+   * Where field is exists
+   *
+   * @param {String} key
+   * @param {Mixed} [value]
+   *
+   * @chainable
+   */
+  whereNotNull (key) {
+    this.query.where(key).exists()
+  }
+
+  /**
+   * Convert select query
+   *
+   * @public
+   */
+  select () {
+    let arg = null
+    if (arguments.length > 1) {
+      arg = _.values(arguments).join(' ')
+    } else {
+      arg = arguments[0]
+    }
+    this.query.select(arg)
+  }
+
+  /**
+   * @method orderBy
+   *
+   * @returns {this}
+   * @memberof QueryBuilder
+   */
+  orderBy () {
+    let arg = null
+    if (arguments.length > 1) {
+      arg = _.set({}, arguments[0], arguments[1])
+    } else {
+      arg = arguments[0]
+    }
+    return this.query.sort(arg)
+  }
+
+  /**
+   * Count collections
+   *
+   * @method count
+   *
+   * @return {Object}
+   */
+  count (groupBy) {
+    this._applyScopes()
+    return this.query.aggregate('count', null, groupBy)
+  }
+
+  /**
+   * Max field collections
+   *
+   * @method max
+   *
+   * @return {Object}
+   */
+  max (key, groupBy) {
+    this._applyScopes()
+    return this.query.aggregate('max', key, groupBy)
+  }
+
+  /**
+   * Min field collections
+   *
+   * @method min
+   *
+   * @return {Object}
+   */
+  async min (key, groupBy) {
+    this._applyScopes()
+    return this.query.aggregate('min', key, groupBy)
+  }
+
+  /**
+   * Sum field collections
+   *
+   * @method sum
+   *
+   * @return {Object}
+   */
+  async sum (key, groupBy) {
+    this._applyScopes()
+    return this.query.aggregate('sum', key, groupBy)
+  }
+
+  /**
+   * Average field collections
+   *
+   * @method avg
+   *
+   * @return {Object}
+   */
+  async avg (key, groupBy) {
+    this._applyScopes()
+    return this.query.aggregate('avg', key, groupBy)
+  }
+
+  /**
    * Returns the sql representation of query
    *
    * @method toSQL
@@ -660,7 +795,7 @@ class QueryBuilder {
    * @return {Object}
    */
   toSQL () {
-    return this.query.toSQL()
+    return JSON.stringify(this.mquery)
   }
 
   /**

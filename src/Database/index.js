@@ -12,7 +12,7 @@
 const { MongoClient } = require('mongodb')
 const mquery = require('mquery')
 const CE = require('../Exceptions')
-// const _ = require('lodash')
+const _ = require('lodash')
 
 const proxyHandler = {
   get (target, name) {
@@ -230,6 +230,25 @@ class Database {
   }
 
   /**
+   * get Conditions
+   *
+   * @readonly
+   * @memberof Database
+   */
+  get conditions () {
+    return this.mquery._conditions
+  }
+
+  /**
+   * Clone
+   *
+   * @memberof Database
+   */
+  clone () {
+    return _.cloneDeep(this.mquery)
+  }
+
+  /**
    * Closes the database connection. No more queries
    * can be made after this.
    *
@@ -305,19 +324,6 @@ class Database {
   }
 
   /**
-   * Count collections
-   *
-   * @method count
-   *
-   * @return {Object}
-   */
-  async count () {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return this.mquery.collection(collection).count(...arguments)
-  }
-
-  /**
    * Query pagination
    *
    * @method paginate
@@ -350,10 +356,40 @@ class Database {
    *
    * @return {Object}
    */
-  async aggregate () {
+  async aggregate (aggregator, key, groupBy) {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return collection.aggregate(...arguments)
+    const $match = this.conditions
+    const $group = { _id: '$' + groupBy }
+    switch (aggregator) {
+      case 'count':
+        $group[aggregator] = { $sum: 1 }
+        break
+      case 'max':
+        $group[aggregator] = { $max: '$' + key }
+        break
+      case 'min':
+        $group[aggregator] = { $min: '$' + key }
+        break
+      case 'sum':
+        $group[aggregator] = { $sum: '$' + key }
+        break
+      case 'avg':
+        $group[aggregator] = { $avg: '$' + key }
+        break
+      default:
+        break
+    }
+    // debug('count', this.collectionName, $match, $group)
+    return new Promise((resolve, reject) => {
+      collection.aggregate([{ $match }, { $group }], (err, result) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null)
+        }
+      })
+    })
   }
 }
 
