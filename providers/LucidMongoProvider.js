@@ -11,7 +11,7 @@
 
 const { ServiceProvider } = require('@adonisjs/fold')
 
-class LucidProvider extends ServiceProvider {
+class LucidMongoProvider extends ServiceProvider {
   /**
    * Registering the database manager under
    * Adonis/Src/Database namespace.
@@ -74,4 +74,4 @@ class LucidProvider extends ServiceProvider {
   }
 }
 
-module.exports = LucidProvider
+module.exports = LucidMongoProvider
