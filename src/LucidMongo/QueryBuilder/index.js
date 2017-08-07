@@ -699,6 +699,19 @@ class QueryBuilder {
   }
 
   /**
+   * Where field in array
+   *
+   * @param {String} key
+   * @param {Mixed} [value]
+   *
+   * @chainable
+   */
+  whereIn (key, values) {
+    this.query.where(key).in(values)
+    return this
+  }
+
+  /**
    * Convert select query
    *
    * @public
