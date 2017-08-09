@@ -63,7 +63,6 @@ class Database {
     this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
     this.connection = null
     this._globalTrx = null
-    this.collectionName = null
     return new Proxy(this, proxyHandler)
   }
 
@@ -74,11 +73,11 @@ class Database {
     return Promise.resolve(this.connection)
   }
 
-  collection (collectionName) {
-    // this.query().collection(this.connection.collection(collectionName))
-    this.collectionName = collectionName
-    this.mquery = mquery()
-    return this
+  async collection (collectionName) {
+    if (!this.connection) {
+      this.connection = await MongoClient.connect(this.connectionString)
+    }
+    return Promise.resolve(this.connection.collection(collectionName))
   }
 
   /**
@@ -216,17 +215,7 @@ class Database {
    * @return {Object}
    */
   query () {
-    return this.mquery
-  }
-
-  /**
-   *
-   * @method query
-   *
-   * @return {Object}
-   */
-  on (event, callback) {
-
+    return mquery()
   }
 
   /**
@@ -257,7 +246,7 @@ class Database {
    * @return {Promise}
    */
   close () {
-    return this.mquery.close()
+    return this.connection.close()
   }
 
   /**

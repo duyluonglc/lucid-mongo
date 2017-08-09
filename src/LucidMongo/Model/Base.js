@@ -174,7 +174,7 @@ class BaseModel {
    * @return {String}
    */
   static formatDates (key, value) {
-    return moment(value).toDate()
+    return moment.isMoment(value) ? value.toDate() : moment(value).toDate()
   }
 
   /**
@@ -188,6 +188,9 @@ class BaseModel {
    * @return {String}
    */
   static formatObjectID (key, value) {
+    if (_.isArray(value)) {
+      return _.map(value, item => this.formatObjectID(key, item))
+    }
     return value instanceof ObjectID ? value : ObjectID(value)
   }
 

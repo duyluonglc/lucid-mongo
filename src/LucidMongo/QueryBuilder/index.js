@@ -10,6 +10,7 @@
 */
 
 const _ = require('lodash')
+const query = require('mquery')
 
 const EagerLoad = require('../EagerLoad')
 const RelationsParser = require('../Relations/Parser')
@@ -46,7 +47,7 @@ const proxyHandler = {
 class QueryBuilder {
   constructor (Model, connection) {
     this.Model = Model
-    const collection = this.Model.prefix ? `${this.Model.prefix}${this.Model.collection}` : this.Model.collection
+    this.collection = this.Model.prefix ? `${this.Model.prefix}${this.Model.collection}` : this.Model.collection
 
     /**
      * Reference to database provider
@@ -54,9 +55,9 @@ class QueryBuilder {
     this.db = ioc.use('Adonis/Src/Database').connection(connection)
 
     /**
-     * Reference to query builder with pre selected collection
+     * mquery
      */
-    this.query = this.db.collection(collection)
+    this.query = query()
 
     /**
      * Scopes to be ignored at runtime
@@ -87,6 +88,16 @@ class QueryBuilder {
     this.replaceMethods()
 
     return new Proxy(this, proxyHandler)
+  }
+
+  /**
+   *
+   * @method query
+   *
+   * @return {Object}
+   */
+  on (event, callback) {
+
   }
 
   /**
@@ -211,7 +222,8 @@ class QueryBuilder {
     /**
      * Execute query
      */
-    const rows = await this.query.find()
+    const collection = await this.db.collection(this.collection)
+    const rows = await this.query.collection(collection).find()
 
     /**
      * Convert to an array of model instances
@@ -240,7 +252,9 @@ class QueryBuilder {
      */
     this._applyScopes()
 
-    const row = await this.query.first()
+    const collection = await this.db.collection(this.collection)
+    const row = await this.query.collection(collection).findOne()
+
     if (!row) {
       return null
     }
@@ -310,7 +324,9 @@ class QueryBuilder {
      * data
      */
     this._applyScopes()
-    const result = await this.query.paginate(page, limit)
+    const collection = await this.db.collection(this.collection)
+    this.query.limit(limit).skip((page || 1) * limit)
+    const result = await this.query.collection(collection).find()
 
     /**
      * Convert to an array of model instances
@@ -335,7 +351,7 @@ class QueryBuilder {
    *
    * @return {Promise}
    */
-  update (values) {
+  async update (values) {
     const valuesCopy = _.clone(values)
     const fakeModel = new this.Model()
     fakeModel._setUpdatedAt(valuesCopy)
@@ -345,7 +361,8 @@ class QueryBuilder {
      * Apply all the scopes before update
      */
     this._applyScopes()
-    return this.query.update(valuesCopy)
+    const collection = await this.db.collection(this.collection)
+    return this.query.collection(collection).update(valuesCopy, { multi: true })
   }
 
   /**
@@ -356,21 +373,23 @@ class QueryBuilder {
    *
    * @return {Promise}
    */
-  delete () {
+  async delete () {
     this._applyScopes()
-    return this.query.delete()
+    const collection = await this.db.collection(this.collection)
+    return this.query.collection(collection).remove()
   }
 
   /**
    * Insert row.
    *
    * @method insert
-   * @async
    *
-   * @return {Promise}
+   * @param {object} attributes
+   * @returns {Promise}
    */
-  insert () {
-    return this.query.insert(...arguments)
+  async insert (attributes) {
+    const collection = await this.db.collection(this.collection)
+    return collection.insert(attributes)
   }
 
   /**
@@ -383,7 +402,7 @@ class QueryBuilder {
    */
   async ids () {
     this._applyScopes()
-    const rows = await this.query.find()
+    const rows = await this.fetch()
     return rows.map((row) => row[this.Model.primaryKey])
   }
 
@@ -553,7 +572,7 @@ class QueryBuilder {
     for (let name of this.constructor.conditionMethods) {
       let originMethod = this.query[name]
       this.query[name] = (param) => {
-        const key = this.query.mquery._path
+        const key = this.query._path
         param = this.Model.formatField(key, param)
         originMethod.apply(this.query, [param])
         return this
@@ -751,9 +770,9 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  count (groupBy) {
+  async count (groupBy) {
     this._applyScopes()
-    return this.query.aggregate('count', null, groupBy)
+    return this._aggregate('count', null, groupBy)
   }
 
   /**
@@ -765,7 +784,7 @@ class QueryBuilder {
    */
   max (key, groupBy) {
     this._applyScopes()
-    return this.query.aggregate('max', key, groupBy)
+    return this._aggregate('max', key, groupBy)
   }
 
   /**
@@ -777,7 +796,7 @@ class QueryBuilder {
    */
   async min (key, groupBy) {
     this._applyScopes()
-    return this.query.aggregate('min', key, groupBy)
+    return this._aggregate('min', key, groupBy)
   }
 
   /**
@@ -789,7 +808,7 @@ class QueryBuilder {
    */
   async sum (key, groupBy) {
     this._applyScopes()
-    return this.query.aggregate('sum', key, groupBy)
+    return this._aggregate('sum', key, groupBy)
   }
 
   /**
@@ -801,7 +820,49 @@ class QueryBuilder {
    */
   async avg (key, groupBy) {
     this._applyScopes()
-    return this.query.aggregate('avg', key, groupBy)
+    return this._aggregate('avg', key, groupBy)
+  }
+
+  /**
+   * Aggregation
+   *
+   * @method _aggregate
+   *
+   * @return {Object}
+   */
+  async _aggregate (aggregator, key, groupBy) {
+    const collection = await this.db.collection(this.collection)
+    const $match = this.conditions
+    const $group = { _id: '$' + groupBy }
+    switch (aggregator) {
+      case 'count':
+        $group[aggregator] = { $sum: 1 }
+        break
+      case 'max':
+        $group[aggregator] = { $max: '$' + key }
+        break
+      case 'min':
+        $group[aggregator] = { $min: '$' + key }
+        break
+      case 'sum':
+        $group[aggregator] = { $sum: '$' + key }
+        break
+      case 'avg':
+        $group[aggregator] = { $avg: '$' + key }
+        break
+      default:
+        break
+    }
+    // debug('count', this.collectionName, $match, $group)
+    return new Promise((resolve, reject) => {
+      this.db.collection.aggregate([{ $match }, { $group }], (err, result) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve(groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null)
+        }
+      })
+    })
   }
 
   /**
