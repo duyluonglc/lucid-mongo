@@ -68,25 +68,25 @@ class BaseRelation {
   }
 
   /**
-   * The primary table in relationship
+   * The primary collection in relationship
    *
-   * @attribute $primaryTable
+   * @attribute $primaryCollection
    *
    * @return {String}
    */
-  get $primaryTable () {
-    return this.parentInstance.constructor.table
+  get $primaryCollection () {
+    return this.parentInstance.constructor.collection
   }
 
   /**
-   * The foreign table in relationship
+   * The foreign collection in relationship
    *
-   * @attribute $foreignTable
+   * @attribute $foreignCollection
    *
    * @return {String}
    */
-  get $foreignTable () {
-    return this.RelatedModel.table
+  get $foreignCollection () {
+    return this.RelatedModel.collection
   }
 
   /**

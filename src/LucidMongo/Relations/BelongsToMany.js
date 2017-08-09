@@ -26,7 +26,7 @@ const PivotModel = require('../Model/PivotModel')
 
 /**
  * BelongsToMany class builds relationship between
- * two models with the help of pivot table/model
+ * two models with the help of pivot collection/model
  *
  * @class BelongsToMany
  * @constructor
@@ -40,19 +40,19 @@ class BelongsToMany extends BaseRelation {
 
     /**
      * Since user can define a fully qualified model for
-     * pivot table, we store it under this variable.
+     * pivot collection, we store it under this variable.
      *
      * @type {[type]}
      */
     this._PivotModel = null
 
     /**
-     * Settings related to pivot table only
+     * Settings related to pivot collection only
      *
      * @type {Object}
      */
     this._pivot = {
-      table: util.makePivotTableName(parentInstance.constructor.name, relatedModel.name),
+      collection: util.makePivotCollectionName(parentInstance.constructor.name, relatedModel.name),
       withTimestamps: false,
       withFields: []
     }
@@ -84,15 +84,15 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Returns the pivot table name. The pivot model is
-   * given preference over the default table name.
+   * Returns the pivot collection name. The pivot model is
+   * given preference over the default collection name.
    *
-   * @attribute $pivotTable
+   * @attribute $pivotCollection
    *
    * @return {String}
    */
-  get $pivotTable () {
-    return this._PivotModel ? this._PivotModel.table : this._pivot.table
+  get $pivotCollection () {
+    return this._PivotModel ? this._PivotModel.collection : this._pivot.collection
   }
 
   /**
@@ -107,7 +107,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Returns the name of select statement on pivot table
+   * Returns the name of select statement on pivot collection
    *
    * @method _selectForPivot
    *
@@ -118,12 +118,12 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _selectForPivot (field) {
-    return `${this.$pivotTable}.${field} as pivot_${field}`
+    return `${this.$pivotCollection}.${field} as pivot_${field}`
   }
 
   /**
-   * Adds a where clause on pivot table by prefixing
-   * the pivot table name.
+   * Adds a where clause on pivot collection by prefixing
+   * the pivot collection name.
    *
    * @method _whereForPivot
    *
@@ -136,55 +136,7 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _whereForPivot (method, key, ...args) {
-    this.relatedQuery[method](`${this.$pivotTable}.${key}`, ...args)
-  }
-
-  /**
-   * Selecting fields from foriegn table and pivot
-   * table
-   *
-   * @method _selectFields
-   *
-   * @return {void}
-   */
-  _selectFields () {
-    const pivotColumns = this.$pivotColumns
-
-    /**
-     * The list of pivotFields to be selected
-     *
-     * @type {Array}
-     */
-    const pivotFields = _.map(pivotColumns, (column) => {
-      this.relatedQuery._sideLoaded.push(`pivot_${column}`)
-      return this._selectForPivot(column)
-    })
-
-    const relatedFields = _.size(this._relatedFields) ? this._relatedFields.map((field) => {
-      return `${this.$foreignTable}.${field}`
-    }) : `${this.$foreignTable}.*`
-
-    this.relatedQuery.select(relatedFields).select(pivotFields)
-  }
-
-  /**
-   * Makes the join query
-   *
-   * @method _makeJoinQuery
-   *
-   * @return {void}
-   *
-   * @private
-   */
-  _makeJoinQuery () {
-    const self = this
-
-    /**
-     * Inner join to limit the rows
-     */
-    this.relatedQuery.innerJoin(this.$pivotTable, function () {
-      this.on(`${self.$foreignTable}.${self.relatedPrimaryKey}`, `${self.$pivotTable}.${self.relatedForeignKey}`)
-    })
+    this.relatedQuery[method](`${this.$pivotCollection}.${key}`, ...args)
   }
 
   /**
@@ -198,8 +150,6 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _decorateQuery () {
-    this._selectFields()
-    this._makeJoinQuery()
     this.wherePivot(this.foreignKey, this.$primaryKeyValue)
   }
 
@@ -218,7 +168,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * The pivot table values are sideloaded, so we need to remove
+   * The pivot collection values are sideloaded, so we need to remove
    * them sideload and instead set it as a relationship on
    * model instance
    *
@@ -248,7 +198,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Saves the relationship to the pivot table
+   * Saves the relationship to the pivot collection
    *
    * @method _attachSingle
    * @async
@@ -276,11 +226,11 @@ class BelongsToMany extends BaseRelation {
     pivotModel.fill(pivotValues)
 
     /**
-     * Set $table, $timestamps, $connection when there
+     * Set $collection, $timestamps, $connection when there
      * is no pre-defined pivot model.
      */
     if (!this._PivotModel) {
-      pivotModel.$table = this.$pivotTable
+      pivotModel.$collection = this.$pivotCollection
       pivotModel.$connection = this.RelatedModel.connection
       pivotModel.$withTimestamps = this._pivot.withTimestamps
     }
@@ -330,9 +280,7 @@ class BelongsToMany extends BaseRelation {
    */
   async _loadAndCachePivot () {
     if (_.size(this._existingPivotInstances) === 0) {
-      this._existingPivotInstances = (await this
-        .pivotQuery().fetch()
-      ).rows
+      this._existingPivotInstances = (await this.pivotQuery().fetch()).rows
     }
   }
 
@@ -354,8 +302,8 @@ class BelongsToMany extends BaseRelation {
 
   /**
    * Define a fully qualified model to be used for
-   * making pivot table queries and using defining
-   * pivot table settings.
+   * making pivot collection queries and using defining
+   * pivot collection settings.
    *
    * @method pivotModel
    *
@@ -369,20 +317,20 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Define the pivot table
+   * Define the pivot collection
    *
-   * @method pivotTable
+   * @method pivotCollection
    *
-   * @param  {String}   table
+   * @param  {String}   collection
    *
    * @chainable
    */
-  pivotTable (table) {
+  pivotCollection (collection) {
     if (this._PivotModel) {
-      throw CE.ModelRelationException.pivotModelIsDefined('pivotTable')
+      throw CE.ModelRelationException.pivotModelIsDefined('pivotCollection')
     }
 
-    this._pivot.table = table
+    this._pivot.collection = collection
     return this
   }
 
@@ -404,7 +352,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Fields to be selected from pivot table
+   * Fields to be selected from pivot collection
    *
    * @method withPivot
    *
@@ -433,7 +381,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Make a where clause on the pivot table
+   * Make a where clause on the pivot collection
    *
    * @method whereInPivot
    *
@@ -448,7 +396,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Make a orWhere clause on the pivot table
+   * Make a orWhere clause on the pivot collection
    *
    * @method orWherePivot
    *
@@ -463,7 +411,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Where clause on pivot table
+   * Where clause on pivot collection
    *
    * @method wherePivot
    *
@@ -510,19 +458,18 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Execute the query and setup pivot values
-   * as a relation
-   *
-   * @method fetch
-   * @async
+   * Fetch over the related rows
    *
    * @return {Serializer}
    */
   async fetch () {
-    const rows = await super.fetch()
-    rows.rows.forEach((row) => {
-      this._addPivotValuesAsRelation(row)
-    })
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
+    const rows = await this.relatedQuery.whereIn(this.primaryKey, foreignKeyValues).fetch()
+    // const rows = await super.fetch()
+    // rows.rows.forEach((row) => {
+    //   this._addPivotValuesAsRelation(row)
+    // })
     return rows
   }
 
@@ -562,7 +509,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Returns the query for pivot table
+   * Returns the query for pivot collection
    *
    * @method pivotQuery
    *
@@ -573,8 +520,7 @@ class BelongsToMany extends BaseRelation {
   pivotQuery (selectFields = true) {
     const query = this._PivotModel
       ? this._PivotModel.query()
-      : new PivotModel().query(this.$pivotTable, this.RelatedModel.$connection)
-
+      : new PivotModel().query(this.$pivotCollection, this.RelatedModel.$connection)
     if (selectFields) {
       query.select(this.$pivotColumns)
     }
@@ -595,7 +541,7 @@ class BelongsToMany extends BaseRelation {
    */
   relatedWhere (count) {
     this._makeJoinQuery()
-    this.relatedQuery.whereRaw(`${this.$primaryTable}.${this.primaryKey} = ${this.$pivotTable}.${this.foreignKey}`)
+    this.relatedQuery.whereRaw(`${this.$primaryCollection}.${this.primaryKey} = ${this.$pivotCollection}.${this.foreignKey}`)
 
     /**
      * Add count clause if count is required
@@ -609,11 +555,11 @@ class BelongsToMany extends BaseRelation {
 
   addWhereOn (context) {
     this._makeJoinQuery()
-    context.on(`${this.$primaryTable}.${this.primaryKey}`, '=', `${this.$pivotTable}.${this.foreignKey}`)
+    context.on(`${this.$primaryCollection}.${this.primaryKey}`, '=', `${this.$pivotCollection}.${this.foreignKey}`)
   }
 
   /**
-   * Attach existing rows inside pivot table as a relationship
+   * Attach existing rows inside pivot collection as a relationship
    *
    * @method attach
    *
@@ -634,11 +580,11 @@ class BelongsToMany extends BaseRelation {
 
   /**
    * Delete related model rows in bulk and also detach
-   * them from the pivot table.
+   * them from the pivot collection.
    *
    * NOTE: This method will run 3 queries in total. First is to
    * fetch the related rows, next is to delete them and final
-   * is to remove the relationship from pivot table.
+   * is to remove the relationship from pivot collection.
    *
    * @method delete
    * @async
@@ -674,7 +620,7 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Detach existing relations from the pivot table
+   * Detach existing relations from the pivot collection
    *
    * @method detach
    * @async
@@ -699,7 +645,7 @@ class BelongsToMany extends BaseRelation {
 
   /**
    * Save the related model instance and setup the relationship
-   * inside pivot table
+   * inside pivot collection
    *
    * @method save
    *
@@ -756,7 +702,7 @@ class BelongsToMany extends BaseRelation {
 
   /**
    * Creates a new related model instance and persist
-   * the relationship inside pivot table
+   * the relationship inside pivot collection
    *
    * @method create
    * @async

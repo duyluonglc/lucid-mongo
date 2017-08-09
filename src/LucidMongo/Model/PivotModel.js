@@ -39,7 +39,7 @@ class PivotModel extends BaseModel {
   _instantiate () {
     super._instantiate()
     this.__setters__.push('$withTimestamps')
-    this.__setters__.push('$table')
+    this.__setters__.push('$collection')
     this.__setters__.push('$connection')
     this.$withTimestamps = false
   }
@@ -123,17 +123,19 @@ class PivotModel extends BaseModel {
 
   /**
    * Returns query builder instance for a given connection
-   * and table
+   * and collection
    *
    * @method query
    *
-   * @param  {String} table
+   * @param  {String} collection
    * @param  {Object} connection
    *
    * @return {Object}
    */
-  query (table, connection) {
-    return new QueryBuilder(this.constructor, connection).table(table)
+  query (collection, connection) {
+    const query = new QueryBuilder(this.constructor, connection)
+    query.collection = collection
+    return query
   }
 
   /**
@@ -155,11 +157,10 @@ class PivotModel extends BaseModel {
     }
 
     const result = await this
-      .query(this.$table, this.$connection)
-      .returning('id')
+      .query(this.$collection, this.$connection)
       .insert(this.$attributes)
 
-    this.primaryKeyValue = result[0]
+    this.primaryKeyValue = result.insertedIds[0]
     this.$persisted = true
     this.$frozen = true
   }
