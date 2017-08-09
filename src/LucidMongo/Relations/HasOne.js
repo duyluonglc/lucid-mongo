@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -13,115 +13,169 @@ const _ = require('lodash')
 const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
 
+/**
+ * The HasOne relationship defines a relation between
+ * two models
+ *
+ * @class HasOne
+ * @constructor
+ */
 class HasOne extends BaseRelation {
-  constructor (parent, related, primaryKey, foreignKey) {
-    super(parent, related)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.parent.constructor.foreignKey
-  }
-
   /**
-   * empty placeholder to be used when unable to eagerload
-   * relations. It needs to be an array of many to many
-   * relationships.
+   * Persists the parent model instance if it's not
+   * persisted already. This is done before saving
+   * the related instance
    *
-   * @method eagerLoadFallbackValue
+   * @method _persistParentIfRequired
    *
-   * @return {Null}
+   * @return {void}
+   *
+   * @private
    */
-  get eagerLoadFallbackValue () {
-    return null
+  async _persistParentIfRequired () {
+    if (this.parentInstance.isNew) {
+      await this.parentInstance.save()
+    }
   }
 
   /**
-   * returns result of this.first
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
    *
-   * @see this.first()
-   * @return {Object}
+   * @method mapValues
    *
-   * @public
+   * @param  {Array}  modelInstances - An array of model instances
+   *
+   * @return {Array}
+   */
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+  }
+
+  /**
+   * Takes an array of related instances and returns an array
+   * for each parent record.
+   *
+   * @method group
+   *
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
+   */
+  group (relatedInstances) {
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance[this.foreignKey]
+      const existingRelation = _.find(result, (row) => row.identity === foreignKeyValue)
+
+      /**
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
+       */
+      if (existingRelation) {
+        existingRelation.value = relatedInstance
+        return result
+      }
+
+      result.push({
+        identity: foreignKeyValue,
+        value: relatedInstance
+      })
+      return result
+    }, [])
+    return { key: this.primaryKey, values: transformedValues, defaultValue: null }
+  }
+
+  /**
+   * Fetch related rows for a relationship
+   *
+   * @method fetch
+   *
+   * @alias first
+   *
+   * @return {Model}
    */
   fetch () {
     return this.first()
   }
 
   /**
-   * hasOne cannot have paginate, since it
-   * maps one to one relationship
+   * Adds a where clause to limit the select search
+   * to related rows only.
    *
-   * @public
+   * @method relatedWhere
    *
-   * @throws CE.ModelRelationException
-   */
-  paginate () {
-    throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
+   * @param  {Boolean}     count
    *
-   * @param {Array} values
    * @return {Object}
-   *
-   * @public
-   *
    */
-  * eagerLoad (values, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
+  relatedWhere (count) {
+    this.relatedQuery.whereRaw(`${this.$primaryTable}.${this.primaryKey} = ${this.$foreignTable}.${this.foreignKey}`)
+    if (count) {
+      this.relatedQuery.count('*')
     }
-    const results = yield this.relatedQuery.whereIn(this.toKey, values).fetch()
-    return results.keyBy((item) => {
-      return item[this.toKey]
-    }).value()
+    return this.relatedQuery.query
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
+   * Adds `on` clause to the innerjoin context. This
+   * method is mainly used by HasManyThrough
    *
-   * @param  {Mixed} value
-   * @return {Object}
+   * @method addWhereOn
    *
-   * @public
-   *
+   * @param  {Object}   context
    */
-  * eagerLoadSingle (value, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const result = yield this.relatedQuery.where(this.toKey, value).first()
-    const response = {}
-    response[value] = result
-    return response
+  addWhereOn (context) {
+    context.on(`${this.$primaryTable}.${this.primaryKey}`, '=', `${this.$foreignTable}.${this.foreignKey}`)
   }
 
   /**
-   * hasOne cannot have createMany, since it
-   * maps one to one relationship
+   * Saves the related instance to the database. Foreign
+   * key is set automatically.
    *
-   * @public
+   * NOTE: This method will persist the parent model if
+   * not persisted already.
    *
-   * @throws CE.ModelRelationException
+   * @method save
+   *
+   * @param  {Object} relatedInstance
+   *
+   * @return {Promise}
    */
-  * createMany () {
-    throw CE.ModelRelationException.unSupportedMethod('createMany', this.constructor.name)
+  async save (relatedInstance) {
+    await this._persistParentIfRequired()
+    relatedInstance[this.foreignKey] = this.$primaryKeyValue
+    return relatedInstance.save()
   }
 
   /**
-   * hasOne cannot have saveMany, since it
-   * maps one to one relationship
+   * Creates the new related instance model and persist
+   * it to database. Foreign key is set automatically.
    *
-   * @public
+   * NOTE: This method will persist the parent model if
+   * not persisted already.
    *
-   * @throws CE.ModelRelationException
+   * @method create
+   *
+   * @param  {Object} payload
+   *
+   * @return {Promise}
    */
-  * saveMany () {
-    throw CE.ModelRelationException.unSupportedMethod('saveMany', this.constructor.name)
+  async create (payload) {
+    await this._persistParentIfRequired()
+    payload[this.foreignKey] = this.$primaryKeyValue
+    return this.RelatedModel.create(payload)
+  }
+
+  /* istanbul ignore next */
+  createMany () {
+    throw CE.ModelRelationException.unSupportedMethod('createMany', 'hasOne')
+  }
+
+  /* istanbul ignore next */
+  saveMany () {
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'hasOne')
   }
 }
 
