@@ -402,7 +402,7 @@ class QueryBuilder {
    */
   async ids () {
     this._applyScopes()
-    const rows = await this.fetch()
+    const rows = await this.select(this.Model.primaryKey).fetch()
     return rows.rows.map((row) => row[this.Model.primaryKey])
   }
 
