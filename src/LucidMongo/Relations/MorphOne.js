@@ -11,187 +11,163 @@
 
 const _ = require('lodash')
 const BaseRelation = require('./BaseRelation')
-const CE = require('../../Exceptions')
+const GE = require('@adonisjs/generic-exceptions')
+// const util = require('../../../lib/util')
 
-class MorphOne extends BaseRelation {
+class MorphMany extends BaseRelation {
   /**
-   * Creates an instance of MorphOne.
+   * Creates an instance of MorphMany.
    *
-   * @param {String} parent
+   * @param {String} parentInstance
    * @param {String} related
    * @param {String} determiner
-   * @param {String} foreignKey
+   * @param {String} localKey
    * @param {String} primaryKey
    *
-   * @memberOf MorphOne
+   * @memberOf MorphMany
    */
-  constructor (parent, related, determiner, foreignKey, primaryKey) {
-    super(parent, related)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || 'parentId'
-    this.determiner = determiner || 'parentType'
+  constructor (parentInstance, RelatedModel, determiner, localKey, primaryKey) {
+    super(parentInstance, RelatedModel)
+    this.primaryKey = primaryKey || RelatedModel.primaryKey
+    this.localKey = localKey || 'parent_id'
+    this.determiner = determiner || 'parent_type'
   }
 
   /**
-   * decorates the current query chain before execution
-   */
-  _decorateRead () {
-    this.relatedQuery
-      .where(this.determiner, this.parent.constructor.name)
-      .where(this.toKey, this.parent[this.fromKey])
-  }
-
-  /**
-   * empty placeholder to be used when unable to eagerload
-   * relations. It needs to be an array of many to many
-   * relationships.
+   * Persists the parent model instance if it's not
+   * persisted already. This is done before saving
+   * the related instance
    *
-   * @method eagerLoadFallbackValue
+   * @method _persistParentIfRequired
    *
-   * @return {Null}
+   * @return {void}
+   *
+   * @private
    */
-  get eagerLoadFallbackValue () {
-    return null
+  async _persistParentIfRequired () {
+    if (this.parentInstance.isNew) {
+      await this.parentInstance.save()
+    }
   }
 
   /**
-   * calls the fetch method on the related query builder
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
+   *
+   * @method mapValues
+   *
+   * @param  {Array}  modelInstances - An array of model instances
+   *
+   * @return {Array}
+   */
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+  }
+
+  /**
+   * Takes an array of related instances and returns an array
+   * for each parent record.
+   *
+   * @method group
+   *
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
+   */
+  group (relatedInstances) {
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance[this.foreignKey]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
+      /**
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
+       */
+      if (existingRelation) {
+        existingRelation.value = relatedInstance
+        return result
+      }
+
+      result.push({
+        identity: foreignKeyValue,
+        value: relatedInstance
+      })
+      return result
+    }, [])
+    return { key: this.primaryKey, values: transformedValues, defaultValue: null }
+  }
+
+  /**
+   * Returns the eagerLoad query for the relationship
+   *
+   * @method eagerLoad
+   * @async
+   *
+   * @param  {Array}          rows
    *
    * @return {Object}
-   *
-   * @public
    */
+  async eagerLoad (rows) {
+    const relatedInstances = await this.relatedQuery
+      .where(this.determiner, this.parentInstance.constructor.name)
+      .whereIn(this.localKey, this.mapValues(rows)).fetch()
+    return this.group(relatedInstances.rows)
+  }
+
+  _decorateQuery () {
+    this.relatedQuery
+      .where(this.determiner, this.parentInstance.constructor.name)
+      .where(this.localKey, this.parentInstance.primaryKeyValue)
+  }
+
   fetch () {
     return this.first()
   }
 
   /**
-   * morphOne cannot have paginate, since it
-   * maps one to one relationship
-   *
-   * @public
-   *
-   * @throws CE.ModelRelationException
-   */
-  paginate () {
-    throw CE.ModelRelationException.unSupportedMethod(
-      'paginate',
-      this.constructor.name
-    )
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
-   *
-   * @param {Array} values
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoad (values, scopeMethod) {
-    if (typeof scopeMethod === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const results = yield this.relatedQuery
-      .where(this.determiner, this.parent.constructor.name)
-      .whereIn(this.toKey, values)
-      .fetch()
-
-    return results
-      .keyBy(item => {
-        return item[this.toKey]
-      })
-      .value()
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
-   *
-   * @param  {Mixed} value
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoadSingle (value, scopeMethod) {
-    if (typeof scopeMethod === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const results = yield this.relatedQuery
-      .where(this.determiner, this.parent.constructor.name)
-      .where(this.toKey, value)
-      .first()
-    const response = {}
-    response[value] = results
-    return response
-  }
-
-  /**
-   * morphOne cannot have createMany, since it
-   * maps one to one relationship
-   *
-   * @public
-   *
-   * @throws CE.ModelRelationException
-   */
-  * createMany () {
-    throw CE.ModelRelationException.unSupportedMethod(
-      'createMany',
-      this.constructor.name
-    )
-  }
-
-  /**
-   * morphOne cannot have saveMany, since it
-   * maps one to one relationship
-   *
-   * @public
-   *
-   * @throws CE.ModelRelationException
-   */
-  * saveMany () {
-    throw CE.ModelRelationException.unSupportedMethod(
-      'saveMany',
-      this.constructor.name
-    )
-  }
-
-  /**
    * Save related instance
    *
-   * @param {any} relatedInstance
+   * @param {RelatedModel} relatedInstance
    * @returns
    *
-   * @memberOf MorphOne
+   * @memberOf MorphMany
    */
-  * save (relatedInstance) {
-    if (relatedInstance instanceof this.related === false) {
-      throw CE.ModelRelationException.relationMisMatch(
-        'save accepts an instance of related model'
-      )
+  async save (relatedInstance) {
+    if (relatedInstance instanceof this.RelatedModel === false) {
+      throw GE.ModelRelationException.relationMisMatch('save accepts an instance of related model')
     }
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget(
-        'save',
-        this.parent.constructor.name,
-        this.related.name
-      )
-    }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(
-        `Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`
-      )
-    }
-    relatedInstance.set(this.determiner, this.parent.constructor.name)
-    relatedInstance.set(this.toKey, this.parent[this.fromKey])
-    return yield relatedInstance.save()
+    await this._persistParentIfRequired()
+    relatedInstance[this.determiner] = this.parentInstance.constructor.name
+    relatedInstance[this.localKey] = this.parentInstance[this.primaryKey]
+    return relatedInstance.save()
+  }
+
+  /**
+   * Create related instance
+   *
+   * @param {Object} payload
+   * @returns {Promise}
+   *
+   * @memberOf MorphMany
+   */
+  async create (payload) {
+    await this._persistParentIfRequired()
+    const relatedInstance = new this.RelatedModel(payload)
+    await this.save(relatedInstance)
+    return relatedInstance
+  }
+
+  /* istanbul ignore next */
+  createMany () {
+    throw CE.ModelRelationException.unSupportedMethod('createMany', 'morphOne')
+  }
+
+  /* istanbul ignore next */
+  saveMany () {
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'morphOne')
   }
 }
 
-module.exports = MorphOne
+module.exports = MorphMany

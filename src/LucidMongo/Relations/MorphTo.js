@@ -17,20 +17,20 @@ class MorphMany extends BaseRelation {
   /**
    * Creates an instance of MorphMany.
    *
-   * @param {String} parent
+   * @param {String} parentInstance
    * @param {String} related
    * @param {String} determiner
-   * @param {String} foreignKey
+   * @param {String} localKey
    * @param {String} primaryKey
    *
    * @memberOf MorphMany
    */
-  constructor (parent, modelPath, determiner, foreignKey, primaryKey) {
-    super(parent, null)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || 'parentId'
+  constructor (parentInstance, modelPath, determiner, localKey, primaryKey) {
+    super(parentInstance, null)
+    this.fromKey = primaryKey || this.parentInstance.constructor.primaryKey
+    this.localKey = localKey || 'parent_id'
     this.modelPath = modelPath || 'App/Model'
-    this.determiner = determiner || 'parentType'
+    this.determiner = determiner || 'parent_type'
   }
 
   /**
@@ -44,47 +44,23 @@ class MorphMany extends BaseRelation {
    * @public
    *
    */
-  * eagerLoad (values, scopeMethod, results) {
+  async eagerLoad (values, scopeMethod, results) {
     const groups = _.groupBy(results, this.determiner)
     let relates = {}
     for (let determiner in groups) {
       const groupResults = groups[determiner]
       const relatedModel = this._resolveModel(this.modelPath + '/' + determiner)
       // this.relatedQuery = relatedModel.query()
-      const parentIds = _(groupResults).map(this.toKey).uniq().value()
-      let groupParent = yield relatedModel.whereIn(this.fromKey, parentIds).fetch()
-      for (let parent of groupParent.value()) {
-        const subResults = _.filter(groupResults, result => String(result[this.toKey]) === String(parent[this.fromKey]))
+      const parenIds = _(groupResults).map(this.localKey).uniq().value()
+      let groupParent = await relatedModel.whereIn(this.fromKey, parenIds).fetch()
+      for (let parentInstance of groupParent.value()) {
+        const subResults = _.filter(groupResults, result => String(result[this.localKey]) === String(parentInstance[this.fromKey]))
         for (let result of subResults) {
-          relates[result[this.fromKey]] = parent
+          relates[result[this.fromKey]] = parentInstance
         }
       }
     }
     return relates
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
-   *
-   * @param  {Mixed} value
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoadSingle (value, scopeMethod, result) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const determiner = result[this.determiner]
-    const relatedModel = this._resolveModel(this.modelPath + '/' + determiner)
-    const relate = yield relatedModel.where(this.fromKey, result[this.toKey]).first()
-    const response = {}
-    response[value] = relate
-    return response
   }
 
   /**
@@ -95,7 +71,7 @@ class MorphMany extends BaseRelation {
    *
    * @memberOf MorphMany
    */
-  * save (relatedInstance) {
+  async save (relatedInstance) {
     throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
   }
 
@@ -107,7 +83,7 @@ class MorphMany extends BaseRelation {
    *
    * @throws CE.ModelRelationException
    */
-  paginate () {
+  async paginate () {
     throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
   }
 
@@ -116,10 +92,10 @@ class MorphMany extends BaseRelation {
    * @public
    *
    */
-  * first () {
-    const determiner = this.parent[this.determiner]
+  first () {
+    const determiner = this.parentInstance[this.determiner]
     const relatedModel = this._resolveModel(this.modelPath + '/' + determiner)
-    return yield relatedModel.where(this.fromKey, this.parent[this.toKey]).first()
+    return relatedModel.where(this.fromKey, this.parentInstance[this.localKey]).first()
   }
 
   /**

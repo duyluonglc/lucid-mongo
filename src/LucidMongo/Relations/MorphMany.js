@@ -11,99 +11,191 @@
 
 const _ = require('lodash')
 const BaseRelation = require('./BaseRelation')
-const CE = require('../../Exceptions')
+const GE = require('@adonisjs/generic-exceptions')
+// const util = require('../../../lib/util')
 
 class MorphMany extends BaseRelation {
   /**
    * Creates an instance of MorphMany.
    *
-   * @param {String} parent
+   * @param {String} parentInstance
    * @param {String} related
    * @param {String} determiner
-   * @param {String} foreignKey
+   * @param {String} localKey
    * @param {String} primaryKey
    *
    * @memberOf MorphMany
    */
-  constructor (parent, related, determiner, foreignKey, primaryKey) {
-    super(parent, related)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || 'parentId'
-    this.determiner = determiner || 'parentType'
+  constructor (parentInstance, RelatedModel, determiner, localKey, primaryKey) {
+    super(parentInstance, RelatedModel)
+    this.primaryKey = primaryKey || RelatedModel.primaryKey
+    this.localKey = localKey || 'parentId'
+    this.determiner = determiner || 'determiner'
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
+   * Persists the parent model instance if it's not
+   * persisted already. This is done before saving
+   * the related instance
    *
-   * @param {Array} values
-   * @return {Object}
+   * @method _persistParentIfRequired
    *
-   * @public
+   * @return {void}
    *
+   * @private
    */
-  * eagerLoad (values, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
+  async _persistParentIfRequired () {
+    if (this.parentInstance.isNew) {
+      await this.parentInstance.save()
     }
-    const results = yield this.relatedQuery
-      .where(this.determiner, this.parent.constructor.name)
-      .whereIn(this.toKey, values).fetch()
-
-    return results.groupBy((item) => {
-      return item[this.toKey]
-    }).mapValues(function (value) {
-      return helpers.toCollection(value)
-    })
-      .value()
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
    *
-   * @param  {Mixed} value
-   * @return {Object}
+   * @method mapValues
    *
-   * @public
+   * @param  {Array}  modelInstances - An array of model instances
    *
+   * @return {Array}
    */
-  * eagerLoadSingle (value, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const results = yield this.relatedQuery
-      .where(this.determiner, this.parent.constructor.name)
-      .where(this.toKey, value).fetch()
-    const response = {}
-    response[value] = results
-    return response
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+  }
+
+  /**
+   * Takes an array of related instances and returns an array
+   * for each parent record.
+   *
+   * @method group
+   *
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
+   */
+  group (relatedInstances) {
+    const Serializer = this.RelatedModel.Serializer
+
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance[this.localKey]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
+      /**
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
+       */
+      if (existingRelation) {
+        existingRelation.value.addRow(relatedInstance)
+        return result
+      }
+
+      result.push({
+        identity: foreignKeyValue,
+        value: new Serializer([relatedInstance])
+      })
+      return result
+    }, [])
+
+    return { key: this.primaryKey, values: transformedValues, defaultValue: new Serializer([]) }
+  }
+
+  /**
+   * Returns the eagerLoad query for the relationship
+   *
+   * @method eagerLoad
+   * @async
+   *
+   * @param  {Array}          rows
+   *
+   * @return {Object}
+   */
+  async eagerLoad (rows) {
+    const relatedInstances = await this.relatedQuery
+      .where(this.determiner, this.parentInstance.constructor.name)
+      .whereIn(this.localKey, this.mapValues(rows)).fetch()
+    return this.group(relatedInstances.rows)
+  }
+
+  _decorateQuery () {
+    this.relatedQuery
+      .where(this.determiner, this.parentInstance.constructor.name)
+      .where(this.localKey, this.parentInstance.primaryKeyValue)
   }
 
   /**
    * Save related instance
    *
-   * @param {any} relatedInstance
+   * @param {RelatedModel} relatedInstance
    * @returns
    *
    * @memberOf MorphMany
    */
-  * save (relatedInstance) {
-    if (relatedInstance instanceof this.related === false) {
-      throw CE.ModelRelationException.relationMisMatch('save accepts an instance of related model')
+  async save (relatedInstance) {
+    if (relatedInstance instanceof this.RelatedModel === false) {
+      throw GE.ModelRelationException.relationMisMatch('save accepts an instance of related model')
     }
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('save', this.parent.constructor.name, this.related.name)
+    await this._persistParentIfRequired()
+    relatedInstance[this.determiner] = this.parentInstance.constructor.name
+    relatedInstance[this.localKey] = this.parentInstance[this.primaryKey]
+    return relatedInstance.save()
+  }
+
+  /**
+   * Create related instance
+   *
+   * @param {Object} payload
+   * @returns {Promise}
+   *
+   * @memberOf MorphMany
+   */
+  async create (payload) {
+    await this._persistParentIfRequired()
+    const relatedInstance = new this.RelatedModel(payload)
+    await this.save(relatedInstance)
+    return relatedInstance
+  }
+
+  /**
+   * Creates an array of model instances in parallel
+   *
+   * @method createMany
+   *
+   * @param  {Array}   arrayOfPayload
+   *
+   * @return {Array}
+   */
+  async createMany (arrayOfPayload) {
+    if (arrayOfPayload instanceof Array === false) {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('morphMany.createMany expects an array of values', arrayOfPayload)
     }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
+
+    await this._persistParentIfRequired()
+    return Promise.all(arrayOfPayload.map((payload) => this.create(payload)))
+  }
+
+  /**
+   * Creates an array of model instances in parallel
+   *
+   * @method saveMany
+   *
+   * @param  {Array}   arrayOfRelatedInstances
+   *
+   * @return {Array}
+   */
+  async saveMany (arrayOfRelatedInstances) {
+    if (arrayOfRelatedInstances instanceof Array === false) {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('morphMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)
     }
-    relatedInstance.set(this.determiner, this.parent.constructor.name)
-    relatedInstance.set(this.toKey, this.parent[this.fromKey])
-    return yield relatedInstance.save()
+
+    await this._persistParentIfRequired()
+    return Promise.all(arrayOfRelatedInstances.map((relatedInstance) => this.save(relatedInstance)))
   }
 }
 

@@ -19,7 +19,19 @@ const BaseModel = require('./Base')
 const Hooks = require('../Hooks')
 const QueryBuilder = require('../QueryBuilder')
 const EagerLoad = require('../EagerLoad')
-const { HasOne, HasMany, BelongsTo, BelongsToMany, HasManyThrough } = require('../Relations')
+const {
+  HasOne,
+  HasMany,
+  BelongsTo,
+  BelongsToMany,
+  HasManyThrough,
+  MorphMany,
+  MorphOne,
+  MorphTo,
+  EmbedsMany,
+  EmbedsOne,
+  ReferMany
+} = require('../Relations')
 
 const CE = require('../../Exceptions')
 const util = require('../../../lib/util')
@@ -1235,6 +1247,71 @@ class Model extends BaseModel {
     foreignKey = this.constructor.foreignKey
   ) {
     return new HasManyThrough(this, relatedModel, relatedMethod, primaryKey, foreignKey)
+  }
+
+  /**
+   * Returns instance of @ref('MorphMany')
+   *
+   * @method morphMany
+   *
+   * @param  {Class|String}    relatedModel
+   * @param  {String}    determiner
+   * @param  {String}    localKey
+   * @param  {String}    primaryKey
+   *
+   * @return {MorphMany}
+   */
+  morphMany (
+    relatedModel,
+    determiner,
+    localKey,
+    primaryKey = this.constructor.primaryKey
+  ) {
+    return new MorphMany(this, relatedModel, determiner, localKey, primaryKey)
+  }
+
+  /**
+   * Returns instance of @ref('MorphOne')
+   *
+   * @method morphOne
+   *
+   * @param  {Class|String}    relatedModel
+   * @param  {String}    determiner
+   * @param  {String}    localKey
+   * @param  {String}    primaryKey
+   *
+   * @return {MorphMany}
+   */
+  morphOne (
+    relatedModel,
+    determiner,
+    localKey,
+    primaryKey = this.constructor.primaryKey
+  ) {
+    return new MorphOne(this, relatedModel, determiner, localKey, primaryKey)
+  }
+
+  /**
+   * Returns instance of @ref('MorphTo')
+   *
+   * @method morphTo
+   *
+   * @param  {Class|String}    relatedModel
+   * @param  {String}    modelPath
+   * @param  {String}    determiner
+   * @param  {String}    localKey
+   * @param  {String}    primaryKey
+   *
+   * @return {MorphMany}
+   */
+  morphTo (
+    relatedModel,
+    modelPath,
+    determiner,
+    localKey,
+    primaryKey = this.constructor.primaryKey
+  ) {
+    return new MorphTo(this, relatedModel, modelPath, determiner, localKey, primaryKey)
   }
 
   /**
