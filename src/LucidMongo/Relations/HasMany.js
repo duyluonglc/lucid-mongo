@@ -68,7 +68,7 @@ class HasMany extends BaseRelation {
 
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
       const foreignKeyValue = relatedInstance[this.foreignKey]
-      const existingRelation = _.find(result, (row) => row.identity === foreignKeyValue)
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
       /**
        * If there is already an existing instance for same parent
@@ -176,7 +176,7 @@ class HasMany extends BaseRelation {
   /**
    * Creates an array of model instances in parallel
    *
-   * @method createMany
+   * @method saveMany
    *
    * @param  {Array}   arrayOfRelatedInstances
    *

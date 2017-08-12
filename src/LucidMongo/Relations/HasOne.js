@@ -65,7 +65,7 @@ class HasOne extends BaseRelation {
   group (relatedInstances) {
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
       const foreignKeyValue = relatedInstance[this.foreignKey]
-      const existingRelation = _.find(result, (row) => row.identity === foreignKeyValue)
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
       /**
        * If there is already an existing instance for same parent
