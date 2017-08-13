@@ -1,342 +1,327 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ *
+ * ==== Keys for User and Post model
+ * relatedPrimaryKey    -    post.primaryKey    -    id
+ * relatedForeignKey    -    post.foreignKey    -    post_id
+ *
 */
 
 const _ = require('lodash')
+const GE = require('@adonisjs/generic-exceptions')
+
 const BaseRelation = require('./BaseRelation')
-const CE = require('../../Exceptions')
-const objectId = require('mongodb').ObjectID
 
+/**
+ * ReferMany class builds relationship between
+ * two models with the help of pivot collection/model
+ *
+ * @class ReferMany
+ * @constructor
+ */
 class ReferMany extends BaseRelation {
-  constructor (parent, related, primaryKey, foreignKey) {
-    super(parent, related)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || this.related.constructor.foreignKey
+  /**
+   * Decorates the query for read/update/delete
+   * operations
+   *
+   * @method _decorateQuery
+   *
+   * @return {void}
+   *
+   * @private
+   */
+  _decorateQuery () {
+    this.relatedQuery.whereIn(this.primaryKey, this.parentInstance[this.foreignKey] || [])
+  }
+  /**
+     * Persists the parent model instance if it's not
+     * persisted already. This is done before saving
+     * the related instance
+     *
+     * @method _persistParentIfRequired
+     *
+     * @return {void}
+     *
+     * @private
+     */
+  async _persistParentIfRequired () {
+    if (this.parentInstance.isNew) {
+      await this.parentInstance.save()
+    }
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
+   * Returns the eagerLoad query for the relationship
    *
-   * @param {Array} values
+   * @method eagerLoad
+   * @async
+   *
+   * @param  {Array}          rows
+   *
    * @return {Object}
-   *
-   * @public
-   *
    */
-  * eagerLoad (values, scopeMethod, results) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const referValues = _(results).filter(this.toKey).map(this.toKey).flatten().value()
-    const relatedResults = yield this.relatedQuery.whereIn(this.fromKey, referValues).fetch()
-
-    const response = {}
-    relatedResults.forEach(item => {
-      const matchParents = _(results).filter(result => {
-        return _(result[this.toKey]).map(String).includes(String(item[this.fromKey]))
+  async eagerLoad (rows) {
+    const relatedInstances = await this.relatedQuery.whereIn(this.primaryKey, this.mapValues(rows)).fetch()
+    return this.group(relatedInstances.rows.map(related => {
+      const parent = _.find(rows, row => {
+        const foreignKeys = row[this.foreignKey] || []
+        const relatedPrimaryKey = related[this.primaryKey]
+        return foreignKeys.map(String).includes(String(relatedPrimaryKey))
       })
-
-      matchParents.forEach(matchParent => {
-        const parentId = matchParent[this.fromKey]
-        response[parentId] = (response[parentId] || _([])).concat(item)
-      })
-    })
-    return response
+      related.$sideLoaded[`refer_${this.primaryKey}`] = parent[this.primaryKey]
+      return related
+    }))
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
    *
-   * @param  {Mixed} value
-   * @return {Object}
+   * @method mapValues
    *
-   * @public
+   * @param  {Array}  modelInstances - An array of model instances
    *
+   * @return {Array}
    */
-  * eagerLoadSingle (value, scopeMethod, result) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const results = yield this.relatedQuery
-      .whereIn(this.fromKey, result[this.toKey] || [])
-      .fetch()
-    const response = {}
-    response[value] = results
-    return response
+  mapValues (modelInstances) {
+    return _.flatten(_.map(modelInstances, (modelInstance) => modelInstance[this.foreignKey] || []))
   }
 
   /**
-   * Save related instance
+   * Takes an array of related instances and returns an array
+   * for each parent record.
    *
-   * @param {any} relatedInstance
-   * @returns
+   * @method group
    *
-   * @memberOf referMany
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
    */
-  * save (relatedInstance) {
-    if (relatedInstance instanceof this.related === false) {
-      throw CE.ModelRelationException.relationMisMatch('save accepts an instance of related model')
-    }
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('save', this.parent.constructor.name, this.related.name)
-    }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
+  group (relatedInstances) {
+    const Serializer = this.RelatedModel.Serializer
 
-    if (relatedInstance.isNew()) {
-      yield relatedInstance.save()
-      let referKeys = _.clone(this.parent.get(this.toKey))
-      if (!referKeys || !_.isArray(referKeys)) {
-        referKeys = []
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance.$sideLoaded[`refer_${this.primaryKey}`]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
+      /**
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
+       */
+      if (existingRelation) {
+        existingRelation.value.addRow(relatedInstance)
+        return result
       }
-      referKeys.push(relatedInstance[this.fromKey])
-      this.parent.set(this.toKey, referKeys)
-      yield this.parent.save()
+
+      result.push({
+        identity: foreignKeyValue,
+        value: new Serializer([relatedInstance])
+      })
+      return result
+    }, [])
+
+    return { key: this.primaryKey, values: transformedValues, defaultValue: new Serializer([]) }
+  }
+
+  /**
+   * Method called when eagerloading for a single
+   * instance
+   *
+   * @method load
+   * @async
+   *
+   * @return {Promise}
+   */
+  load () {
+    return this.fetch()
+  }
+
+  /**
+   * Saves the relationship
+   *
+   * @method _attachSingle
+   * @async
+   *
+   * @param  {Number|String}      value
+   *
+   * @return {Object}                    Instance of parent model
+   *
+   * @private
+   */
+  _attachSingle (value) {
+    const relates = this.parentInstance[this.foreignKey] || []
+    this.parentInstance.$attributes[this.foreignKey] = _.concat(relates, [value])
+    return this.parentInstance.save()
+  }
+
+  /**
+   * Attach existing rows
+   *
+   * @method attach
+   *
+   * @param  {Number|String|Array} relatedPrimaryKeyValue
+   *
+   * @return {Promise}
+   */
+  async attach (references) {
+    const rows = references instanceof Array === false ? [references] : references
+
+    return Promise.all(rows.map((row) => {
+      const relates = this.parentInstance[this.foreignKey] | []
+      const existing = _.find(relates, key => String(key) === String(row))
+      return existing ? Promise.resolve(existing) : this._attachSingle(row)
+    }))
+  }
+
+  /**
+   * Delete related model rows in bulk and also detach
+   * them from the pivot collection.
+   *
+   * NOTE: This method will run 3 queries in total. First is to
+   * fetch the related rows, next is to delete them and final
+   * is to remove the relationship from pivot collection.
+   *
+   * @method delete
+   * @async
+   *
+   * @return {Number} Number of effected rows
+   */
+  async delete () {
+    const foreignKeyValues = await this.ids()
+    const effectedRows = await this.RelatedModel
+      .query()
+      .whereIn(this.RelatedModel.primaryKey, foreignKeyValues)
+      .delete()
+
+    await this.detach(foreignKeyValues)
+    return effectedRows
+  }
+
+  /**
+   * Detach existing relations from relates
+   *
+   * @method detach
+   * @async
+   *
+   * @param  {Array} references
+   *
+   * @return {Number}  The number of effected rows
+   */
+  detach (references) {
+    if (references) {
+      const rows = references instanceof Array === false ? [references] : references
+      let relates = this.parentInstance[this.foreignKey]
+      for (let row of rows) {
+        relates = _.remove(relates, relate => String(relate) === String(row))
+      }
+      this.parentInstance[this.foreignKey] = relates
     } else {
-      yield relatedInstance.save()
+      this.parentInstance[this.foreignKey] = []
     }
+    return this.parentInstance.save()
+  }
+
+  /**
+   * Save the related model instance and setup the relationship
+   * inside pivot collection
+   *
+   * @method save
+   *
+   * @param  {Object} relatedInstance
+   * @param  {Function} pivotCallback
+   *
+   * @return {void}
+   */
+  async save (relatedInstance) {
+    await this._persistParentIfRequired()
+
+    /**
+     * Only save related instance when not persisted already. This is
+     * only required in belongsToMany since relatedInstance is not
+     * made dirty by this method.
+     */
+    if (relatedInstance.isNew || relatedInstance.isDirty) {
+      await relatedInstance.save()
+    }
+
+    /**
+     * Attach the primaryKeyValue
+     */
+    return this.attach(relatedInstance.primaryKeyValue)
+  }
+
+  /**
+   * Save multiple relationships to the database. This method
+   * will run queries in parallel
+   *
+   * @method saveMany
+   * @async
+   *
+   * @param  {Array}    arrayOfRelatedInstances
+   *
+   * @return {void}
+   */
+  async saveMany (arrayOfRelatedInstances) {
+    if (arrayOfRelatedInstances instanceof Array === false) {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('belongsToMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)
+    }
+
+    await this._persistParentIfRequired()
+    return Promise.all(arrayOfRelatedInstances.map((relatedInstance) => this.save(relatedInstance)))
+  }
+
+  /**
+   * Creates a new related model instance and persist
+   * the relationship inside pivot collection
+   *
+   * @method create
+   * @async
+   *
+   * @param  {Object}   row
+   *
+   * @return {Object}               Instance of related model
+   */
+  async create (row) {
+    await this._persistParentIfRequired()
+
+    const relatedInstance = new this.RelatedModel()
+    relatedInstance.fill(row)
+    await this.save(relatedInstance)
 
     return relatedInstance
   }
 
   /**
-   * fetch
+   * Creates multiple related relationships. This method will
+   * call all queries in parallel
    *
-   * @public
+   * @method createMany
+   * @async
+   *
+   * @param  {Array}   rows
    *
    * @return {Array}
    */
-  * fetch () {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).fetch()
-  }
-
-  /**
-   * find
-   *
-   * @public
-   *
-   * @return {Object}
-   */
-  * find (id) {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).find(id)
-  }
-
-  /**
-   * fetch
-   *
-   * @public
-   *
-   * @return {Object}
-   */
-  * first () {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).first()
-  }
-
-  /**
-   * fetch
-   *
-   * @public
-   *
-   * @return {Object}
-   */
-  * update (values) {
-    return yield this.relatedQuery.whereIn(this.fromKey, this.parent.get(this.toKey) || []).update(values)
-  }
-
-  /**
-   * belongsTo cannot have paginate, since it
-   * maps one to one relationship
-   *
-   * @public
-   *
-   * @throws CE.ModelRelationException
-   */
-  paginate () {
-    throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
-  }
-
-  /**
-   * attach method will add relationship to the pivot collection
-   * with current instance and related model values
-   *
-   * @param  {Array|Object} references
-   * @return {Number}
-   *
-   * @example
-   * user.roles().attach(1)
-   * user.roles().attach(role1)
-   * user.roles().attach([1,2])
-   * user.roles().attach([role1, role2])
-   *
-   * @public
-   */
-  * attach (references) {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('attach', this.parent.constructor.name, this.related.name)
+  async createMany (rows) {
+    if (rows instanceof Array === false) {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('belongsToMany.createMany expects an array of related model instances', rows)
     }
 
-    const fromKey = this.fromKey
-    const related = this.related
-    if (!this.parent[fromKey]) {
-      logger.warn(`Trying to attach values with ${fromKey} as primaryKey, whose value is falsy`)
-    }
-
-    let saveReferences = _.isArray(this.parent.get(this.toKey)) ? _.clone(this.parent.get(this.toKey)) : []
-    if (_.isArray(references)) {
-      references = _.map(references, function (reference) {
-        if (_.isString(reference) || _.isNumber(reference) || reference instanceof objectId) {
-          return reference
-        } else if (reference instanceof related) {
-          return reference[fromKey]
-        }
-        throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
-      })
-    } else if (references instanceof related) {
-      references = [references[fromKey]]
-    } else if (_.isString(references) || _.isNumber(references) || references instanceof objectId) {
-      references = [references]
-    } else {
-      throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
-    }
-    saveReferences = _.unionBy(saveReferences, references, String)
-    return yield this.parent.set(this.toKey, saveReferences).save()
-  }
-
-  /**
-   * removes the relationship stored inside a pivot collection. If
-   * references are not defined all relationships will be
-   * deleted
-   * @method detach
-   * @param  {Array} [references]
-   * @return {Number}
-   *
-   * @public
-   */
-  * detach (references) {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('detach', this.parent.constructor.name, this.related.name)
-    }
-
-    const fromKey = this.fromKey
-    const related = this.related
-
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to detach values with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
-
-    let saveReferences = _.isArray(this.parent.get(this.toKey)) ? _.clone(this.parent.get(this.toKey)) : []
-    if (references !== undefined) {
-      if (_.isArray(references)) {
-        references = _.map(references, function (reference) {
-          if (_.isString(reference) || _.isNumber(reference) || reference instanceof objectId) {
-            return reference
-          } else if (reference instanceof related) {
-            return reference[fromKey]
-          }
-          throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
-        })
-      } else if (references instanceof related) {
-        references = [references[this.fromKey]]
-      } else if (_.isString(references) || _.isNumber(references) || references instanceof objectId) {
-        references = [references]
-      } else {
-        throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
-      }
-      saveReferences = _.differenceBy(saveReferences, references, String)
-    } else {
-      saveReferences = []
-    }
-    return yield this.parent.set(this.toKey, saveReferences).save()
-  }
-
-  /**
-   * shorthand for detach and then attach
-   *
-   * @param  {Array} [references]
-   * @return {Number}
-   *
-   * @public
-   */
-  * sync (references) {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('sync', this.parent.constructor.name, this.related.name)
-    }
-    const fromKey = this.fromKey
-    const related = this.related
-    let saveReferences = []
-    if (references !== undefined) {
-      if (_.isArray(references)) {
-        saveReferences = _.map(references, function (reference) {
-          if (_.isString(reference) || _.isNumber(reference) || reference instanceof objectId) {
-            return reference
-          } else if (reference instanceof related) {
-            return reference[fromKey]
-          }
-          throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
-        })
-      } else if (references instanceof related) {
-        saveReferences = [references[this.fromKey]]
-      } else if (_.isString(references) || _.isNumber(references) || references instanceof objectId) {
-        saveReferences = [references]
-      } else {
-        throw new CE.InvalidArgumentException(`reference must be string, number, objectId or instance of ${related.name}`)
-      }
-      saveReferences = _.difference(saveReferences, references)
-    }
-    return yield this.parent.set(this.toKey, saveReferences).save()
-  }
-
-  /**
-   * detach item from references and delete item
-   *
-   * @param  {Object} [reference]
-   * @return {Number}
-   *
-   * @public
-   */
-  * delete (reference) {
-    const related = this.related
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('delete', this.parent.constructor.name, this.related.name)
-    }
-    if (!reference) {
-      throw CE.InvalidArgumentException.invalidParameter('delete expects a primary key or instance of related')
-    }
-    yield this.detach(reference)
-    if (reference instanceof related) {
-      return yield reference.delete()
-    } else {
-      return yield this.relatedQuery.whereIn(this.fromKey, reference).delete()
-    }
-  }
-
-  /**
-   * detach all item from references and delete them
-   *
-   * @return {Number}
-   *
-   * @public
-   */
-  * deleteAll () {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('deleteAll', this.parent.constructor.name, this.related.name)
-    }
-    const references = this.target.get(this.toKey)
-    yield this.detach()
-    return yield this.relatedQuery.whereIn(this.fromKey, references).delete()
+    await this._persistParentIfRequired()
+    return Promise.all(rows.map((relatedInstance) => this.create(relatedInstance)))
   }
 }
 

@@ -1315,6 +1315,26 @@ class Model extends BaseModel {
   }
 
   /**
+   * Returns instance of @ref('ReferMany')
+   *
+   * @method referMany
+   *
+   * @param  {Class|String}    relatedModel
+   * @param  {String}    modelPath
+   * @param  {String}    primaryKey
+   * @param  {String}    foreignKey
+   *
+   * @return {ReferMany}
+   */
+  referMany (
+    relatedModel,
+    primaryKey = this.constructor.primaryKey,
+    foreignKey = relatedModel.foreignKey
+  ) {
+    return new ReferMany(this, relatedModel, primaryKey, foreignKey)
+  }
+
+  /**
    * Reload the model instance in memory. Some may
    * not like it, but in real use cases no one
    * wants a new instance.
