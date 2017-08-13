@@ -362,7 +362,7 @@ class QueryBuilder {
      */
     this._applyScopes()
     const collection = await this.db.collection(this.collection)
-    return this.query.collection(collection).update(valuesCopy, { multi: true })
+    return this.query.collection(collection).setOptions({ multi: true }).update(valuesCopy)
   }
 
   /**
