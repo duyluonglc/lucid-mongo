@@ -1,9 +1,6 @@
 'use strict'
 
 /**
- * adonis-lucid
- *
- * (c) Harminder Virk <virk@adonisjs.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -13,137 +10,159 @@ const _ = require('lodash')
 const BaseRelation = require('./BaseRelation')
 const util = require('../../../lib/util')
 const CE = require('../../Exceptions')
+const ObjectID = require('mongodb').ObjectID
 
-class EmbedMany extends BaseRelation {
-  constructor (parent, related, primaryKey, foreignKey) {
-    super(parent, related)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey
-    this.toKey = foreignKey || inflect.camelize(inflect.pluralize(this.related.name), false)
+class EmbedsMany extends BaseRelation {
+  constructor (parentInstance, RelatedModel, primaryKey, foreignKey) {
+    super(parentInstance, RelatedModel)
+    this.primaryKey = primaryKey || this.parentInstance.constructor.primaryKey
+    this.foreignKey = foreignKey || util.makeEmbedsName(this.RelatedModel.name)
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
+   * Persists the parent model instance if it's not
+   * persisted already. This is done before saving
+   * the related instance
    *
-   * @param {Array} values
-   * @return {Object}
+   * @method _persistParentIfRequired
+   * @async
    *
-   * @public
+   * @return {void}
    *
+   * @private
    */
-  * eagerLoad (values, scopeMethod, results) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
+  async _persistParentIfRequired () {
+    if (this.parentInstance.isNew) {
+      await this.parentInstance.save()
     }
-
-    return _(results).keyBy(this.fromKey).mapValues((value) => {
-      return helpers.toCollection(_.map(value[this.toKey], embed => {
-        const RelatedModel = this.related
-        const modelInstance = new RelatedModel()
-        modelInstance.attributes = embed
-        modelInstance.exists = true
-        modelInstance.original = _.clone(modelInstance.attributes)
-        return modelInstance
-      }))
-    }).value()
   }
 
   /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
+   * Groups related instances with their foreign keys
    *
-   * @param  {Mixed} value
-   * @return {Object}
+   * @method group
    *
-   * @public
+   * @param  {Array} relatedInstances
    *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
    */
-  * eagerLoadSingle (value, scopeMethod, result) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const response = {}
-    response[value] = helpers.toCollection(_.map(result[this.toKey], embed => {
-      const RelatedModel = this.related
-      const modelInstance = new RelatedModel()
-      modelInstance.attributes = embed
-      modelInstance.exists = true
-      modelInstance.original = _.clone(modelInstance.attributes)
-      return modelInstance
-    }))
-    return response
+  group (relatedInstances) {
+    const Serializer = this.RelatedModel.Serializer
+
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance.$sideLoaded[`embed_${this.foreignKey}`]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
+      /**
+       * If there is an existing relation, add row to
+       * the relationship
+       */
+      if (existingRelation) {
+        existingRelation.value.addRow(relatedInstance)
+        return result
+      }
+
+      result.push({
+        identity: foreignKeyValue,
+        value: new Serializer([relatedInstance])
+      })
+      return result
+    }, [])
+
+    return { key: this.primaryKey, values: transformedValues, defaultValue: new Serializer([]) }
+  }
+
+  /**
+   * Returns the eagerLoad query for the relationship
+   *
+   * @method eagerLoad
+   * @async
+   *
+   * @param  {Array}          rows
+   *
+   * @return {Object}
+   */
+  async eagerLoad (rows) {
+    const relatedInstances = []
+    rows.map(row => {
+      _.map(this.parentInstance[this.foreignKey], embed => {
+        const relatedInstance = this._mapRowToInstance(embed)
+        relatedInstance.$sideLoaded[`embed_${this.foreignKey}`] = row.primaryKeyValue
+        relatedInstances.push(relatedInstance)
+      })
+    })
+
+    return this.group(relatedInstances)
   }
 
   /**
    * Save related instance
    *
-   * @param {any} relatedInstance
+   * @param {relatedInstance} relatedInstance
    * @returns
    *
-   * @memberOf EmbedMany
+   * @memberOf EmbedsMany
    */
-  * save (relatedInstance) {
-    if (relatedInstance instanceof this.related === false) {
+  async save (relatedInstance) {
+    if (relatedInstance instanceof this.RelatedModel === false) {
       throw CE.ModelRelationException.relationMisMatch('save accepts an instance of related model')
     }
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('save', this.parent.constructor.name, this.related.name)
+
+    await this._persistParentIfRequired()
+
+    let embeds = this.parentInstance[this.foreignKey] ? _.cloneDeep(this.parentInstance[this.foreignKey]) : []
+    if (!_.isArray(embeds)) {
+      embeds = [embeds]
     }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
-    let embedItems = this.parent.get(this.toKey) ? _.clone(this.parent.get(this.toKey)) : []
-    if (!embedItems || !_.isArray(embedItems)) {
-      embedItems = []
-    }
-    if (!relatedInstance[this.fromKey]) {
-      relatedInstance[this.fromKey] = uuid.v4()
-      embedItems.push(relatedInstance.toJSON())
+    if (!relatedInstance[this.primaryKey]) {
+      relatedInstance[this.primaryKey] = new ObjectID()
+      embeds.push(relatedInstance.$attributes)
     } else {
-      embedItems = embedItems.map(item => {
-        return item[this.fromKey] === relatedInstance[this.fromKey] ? relatedInstance.toJSON() : item
+      embeds = embeds.map(embed => {
+        return embed[this.primaryKey] === relatedInstance[this.primaryKey] ? relatedInstance.$attributes : embed
       })
     }
-    this.parent.set(this.toKey, embedItems)
-    yield this.parent.save()
-    return relatedInstance
+    this.parentInstance[this.foreignKey] = embeds
+    return this.parentInstance.save()
+  }
+
+  /**
+   * @method create
+   *
+   * @param {Object} values
+   * @returns relatedInstance
+   * @memberof EmbedsMany
+   */
+  create (values) {
+    const relatedInstance = new this.RelatedModel(values)
+    return this.save(relatedInstance)
   }
 
   /**
    * Remove related instance
    *
-   * @param {any} id
+   * @param {String|Array} id
    * @returns
    *
-   * @memberOf EmbedMany
+   * @memberOf EmbedsMany
    */
-  * delete (references) {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('delete', this.parent.constructor.name, this.references.name)
-    }
+  async delete (references) {
+    await this._persistParentIfRequired()
     if (!references) {
       throw CE.InvalidArgumentException.invalidParameter('delete expects a primary key or array of primary key')
     }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to save relationship with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
-    let embedItems = _.clone(this.parent.get(this.toKey))
-    if (!embedItems || !_.isArray(embedItems)) {
-      embedItems = []
+
+    let embeds = _.clone(this.parentInstance[this.foreignKey]) || []
+    if (!_.isArray(embeds)) {
+      embeds = [embeds]
     }
 
-    if (_.isArray(references)) {
-      references.forEach(reference => {
-        _.remove(embedItems, item => item[this.fromKey] === (_.isObject(reference) ? reference[this.fromKey] : reference))
-      })
-    } else {
-      _.remove(embedItems, item => item[this.fromKey] === (_.isObject(references) ? references[this.fromKey] : references))
-    }
-    this.parent.set(this.toKey, embedItems)
-    return yield this.parent.save()
+    references = _.isArray(references) ? references : [references]
+    references.forEach(reference => {
+      _.remove(embeds, embed => embed[this.primaryKey] === reference)
+    })
+    this.parentInstance.set(this.foreignKey, embeds)
+    return this.parentInstance.save()
   }
 
   /**
@@ -153,13 +172,11 @@ class EmbedMany extends BaseRelation {
    *
    * @public
    */
-  * deleteAll () {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('deleteAll', this.parent.constructor.name, this.related.name)
-    }
+  async deleteAll () {
+    await this._persistParentIfRequired()
 
-    this.parent.unset(this.toKey)
-    return yield this.parent.save()
+    this.parentInstance.unset(this.foreignKey)
+    return this.parentInstance.save()
   }
 
   /**
@@ -169,15 +186,38 @@ class EmbedMany extends BaseRelation {
    *
    * @return {Array}
    */
-  * fetch () {
-    return helpers.toCollection(_.map(this.parent.get(this.toKey), embed => {
-      const RelatedModel = this.related
-      const modelInstance = new RelatedModel()
-      modelInstance.attributes = embed
-      modelInstance.exists = true
-      modelInstance.original = _.clone(modelInstance.attributes)
-      return modelInstance
+  fetch () {
+    const embeds = this.parentInstance[this.foreignKey]
+    return new this.RelatedModel.Serializer(_.map(embeds, embed => {
+      return this._mapRowToInstance(embed)
     }))
+  }
+
+  /**
+   * Maps a single row to model instance
+   *
+   * @method _mapRowToInstance
+   *
+   * @param  {Object}          row
+   *
+   * @return {Model}
+   */
+  _mapRowToInstance (embed) {
+    const modelInstance = new this.RelatedModel()
+
+    /**
+     * The omitBy function is used to remove sideLoaded data
+     * from the actual values and set them as $sideLoaded
+     * property on models
+     */
+    modelInstance.newUp(_.omitBy(embed, (value, field) => {
+      if (this._sideLoaded.indexOf(field) > -1) {
+        modelInstance.$sideLoaded[field] = value
+        return true
+      }
+    }))
+
+    return modelInstance
   }
 
   /**
@@ -187,8 +227,10 @@ class EmbedMany extends BaseRelation {
    *
    * @return {Object}
    */
-  * find (id) {
-    return this.fetch().find(item => item[this.fromKey] === id)
+  find (id) {
+    const embeds = this.parentInstance[this.foreignKey]
+    const result = _.find(embeds, embed => String(embed[this.primaryKey]) === String(id))
+    return result ? this._mapRowToInstance(result) : null
   }
 
   /**
@@ -198,8 +240,10 @@ class EmbedMany extends BaseRelation {
    *
    * @return {Object}
    */
-  * first () {
-    return this.fetch().head()
+  first () {
+    const embeds = this.parentInstance[this.foreignKey]
+    const result = _.first(embeds)
+    return result ? this._mapRowToInstance(result) : null
   }
 
   /**
@@ -215,4 +259,4 @@ class EmbedMany extends BaseRelation {
   }
 }
 
-module.exports = EmbedMany
+module.exports = EmbedsMany

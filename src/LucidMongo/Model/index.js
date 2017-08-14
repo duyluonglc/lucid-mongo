@@ -1315,6 +1315,46 @@ class Model extends BaseModel {
   }
 
   /**
+   * Returns instance of @EmbedsMany')
+   *
+   * @method embedsMany
+   *
+   * @param  {Class|String}    relatedModel
+   * @param  {String}    modelPath
+   * @param  {String}    primaryKey
+   * @param  {String}    foreignKey
+   *
+   * @return {EmbedsMany}
+   */
+  embedsMany (
+    relatedModel,
+    primaryKey = this.constructor.primaryKey,
+    foreignKey
+  ) {
+    return new EmbedsMany(this, relatedModel, primaryKey, foreignKey)
+  }
+
+  /**
+   * Returns instance of @ref('EmbedsOne')
+   *
+   * @method embedsOne
+   *
+   * @param  {Class|String}    relatedModel
+   * @param  {String}    modelPath
+   * @param  {String}    primaryKey
+   * @param  {String}    foreignKey
+   *
+   * @return {EmbedsOne}
+   */
+  embedsOne (
+    relatedModel,
+    primaryKey = this.constructor.primaryKey,
+    foreignKey
+  ) {
+    return new EmbedsOne(this, relatedModel, primaryKey, foreignKey)
+  }
+
+  /**
    * Returns instance of @ref('ReferMany')
    *
    * @method referMany
