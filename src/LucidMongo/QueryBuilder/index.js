@@ -831,7 +831,6 @@ class QueryBuilder {
    * @return {Object}
    */
   async _aggregate (aggregator, key, groupBy) {
-    const collection = await this.db.collection(this.collection)
     const $match = this.conditions
     const $group = { _id: '$' + groupBy }
     switch (aggregator) {

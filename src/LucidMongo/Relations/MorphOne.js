@@ -161,12 +161,12 @@ class MorphMany extends BaseRelation {
 
   /* istanbul ignore next */
   createMany () {
-    throw CE.ModelRelationException.unSupportedMethod('createMany', 'morphOne')
+    throw GE.ModelRelationException.unSupportedMethod('createMany', 'morphOne')
   }
 
   /* istanbul ignore next */
   saveMany () {
-    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'morphOne')
+    throw GE.ModelRelationException.unSupportedMethod('saveMany', 'morphOne')
   }
 }
 
