@@ -24,8 +24,9 @@ const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
  * @constructor
  */
 class BaseModel {
-  constructor () {
+  constructor (attributes = {}) {
     this._instantiate()
+    this.fill(attributes)
     return new Proxy(this, require('./proxyHandler'))
   }
 
