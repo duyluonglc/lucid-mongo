@@ -204,7 +204,7 @@ class Model extends BaseModel {
    *
    * @static
    */
-  static query () {
+  static query (params) {
     const query = new (this.QueryBuilder || QueryBuilder)(this, this.connection)
     /**
      * Listening for query event and executing
@@ -215,6 +215,15 @@ class Model extends BaseModel {
       .filter((listener) => typeof (listener) === 'function')
       .each((listener) => listener(builder))
     })
+
+    if (_.isObject(params)) {
+      if (params.select) { query.select(params.select) }
+      if (params.where) { query.where(params.where) }
+      if (params.with) { query.with(params.with) }
+      if (params.limit) { query.limit(params.limit) }
+      if (params.skip) { query.skip(params.skip) }
+      if (params.sort) { query.sort(params.sort) }
+    }
 
     return query
   }
@@ -250,7 +259,7 @@ class Model extends BaseModel {
    */
   static hydrate () {
     /**
-     * Model hooks for different lifecycle
+     * Model hooks for different lifeCycle
      * events
      *
      * @type {Object}
@@ -1012,62 +1021,6 @@ class Model extends BaseModel {
   }
 
   /**
-   * Select x number of rows
-   *
-   * @method pick
-   * @async
-   *
-   * @param  {Number} [limit = 1]
-   *
-   * @return {Collection}
-   */
-  static pick (limit = 1) {
-    return this.query().pick(limit)
-  }
-
-  /**
-   * Select x number of rows in inverse
-   *
-   * @method pickInverse
-   * @async
-   *
-   * @param  {Number}    [limit = 1]
-   *
-   * @return {Collection}
-   */
-  static pickInverse (limit = 1) {
-    return this.query().pickInverse(limit)
-  }
-
-  /**
-   * Returns an array of ids.
-   *
-   * Note: this method doesn't allow eagerloading relations
-   *
-   * @method ids
-   * @async
-   *
-   * @return {Array}
-   */
-  static ids () {
-    return this.query().ids()
-  }
-
-  /**
-   * Returns an array of ids.
-   *
-   * Note: this method doesn't allow eagerloading relations
-   *
-   * @method ids
-   * @async
-   *
-   * @return {Array}
-   */
-  static pair (lhs, rhs) {
-    return this.query().pair(lhs, rhs)
-  }
-
-  /**
    * Sets a preloaded relationship on the model instance
    *
    * @method setRelated
@@ -1399,5 +1352,36 @@ class Model extends BaseModel {
     }
   }
 }
+
+/**
+ * shorthand to get access to the methods on
+ * query builder chain.
+ */
+const shortHands = [
+  'fetch',
+  'first',
+  'pick',
+  'pickInverse',
+  'pair',
+  'ids',
+  'select',
+  'where',
+  'whereIn',
+  'with',
+  'limit',
+  'sort',
+  'count',
+  'max',
+  'min',
+  'sum',
+  'avg'
+]
+
+shortHands.map(method => {
+  Model[method] = function (...args) {
+    const query = this.query()
+    return query[method].apply(query, args)
+  }
+})
 
 module.exports = Model
