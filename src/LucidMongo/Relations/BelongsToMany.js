@@ -483,7 +483,7 @@ class BelongsToMany extends BaseRelation {
 
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
       const foreignKeyValue = relatedInstance.$sideLoaded[`pivot_${this.foreignKey}`]
-      const existingRelation = _.find(result, (row) => row.identity === foreignKeyValue)
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
       /**
        * If there is an existing relation, add row to
