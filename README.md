@@ -1,20 +1,19 @@
-# AdonisJS Lucid MongoDB
+# Lucid Mongo
 
 > **NB - WORK IN PROGRESS**
 
-[![Version](https://img.shields.io/npm/v/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
+[![Version](https://img.shields.io/npm/v/lucid-mongo.svg)](https://www.npmjs.com/package/lucid-mongo)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-[![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=develop)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
-[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/develop.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=develop)
-[![Downloads](https://img.shields.io/npm/dt/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
+[![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=dawn)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
+[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/dawn.svg)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=dawn)
 [![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/adonis-lucid-mongodb.svg)](https://greenkeeper.io/)
-> :pray: This repository is base on adonis-lucid. This package only work with mongodb.
+> :pray: This repository is base on @adonis/lucid and only work with mongodb.
 
-Adonis-lucid-mongodb is a mongo query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories as Adonis-lucid.
+lucid-mongo is a mongo query builder and ORM. It also has support for database migrations, seeds and factories as @adonis/lucid.
 
 ## Features?
 
-Apart from being just a query builder, Lucid has following features.
+Apart from being just a query builder, lucid-mongo has following features.
 
 1. ES6 classes based data Models.
 2. Model Hooks
@@ -23,62 +22,208 @@ Apart from being just a query builder, Lucid has following features.
 5. Migrations
 6. Factories and Seeds
 
+Lucid-mongo version 2.0 can be used with AdonisJS framework or used standalone
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
-You can see example here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
-
-> Note: If you decided use this package you need replace all setting of adonis-lucid by this package. See [install](https://github.com/duyluonglc/adonis-lucid-mongodb#installation) steps for more detail
+You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate) (out of date)
 
 ## Node/OS Target
 
 This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=7.0`
 
-## Usage
+## <a name="getting-started"></a>Installation
+
+To setup this package
+
+```bash
+$ npm i --save lucid-mongo
+```s
+
+## Usage with other framework
+```js
+const config = {
+  connection: 'mongodb',
+  mongodb: {
+    client: 'mongodb',
+    connection: {
+      host: 'localhost',
+      port: 27017,
+      user: 'test_user',
+      password: 'test_password',
+      database: 'test_database'
+    }
+  }
+}
+```
+```js
+// Models/User.js
+const { Models, Model } = require('./')(config)
+
+class User extends Model {
+
+}
+
+Models.add('App/Model/User', User)
+
+module.exports = User
+```
+```js
+// index.js
+async function test () {
+
+  const users = await User.where({ isActive: false }).fetch()
+
+  console.log(users.toJSON())
+}
+
+test()
+
+```
+## Usage with AdonisJS framework
 The usage of LucidMongo is similar to Lucid
 
 [Official Documentation of Lucid here](http://adonisjs.com/docs/2.0/installation)
+### Breaking update
+| Adonis version  | Lucid Mongo version |
+| ------------- | ------------- |
+| 3.x.x  | 1.x.x  |
+| 4.x.x  | 2.x.x  |
+
+Register lucid providers inside the your `bootstrap/app.js` file.
+you should complete replace all setting of `adonis-lucid` with `lucid-mongo`
+
+```javascript
+const providers = [
+  // ...
+  // 'adonis-lucid/providers/DatabaseProvider',
+  // 'adonis-lucid/providers/LucidMongoProvider',
+  // 'adonis-lucid/providers/FactoryProvider'  
+  'lucid-mongo/providers/DatabaseProvider',
+  'lucid-mongo/providers/LucidMongoProvider',
+  'lucid-mongo/providers/FactoryProvider',
+]
+
+const aceProviders = [
+  // ...
+  // 'adonis-lucid/providers/CommandsProvider',
+  // 'adonis-lucid/providers/MigrationsProvider',
+  // 'adonis-lucid/providers/SchemaProvider',
+  // 'adonis-lucid/providers/SeederProvider',  
+  'lucid-mongo/providers/CommandsProvider',
+  'lucid-mongo/providers/MigrationsProvider',
+  'lucid-mongo/providers/SchemaProvider',
+  'lucid-mongo/providers/SeederProvider',
+]
+```
+
+setting up aliases inside `bootstrap/app.js` file.
+
+```javascript
+const aliases = {
+  Database: 'Adonis/Src/Database',
+  Lucid: 'Adonis/Src/LucidMongo',
+  Schema: 'Adonis/Src/Schema'
+  Migrations: 'Adonis/Src/Migrations',
+  Factory: 'Adonis/Src/Factory'
+}
+```
+
+add config to `config/database.js` file
+
+```javascript
+module.exports = {
+
+  /*
+  |--------------------------------------------------------------------------
+  | Default Connection
+  |--------------------------------------------------------------------------
+  |
+  | Connection defines the default connection settings to be used while
+  | interacting with Mongodb databases.
+  |
+  */
+  connection: Env.get('DB_CONNECTION', 'mongodb'),
+  /*-------------------------------------------------------------------------*/
+
+  mongodb: {
+    client: 'mongodb',
+    connection: {
+      host: Env.get('DB_HOST', 'localhost'),
+      port: Env.get('DB_PORT', 27017),
+      user: Env.get('DB_USER', 'root'),
+      password: Env.get('DB_PASSWORD', ''),
+      database: Env.get('DB_DATABASE', 'adonis')
+    }
+  }
+
+}
+```
 
 ### Query
 
 ```js
-const users =  yield User.all()
+const users =  await User.all()
 
-const users =  yield User.where('name', 'peter').fetch()
+const users =  await User.where('name', 'peter').fetch()
 
-const users =  yield User.where({name: 'peter'}).limit(10).skip(20).fetch()
+const users =  await User.where({ name: 'peter' })
+  .limit(10).skip(20).fetch()
 
-const users =  yield User.where({or: [{gender: 'female', age: {gte: 20}}, {gender: 'male', age: {gte: 22}}]}).fetch()
-const user =  yield User.where('name').eq('peter').where('age').gt(18).lte(60).sort('-age').first()
+const users =  await User.where({
+  or: [
+    { gender: 'female', age: { gte: 20 } }, 
+    { gender: 'male', age: { gte: 22 } }
+  ]
+}).fetch()
 
-const users =  yield User.where({age: {gte: 18}}).sort({age: -1}).fetch()
+const user =  await User
+  .where('name').eq('peter')
+  .where('age').gt(18).lte(60)
+  .sort('-age')
+  .first()
 
-const users =  yield User.where('age', '>=', 18).fetch()
+const users =  await User
+  .where({ age: { gte: 18 } })
+  .sort({age: -1})
+  .fetch()
 
-const users =  yield User.where('age').gt(18).paginate(2, 100)
+const users =  await User
+  .where('age', '>=', 18)
+  .fetch()
 
-const users =  yield User.where(function() {
+const users =  await User
+  .where('age').gt(18)
+  .paginate(2, 100)
+
+const users =  await User.where(function() {
   this.where('age', '>=', 18)
 }).fetch()
 
 
 // to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
-const images = yield Image.where({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
+const images = await Image.where({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
 
-const images = yield Image.where({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
+const images = await Image.where({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
 ### Aggregation
 ```js
-  const count = yield Customer.count()
+  const count = await Customer.count()
 
-  const count = yield Customer.where({invited: {$exist: true}}).count('position')
+  const count = await Customer
+    .where({ invited: { $exist: true } })
+    .count('position')
 
-  const max = yield Employee.max('age')
+  const max = await Employee.max('age')
 
-  const total = yield Employee.where(active, true).sum('salary', 'department_id')
+  const total = await Employee
+    .where(active, true)
+    .sum('salary', 'department_id')
 
-  const avg = yield Employee.where(active, true).avg('salary', {department: 'department_id', role: '$role_id'})
+  const avg = await Employee
+    .where(active, true)
+    .avg('salary', { department: 'department_id', role: '$role_id' })
 ```
 
 ### Relations
@@ -115,7 +260,7 @@ class Reader extends Model {
 class Picture extends Model {
 
   imageable () {
-    return this.morphTo('App/Model', 'pictureableType', 'pictureableId')
+    return this.morphTo('App/Model', 'pictureable_type', 'pictureable_id')
   }
 
 }
@@ -156,14 +301,16 @@ class Bill extends Model {
 ```js
   const user = User.with('emails').find(1)
 
-  const user = User.with('emails', 'phone').find(1)
+  const user = User.with('emails', query => query.where({ status: 'verified' })).find(1)
 
-  const user = User.with(['emails', 'phone']).find(1)
+  const user = User.with(['emails', 'phones']).find(1)
 
-  const user = User.with({relation: 'email', 'scope': {where: {verified: true}, sort: '-age'}}).find(1)
+  const user = User.with({ 
+    email: {where: {verified: true}, sort: '-age'}
+  }).find(1)
 
-  const user = User.with({relation: 'email', 'scope': query => {
-    query.where(active, true).limit(1)
+  const user = User.with({email: query => {
+    query.where(active, true)
   }}).find(1)
 
 ```
@@ -210,8 +357,12 @@ class Article extends LucidMongo {
 ```
 The where query conditions will be converted to objectId too
 ```js
-const article = yield Article.find('58ccb403f895502b84582c63')
-const articles = yield Article.where({department_id: {in: ['58ccb403f895502b84582c63', '58ccb403f895502b84582c63']}}).fetch()
+const article = await Article.find('58ccb403f895502b84582c63')
+const articles = await Article
+  .where({ 
+    department_id: { in: ['58ccb403f895502b84582c63', '58ccb403f895502b84582c63'] } 
+  })
+  .fetch()
 ```
 
 > Type of `date`
@@ -222,7 +373,7 @@ class Staff extends LucidMongo {
 ```
 The field declare as date will be converted to moment js object after get from db
 ```js
-const staff = yield Staff.first()
+const staff = await Staff.first()
 const yearAgo = staff.dob.fromNow()
 ```
 You can set attribute of model as moment js object, field will be converted to date before save to db
@@ -231,7 +382,9 @@ staff.dob = moment(request.input('dob'))
 ```
 The where query conditions will be converted to date too
 ```js
-const user = yield User.where({created_at: {gte: '2017-01-01'}}).fetch()
+const user = await User
+  .where({ created_at: { gte: '2017-01-01' } })
+  .fetch()
 ```
 Date type is UTC timezone
 > Type of `geometry`
@@ -243,7 +396,7 @@ class Image extends LucidMongo {
 When declare field type as geometry the field will be transformed to geoJSON type
 
 ```js
-const image = yield Image.create({
+const image = await Image.create({
   fileName: fileName,
   location: {lat: 1, lng: 1}
 })
@@ -261,89 +414,12 @@ After get from db it will be retransformed to
 You can get the instance of mongodb drive to execute raw query
 ```js
   const Database = use('Database')
-  const mongo = yield Database.connection('mongodb')
-  const users = yield mongo.collection('users').find().toArray()
-  const phone = yield mongo.collection('phones').findOne({userId: user._id})
+  const mongo = await Database.connection('mongodb')
+  const users = await mongo.collection('users').find().toArray()
+  const phone = await mongo.collection('phones').findOne({userId: user._id})
 ```
 [More document about mongo drive here](http://mongodb.github.io/node-mongodb-native/2.2/api/index.html)
 
-## <a name="getting-started"></a>Installation
-
-To setup this package
-
-```bash
-$ npm i --save adonis-lucid-mongodb
-```
-
-and then register lucid providers inside the your `bootstrap/app.js` file.
-you should complete replace all setting of `adonis-lucid` with `adonis-lucid-mongodb`
-
-```javascript
-const providers = [
-  // ...
-  // 'adonis-lucid/providers/DatabaseProvider',
-  // 'adonis-lucid/providers/LucidMongoProvider',
-  // 'adonis-lucid/providers/FactoryProvider'  
-  'adonis-lucid-mongodb/providers/DatabaseProvider',
-  'adonis-lucid-mongodb/providers/LucidMongoProvider',
-  'adonis-lucid-mongodb/providers/FactoryProvider',
-]
-
-const aceProviders = [
-  // ...
-  // 'adonis-lucid/providers/CommandsProvider',
-  // 'adonis-lucid/providers/MigrationsProvider',
-  // 'adonis-lucid/providers/SchemaProvider',
-  // 'adonis-lucid/providers/SeederProvider',  
-  'adonis-lucid-mongodb/providers/CommandsProvider',
-  'adonis-lucid-mongodb/providers/MigrationsProvider',
-  'adonis-lucid-mongodb/providers/SchemaProvider',
-  'adonis-lucid-mongodb/providers/SeederProvider',
-]
-```
-
-setting up aliases inside `bootstrap/app.js` file.
-
-```javascript
-const aliases = {
-  Database: 'Adonis/Src/Database',
-  Lucid: 'Adonis/Src/LucidMongo',
-  Schema: 'Adonis/Src/Schema'
-  Migrations: 'Adonis/Src/Migrations',
-  Factory: 'Adonis/Src/Factory'
-}
-```
-
-add config to `config/database.js` file
-
-```javascript
-module.exports = {
-
-  /*
-  |--------------------------------------------------------------------------
-  | Default Connection
-  |--------------------------------------------------------------------------
-  |
-  | Connection defines the default connection settings to be used while
-  | interacting with Mongodb databases.
-  |
-  */
-  connection: Env.get('DB_CONNECTION', 'mongodb'),
-  /*-------------------------------------------------------------------------*/
-
-  mongodb: {
-    client: 'mongodb',
-    connection: {
-      host: Env.get('DB_HOST', 'localhost'),
-      port: Env.get('DB_PORT', 27017),
-      user: Env.get('DB_USER', 'root'),
-      password: Env.get('DB_PASSWORD', ''),
-      database: Env.get('DB_DATABASE', 'adonis')
-    }
-  }
-
-}
-```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
 
