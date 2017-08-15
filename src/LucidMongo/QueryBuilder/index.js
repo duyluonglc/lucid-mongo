@@ -114,10 +114,10 @@ class QueryBuilder {
     }
 
     _(this.Model.$globalScopes)
-    .filter((scope) => this._ignoreScopes.indexOf(scope.name) <= -1)
-    .each((scope) => {
-      scope.callback(this)
-    })
+      .filter((scope) => this._ignoreScopes.indexOf(scope.name) <= -1)
+      .each((scope) => {
+        scope.callback(this)
+      })
 
     return this
   }
@@ -468,24 +468,19 @@ class QueryBuilder {
    * @chainable
    */
   with (...args) {
-    const relations = _.isArray(args[0]) ? args[0] : _.toArray(args)
-    relations.forEach(item => {
-      if (_.isObject(item)) {
-        this._eagerLoads[item.relation] = null
-        if (item.scope) {
-          if (_.isObject(item.scope)) {
-            this.scope(item.relation, function (query) {
-              query.merge(item.scope)
-            })
-          } else if (item) {
-            this.scope(item.relation, item.scope)
-          }
-        }
-      } else {
-        this._eagerLoads[item] = null
+    if (args[1] && _.isFunction(args[1])) {
+      this._eagerLoads[args[0]] = args[1]
+    } else if (args[1] && _.isObject(args[1])) {
+      this._eagerLoads[args[0]] = function (query) {
+        query.merge(args[1])
       }
-    })
-    // this._eagerLoads[relation] = callback
+    } else if (_.isObject(args[0])) {
+      _.forEach(args[0], (scope, key) => {
+        this._eagerLoads[key] = function (query) {
+          query.merge(scope)
+        }
+      })
+    }
     return this
   }
 
