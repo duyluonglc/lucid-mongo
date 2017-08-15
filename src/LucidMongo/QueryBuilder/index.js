@@ -474,12 +474,20 @@ class QueryBuilder {
       this._eagerLoads[args[0]] = function (query) {
         query.merge(args[1])
       }
-    } else if (_.isObject(args[0])) {
-      _.forEach(args[0], (scope, key) => {
-        this._eagerLoads[key] = function (query) {
-          query.merge(scope)
+    } else if (_.isArray(args[0])) {
+      _.forEach(args[0], related => {
+        if (_.isObject(related)) {
+          this.with(related)
+        } else {
+          this._eagerLoads[related] = function (query) {}
         }
       })
+    } else if (_.isObject(args[0])) {
+      _.forEach(args[0], (scope, key) => {
+        this.with(key, scope)
+      })
+    } else {
+      this._eagerLoads[args[0]] = function (query) { }
     }
     return this
   }
