@@ -17,7 +17,7 @@ const { Config } = require('@adonisjs/sink')
 const moment = require('moment')
 
 const helpers = require('./helpers')
-const Model = require('../../src/Lucid/Model')
+const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
 
 test.group('Relations | Belongs To Many', (group) => {

@@ -19,9 +19,9 @@ const { ioc } = require('@adonisjs/fold')
 const { Config, setupResolver } = require('@adonisjs/sink')
 
 const helpers = require('./helpers')
-const Model = require('../../src/Lucid/Model')
+const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
-const VanillaSerializer = require('../../src/Lucid/Serializers/Vanilla')
+const VanillaSerializer = require('../../src/LucidMongo/Serializers/Vanilla')
 
 test.group('Model', (group) => {
   group.before(async () => {

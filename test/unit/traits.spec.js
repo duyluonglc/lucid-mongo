@@ -12,8 +12,8 @@
 const test = require('japa')
 const { ioc } = require('@adonisjs/fold')
 const helpers = require('./helpers')
-const Model = require('../../src/Lucid/Model')
-const QueryBuilder = require('../../src/Lucid/QueryBuilder')
+const Model = require('../../src/LucidMongo/Model')
+const QueryBuilder = require('../../src/LucidMongo/QueryBuilder')
 
 test.group('Traits', (group) => {
   group.beforeEach(() => {

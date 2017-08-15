@@ -10,7 +10,7 @@
 */
 
 const test = require('japa')
-const RelationsParser = require('../../src/Lucid/Relations/Parser')
+const RelationsParser = require('../../src/LucidMongo/Relations/Parser')
 
 test.group('Relations Parser', () => {
   test('parse individual relationship string', (assert) => {

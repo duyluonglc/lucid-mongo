@@ -10,7 +10,7 @@
 */
 
 const test = require('japa')
-const Hooks = require('../../src/Lucid/Hooks')
+const Hooks = require('../../src/LucidMongo/Hooks')
 const helpers = require('./helpers')
 const { ioc } = require('@adonisjs/fold')
 const { setupResolver } = require('@adonisjs/sink')
