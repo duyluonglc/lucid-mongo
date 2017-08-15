@@ -26,7 +26,11 @@ Serializer.toJSON = function () {
   return _(this.attributes)
   .thru(removeSafeFields)
   .transform((result, value, key) => {
-    result[key] = this.getFormatedField(key, this[key])
+    if (!_.isFunction(this[key])) {
+      result[key] = this.getFormatedField(key, this[key])
+    } else {
+      result[key] = this.getFormatedField(key, this.$attributes[key])
+    }
   })
   .merge(this.initializeComputedProperties())
   .merge(this.serializeRelations())
