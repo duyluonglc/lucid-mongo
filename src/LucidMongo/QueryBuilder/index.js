@@ -268,7 +268,7 @@ class QueryBuilder {
       await modelInstance.loadMany(this._eagerLoads)
     }
 
-    this.Model.$hooks.after.exec('find', modelInstance)
+    await this.Model.$hooks.after.exec('find', modelInstance)
     return modelInstance
   }
 
@@ -467,8 +467,25 @@ class QueryBuilder {
    *
    * @chainable
    */
-  with (relation, callback) {
-    this._eagerLoads[relation] = callback
+  with (...args) {
+    const relations = _.isArray(args[0]) ? args[0] : _.toArray(args)
+    relations.forEach(item => {
+      if (_.isObject(item)) {
+        this._eagerLoads[item.relation] = null
+        if (item.scope) {
+          if (_.isObject(item.scope)) {
+            this.scope(item.relation, function (query) {
+              query.merge(item.scope)
+            })
+          } else if (item) {
+            this.scope(item.relation, item.scope)
+          }
+        }
+      } else {
+        this._eagerLoads[item] = null
+      }
+    })
+    // this._eagerLoads[relation] = callback
     return this
   }
 

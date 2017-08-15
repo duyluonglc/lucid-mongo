@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
 const fs = require('fs-extra')
 const path = require('path')
@@ -57,7 +58,7 @@ test.group('Model', (group) => {
   }).timeout(0)
 
   test('run queries using query builder', (assert) => {
-    class User extends Model {}
+    class User extends Model { }
     User._bootIfNotBooted()
     const query = User.query().toSQL()
     assert.equal(query.sql, helpers.formatQuery('select * from "users"'))
@@ -65,7 +66,7 @@ test.group('Model', (group) => {
 
   test('define different table for a model', (assert) => {
     class User extends Model {
-      static get table () {
+      static get table() {
         return 'my_users'
       }
     }
@@ -77,7 +78,7 @@ test.group('Model', (group) => {
 
   test('define table prefix for a model', (assert) => {
     class User extends Model {
-      static get prefix () {
+      static get prefix() {
         return 'my_'
       }
     }
@@ -90,7 +91,7 @@ test.group('Model', (group) => {
   test('call the boot method only once', (assert) => {
     let callCounts = 0
     class User extends Model {
-      static boot () {
+      static boot() {
         super.boot()
         callCounts++
       }
@@ -124,7 +125,7 @@ test.group('Model', (group) => {
 
   test('call setters when defining attributes via fill', (assert) => {
     class User extends Model {
-      setUsername (username) {
+      setUsername(username) {
         return username.toUpperCase()
       }
     }
@@ -137,7 +138,7 @@ test.group('Model', (group) => {
 
   test('call setters when defining attributes manually', (assert) => {
     class User extends Model {
-      setUsername (username) {
+      setUsername(username) {
         return username.toUpperCase()
       }
     }
@@ -173,15 +174,15 @@ test.group('Model', (group) => {
 
   test('define different primary key for a given model', async (assert) => {
     class User extends Model {
-      static get primaryKey () {
+      static get primaryKey() {
         return 'uuid'
       }
 
-      static get table () {
+      static get table() {
         return 'my_users'
       }
 
-      static get incrementing () {
+      static get incrementing() {
         return false
       }
     }
@@ -201,8 +202,8 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    User.addHook('beforeCreate', function () {})
-    User.addHook('afterCreate', function () {})
+    User.addHook('beforeCreate', function () { })
+    User.addHook('afterCreate', function () { })
 
     assert.lengthOf(User.$hooks.before._handlers.create, 1)
     assert.lengthOf(User.$hooks.after._handlers.create, 1)
@@ -248,7 +249,7 @@ test.group('Model', (group) => {
       throw new Error('Something bad happened')
     })
 
-    User.addHook('afterCreate', function () {})
+    User.addHook('afterCreate', function () { })
 
     const user = new User()
     try {
@@ -338,7 +339,7 @@ test.group('Model', (group) => {
 
   test('do not set timestamps when columns are not defined', async (assert) => {
     class User extends Model {
-      static get createdAtColumn () {
+      static get createdAtColumn() {
         return null
       }
     }
@@ -374,7 +375,7 @@ test.group('Model', (group) => {
 
   test('collection toJSON should call model toJSON and getters', async (assert) => {
     class User extends Model {
-      getCreatedAt (date) {
+      getCreatedAt(date) {
         return date.fromNow()
       }
     }
@@ -410,7 +411,7 @@ test.group('Model', (group) => {
   test('call update hooks when updating model', async (assert) => {
     const stack = []
     class User extends Model {
-      static boot () {
+      static boot() {
         super.boot()
         this.addHook('beforeUpdate', function () {
           stack.push('before')
@@ -434,7 +435,7 @@ test.group('Model', (group) => {
   test('call save hooks when updating or creating model', async (assert) => {
     const stack = []
     class User extends Model {
-      static boot () {
+      static boot() {
         super.boot()
         this.addHook('beforeSave', function (model) {
           stack.push(`before:${model.$persisted}`)
@@ -457,7 +458,7 @@ test.group('Model', (group) => {
 
   test('update updated_at timestamp for mass updates', async (assert) => {
     class User extends Model {
-      static get dates () {
+      static get dates() {
         const dates = super.dates
         dates.push('login_at')
         return dates
@@ -465,7 +466,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').table('users').insert([{username: 'virk'}, { username: 'nikk' }])
+    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await User.query().where('username', 'virk').update({ login_at: new Date() })
     const users = await ioc.use('Database').table('users').orderBy('id', 'asc')
     assert.equal(moment(users[0].updated_at).format('YYYY-MM-DD'), moment().format('YYYY-MM-DD'))
@@ -473,46 +474,46 @@ test.group('Model', (group) => {
 
   test('attach computed properties to the final output', async (assert) => {
     class User extends Model {
-      static get computed () {
+      static get computed() {
         return ['full_name']
       }
 
-      getFullName ({ username }) {
+      getFullName({ username }) {
         return `Mr. ${username}`
       }
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').table('users').insert([{username: 'virk'}, { username: 'nikk' }])
+    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().where('username', 'virk').fetch()
     assert.equal(users.first().toObject().full_name, 'Mr. virk')
   })
 
   test('only pick visible fields', async (assert) => {
     class User extends Model {
-      static get visible () {
+      static get visible() {
         return ['created_at']
       }
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').table('users').insert([{username: 'virk'}, { username: 'nikk' }])
+    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().where('username', 'virk').fetch()
     assert.deepEqual(Object.keys(users.first().toObject()), ['created_at'])
   })
 
   test('omit hidden fields', async (assert) => {
     class User extends Model {
-      static get hidden () {
+      static get hidden() {
         return ['created_at']
       }
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').table('users').insert([{username: 'virk'}, { username: 'nikk' }])
+    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().where('username', 'virk').fetch()
     assert.deepEqual(Object.keys(users.first().toObject()), [
-      'id', 'vid', 'country_id', 'username', 'updated_at', 'login_at', 'deleted_at'
+      'id', 'vid', 'country_id', 'username', 'updated_at', 'type', 'login_at', 'deleted_at'
     ])
   })
 
@@ -594,7 +595,7 @@ test.group('Model', (group) => {
 
   test('define local scopes', async (assert) => {
     class User extends Model {
-      static scopeIsLogged (builder) {
+      static scopeIsLogged(builder) {
         builder.whereNotNull('login_at')
       }
     }
@@ -607,7 +608,7 @@ test.group('Model', (group) => {
 
   test('pass arguments to local scopes', async (assert) => {
     class User extends Model {
-      static scopeIsLogged (builder, time) {
+      static scopeIsLogged(builder, time) {
         builder.where('login_at', '>', time)
       }
     }
@@ -653,7 +654,8 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     const stack = []
-    User.addHook('afterFind', function () {
+    User.addHook('afterFind', async function () {
+      await helpers.sleep(1)
       stack.push('afterFind')
     })
 
@@ -787,7 +789,7 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates (key, value) {
+      static formatDates(key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
       }
@@ -807,7 +809,7 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates (key, value) {
+      static formatDates(key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
       }
@@ -828,7 +830,7 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates (key, value) {
+      static formatDates(key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
       }
@@ -876,13 +878,13 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates (key, value) {
+      static formatDates(key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      setCreatedAt () {
+      setCreatedAt() {
         return null
       }
     }
@@ -903,13 +905,13 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates (key, value) {
+      static formatDates(key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      static get createdAtColumn () {
+      static get createdAtColumn() {
         return null
       }
     }
@@ -930,13 +932,13 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates (key, value) {
+      static formatDates(key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      setUpdatedAt () {
+      setUpdatedAt() {
         return null
       }
     }
@@ -954,7 +956,7 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates (key, value) {
+      static castDates(key, value) {
         const formattedValue = super.castDates(key, value)
         casting.push({ key, value: formattedValue })
         return formattedValue
@@ -978,13 +980,13 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates (key, value) {
+      static castDates(key, value) {
         const formattedValue = value.format('YYYY-MM-DD')
         casting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      static get createdAtColumn () {
+      static get createdAtColumn() {
         return null
       }
     }
@@ -1006,13 +1008,13 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates (key, value) {
+      static castDates(key, value) {
         const formattedValue = super.castDates(key, value)
         casting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      getCreatedAt (value) {
+      getCreatedAt(value) {
         return value.fromNow(true)
       }
     }
@@ -1033,13 +1035,13 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates (key, value) {
+      static castDates(key, value) {
         const formattedValue = super.castDates(key, value)
         casting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      static get dates () {
+      static get dates() {
         const existingDates = super.dates
         existingDates.push('login_at')
         return existingDates
@@ -1246,11 +1248,11 @@ test.group('Model', (group) => {
 
   test('dates should be an empty array when createdAtColumn and updatedAtColumn is not defined', async (assert) => {
     class User extends Model {
-      static get createdAtColumn () {
+      static get createdAtColumn() {
         return null
       }
 
-      static get updatedAtColumn () {
+      static get updatedAtColumn() {
         return null
       }
     }
@@ -1260,11 +1262,11 @@ test.group('Model', (group) => {
 
   test('do not populate dates when columns are set to null', async (assert) => {
     class User extends Model {
-      static get createdAtColumn () {
+      static get createdAtColumn() {
         return null
       }
 
-      static get updatedAtColumn () {
+      static get updatedAtColumn() {
         return null
       }
     }
@@ -1282,7 +1284,7 @@ test.group('Model', (group) => {
     assert.plan(1)
 
     class User extends Model {
-      static boot () {
+      static boot() {
         super.boot()
       }
     }
@@ -1295,12 +1297,186 @@ test.group('Model', (group) => {
     assert.plan(1)
 
     class User extends Model {
-      static boot () {
+      static boot() {
         super.boot()
       }
     }
 
     const fn = () => User.addGlobalScope('foo')
     assert.throw(fn, 'E_INVALID_PARAMETER: Model.addGlobalScope expects a closure as first parameter')
+  })
+
+  test('refresh model state', async (assert) => {
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+    assert.isUndefined(user.type)
+    await user.reload()
+    assert.equal(user.type, 'admin')
+  })
+
+  test('do not reload when isNew', async (assert) => {
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    assert.isUndefined(user.type)
+    await user.reload()
+    assert.isUndefined(user.type)
+  })
+
+  test('throw exception when on reloas the row is missing', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+    assert.isUndefined(user.type)
+
+    await ioc.use('Database').table('users').truncate()
+    try {
+      await user.reload()
+    } catch ({ message }) {
+      assert.equal(message, 'E_RUNTIME_ERROR: Cannot reload model since row with id 1 has been removed')
+    }
+  })
+
+  test('do not reload when model is deleted', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+    assert.isUndefined(user.type)
+    await user.delete()
+
+    try {
+      await user.reload()
+    } catch ({ message }) {
+      assert.equal(message, 'E_RUNTIME_ERROR: Cannot reload a deleted model instance')
+    }
+  })
+
+  test('rollback save operation via transaction', async (assert) => {
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+
+    const trx = await ioc.use('Database').beginTransaction()
+    try {
+      const user = new User()
+      user.username = 'virk'
+      await user.save(trx)
+      trx.rollback()
+    } catch (error) {
+      trx.rollback()
+      throw error
+    }
+
+    const count = await ioc.use('Database').table('users').count('* as total')
+    assert.deepEqual(count, [{ 'total': 0 }])
+  })
+
+  test('rollback update operation via transaction', async (assert) => {
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+
+    const trx = await ioc.use('Database').beginTransaction()
+    try {
+      user.username = 'nikk'
+      await user.save(trx)
+      trx.rollback()
+    } catch (error) {
+      trx.rollback()
+      throw error
+    }
+
+    const firtUser = await ioc.use('Database').table('users').first()
+    assert.equal(firtUser.username, 'virk')
+  })
+
+  test('create inside a transaction', async (assert) => {
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+    const trx = await ioc.use('Database').beginTransaction()
+
+    try {
+      await User.create({ username: 'virk' }, trx)
+      trx.rollback()
+    } catch (error) {
+      trx.rollback()
+      throw error
+    }
+
+    const count = await ioc.use('Database').table('users').count('* as total')
+    assert.deepEqual(count, [{ 'total': 0 }])
+  })
+
+  test('createMany inside a transaction', async (assert) => {
+    class User extends Model {
+      static boot() {
+        super.boot()
+      }
+    }
+
+    User._bootIfNotBooted()
+    const trx = await ioc.use('Database').beginTransaction()
+
+    try {
+      await User.createMany([{ username: 'virk' }], trx)
+      trx.rollback()
+    } catch (error) {
+      trx.rollback()
+      throw error
+    }
+
+    const count = await ioc.use('Database').table('users').count('* as total')
+    assert.deepEqual(count, [{ 'total': 0 }])
   })
 })

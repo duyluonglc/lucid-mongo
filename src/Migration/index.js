@@ -28,43 +28,43 @@ const CE = require('../Exceptions')
 class Migration {
   constructor (Config, Database) {
     this.db = Database
-    this._migrationsTable = Config.get('database.migrationsTable', 'adonis_schema')
-    this._lockTable = `${this._migrationsTable}_lock`
+    this._migrationsCollection = Config.get('database.migrationsCollection', 'adonis_schema')
+    this._lockCollection = `${this._migrationsCollection}_lock`
   }
 
   /**
-   * Makes the migrations table only if doesn't exists
+   * Makes the migrations collection only if doesn't exists
    *
-   * @method _makeMigrationsTable
+   * @method _makeMigrationsCollection
    * @async
    *
    * @return {void}
    *
    * @private
    */
-  _makeMigrationsTable () {
-    return this.db.schema.createTableIfNotExists(this._migrationsTable, (table) => {
-      table.increments()
-      table.string('name')
-      table.integer('batch')
-      table.timestamp('migration_time').defaultsTo(this.db.fn.now())
+  _makeMigrationsCollection () {
+    return this.db.schema.createCollectionIfNotExists(this._migrationsCollection, (collection) => {
+      // collection.increments()
+      collection.string('name')
+      collection.integer('batch')
+      collection.timestamp('migration_time').defaultsTo(this.db.fn.now())
     })
   }
 
   /**
-   * Creates the lock table if it doesn't exists
+   * Creates the lock collection if it doesn't exists
    *
-   * @method _makeLockTable
+   * @method _makeLockCollection
    * @async
    *
    * @return {void}
    *
    * @private
    */
-  _makeLockTable () {
-    return this.db.schema.createTableIfNotExists(this._lockTable, (table) => {
-      table.increments()
-      table.boolean('is_locked')
+  _makeLockCollection () {
+    return this.db.schema.createCollectionIfNotExists(this._lockCollection, (collection) => {
+      // collection.increments()
+      collection.boolean('is_locked')
     })
   }
 
@@ -78,7 +78,7 @@ class Migration {
    * @private
    */
   _addLock () {
-    return this.db.insert({ is_locked: true }).into(this._lockTable)
+    return this.db.insert({ is_locked: true }).into(this._lockCollection)
   }
 
   /**
@@ -92,7 +92,7 @@ class Migration {
    * @private
    */
   _removeLock () {
-    return this.db.schema.dropTableIfExists(this._lockTable)
+    return this.db.schema.dropCollectionIfExists(this._lockCollection)
   }
 
   /**
@@ -108,13 +108,13 @@ class Migration {
    */
   async _checkForLock () {
     const hasLock = await this.db
-      .from(this._lockTable)
+      .from(this._lockCollection)
       .where('is_locked', 1)
       .orderBy('id', 'desc')
       .first()
 
     if (hasLock) {
-      throw CE.RuntimeException.migrationsAreLocked(this._lockTable)
+      throw CE.RuntimeException.migrationsAreLocked(this._lockCollection)
     }
   }
 
@@ -131,12 +131,12 @@ class Migration {
    * @private
    */
   async _getLatestBatch () {
-    const batch = await this.db.table(this._migrationsTable).max('batch as batch')
+    const batch = await this.db.collection(this._migrationsCollection).max('batch as batch')
     return Number(_.get(batch, '0.batch', 0))
   }
 
   /**
-   * Add a new row to the migrations table for
+   * Add a new row to the migrations collection for
    * a given batch
    *
    * @method _addForBatch
@@ -150,12 +150,12 @@ class Migration {
    * @private
    */
   _addForBatch (name, batch) {
-    return this.db.table(this._migrationsTable).insert({name, batch})
+    return this.db.collection(this._migrationsCollection).insert({ name, batch })
   }
 
   /**
    * Remove row for a given schema defination from
-   * the migrations table
+   * the migrations collection
    *
    * @method _remove
    * @async
@@ -167,7 +167,7 @@ class Migration {
    * @private
    */
   _remove (name) {
-    return this.db.table(this._migrationsTable).where('name', name).delete()
+    return this.db.collection(this._migrationsCollection).where('name', name).delete()
   }
 
   /**
@@ -187,7 +187,7 @@ class Migration {
    * @private
    */
   _getAfterBatch (batch = 0) {
-    const query = this.db.table(this._migrationsTable)
+    const query = this.db.collection(this._migrationsCollection)
 
     if (batch > 0) {
       query.where('batch', '>', batch)
@@ -212,8 +212,8 @@ class Migration {
    */
   async _getDiff (names, direction = 'up', batch) {
     const schemas = direction === 'down'
-    ? await this._getAfterBatch(batch)
-    : await this.db.table(this._migrationsTable).pluck('name')
+      ? await this._getAfterBatch(batch)
+      : await this.db.collection(this._migrationsCollection).pluck('name')
 
     return direction === 'down' ? _.reverse(_.intersection(names, schemas)) : _.difference(names, schemas)
   }
@@ -302,8 +302,8 @@ class Migration {
    * @throws {Error} If any of schema file throws exception
    */
   async up (schemas, toSQL) {
-    await this._makeMigrationsTable()
-    await this._makeLockTable()
+    await this._makeMigrationsCollection()
+    await this._makeLockCollection()
     await this._checkForLock()
     await this._addLock()
 
@@ -369,8 +369,8 @@ class Migration {
    * @throws {Error} If something blows in schema file
    */
   async down (schemas, batch, toSQL = false) {
-    await this._makeMigrationsTable()
-    await this._makeLockTable()
+    await this._makeMigrationsCollection()
+    await this._makeLockCollection()
     await this._checkForLock()
     await this._addLock()
 
@@ -436,11 +436,19 @@ class Migration {
    * @return {Object}
    */
   async status (schemas) {
-    const migratedFiles = await this._getAfterBatch(0)
-    return _.transform(schemas, (result, schema, name) => {
-      result[name] = _.includes(migratedFiles, name) ? 'Y' : 'N'
-      return result
-    }, {})
+    const migrated = await this.db
+      .collection(this._migrationsCollection)
+      .orderBy('name')
+
+    this.db.close()
+    return _.map(schemas, (schema, name) => {
+      const migration = _.find(migrated, (mig) => mig.name === name)
+      return {
+        name,
+        migrated: !!migration,
+        batch: migration ? migration.batch : null
+      }
+    })
   }
 }
 
