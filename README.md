@@ -37,9 +37,9 @@ To setup this package
 
 ```bash
 $ npm i --save lucid-mongo
-```s
+```
 
-## Usage with other framework
+## Usage standalone
 ```js
 const config = {
   connection: 'mongodb',
