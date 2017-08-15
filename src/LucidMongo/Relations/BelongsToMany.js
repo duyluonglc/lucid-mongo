@@ -1,529 +1,744 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
+ *
+ * ==== Keys for User and Post model
+ * primaryKey           -    user.primaryKey    -    id
+ * relatedPrimaryKey    -    post.primaryKey    -    id
+ * foreignKey           -    user.foreignKey    -    user_id
+ * relatedForeignKey    -    post.foreignKey    -    post_id
+ *
 */
 
-const Relation = require('./Relation')
-const CE = require('../../Exceptions')
 const _ = require('lodash')
-const helpers = require('../QueryBuilder/helpers')
-const CatLog = require('cat-log')
-const util = require('../../../lib/util')
-const logger = new CatLog('adonis:lucid')
+const GE = require('@adonisjs/generic-exceptions')
 
-class BelongsToMany extends Relation {
-  constructor (parent, related, pivotCollection, pivotLocalKey, pivotOtherKey, primaryKey, relatedPrimaryKey) {
-    super(parent, related)
-    this.pivotPrefix = '_pivot_'
-    this.pivotItems = []
-    this.pivotTimestamps = false
-    this._setUpPivotCollection(pivotCollection)
-    this._setUpKeys(primaryKey, relatedPrimaryKey, pivotLocalKey, pivotOtherKey)
-    this._decorateQueryBuilder()
+const BaseRelation = require('./BaseRelation')
+const util = require('../../../lib/util')
+const CE = require('../../Exceptions')
+const PivotModel = require('../Model/PivotModel')
+
+/**
+ * BelongsToMany class builds relationship between
+ * two models with the help of pivot collection/model
+ *
+ * @class BelongsToMany
+ * @constructor
+ */
+class BelongsToMany extends BaseRelation {
+  constructor (parentInstance, relatedModel, primaryKey, foreignKey, relatedPrimaryKey, relatedForeignKey) {
+    super(parentInstance, relatedModel, primaryKey, foreignKey)
+
+    this.relatedForeignKey = relatedForeignKey
+    this.relatedPrimaryKey = relatedPrimaryKey
+
+    /**
+     * Since user can define a fully qualified model for
+     * pivot collection, we store it under this variable.
+     *
+     * @type {[type]}
+     */
+    this._PivotModel = null
+
+    /**
+     * Settings related to pivot collection only
+     *
+     * @type {Object}
+     */
+    this._pivot = {
+      collection: util.makePivotCollectionName(parentInstance.constructor.name, relatedModel.name),
+      withTimestamps: false,
+      withFields: []
+    }
+
+    this._relatedFields = []
+
+    /**
+     * Here we store the existing pivot rows, to make
+     * sure we are not inserting duplicates.
+     *
+     * @type {Array}
+     */
+    this._existingPivotInstances = []
   }
 
   /**
-   * Add pivot keys
+   * The colums to be selected from the related
+   * query
    *
-   * @param  {Array} results
-   * @param  {Array} pivots
+   * @method select
+   *
+   * @param  {Array} columns
+   *
+   * @chainable
+   */
+  select (columns) {
+    this._relatedFields = _.isArray(columns) ? columns : _.toArray(arguments)
+    return this
+  }
+
+  /**
+   * Returns the pivot collection name. The pivot model is
+   * given preference over the default collection name.
+   *
+   * @attribute $pivotCollection
+   *
+   * @return {String}
+   */
+  get $pivotCollection () {
+    return this._PivotModel ? this._PivotModel.collection : this._pivot.collection
+  }
+
+  /**
+   * The pivot columns to be selected
+   *
+   * @attribute $pivotColumns
    *
    * @return {Array}
    */
-  _addPivotKeys (results, pivots) {
-    return results.map((result) => {
-      const pivotData = _.find(pivots, pivot => {
-        return String(pivot[this.pivotOtherKey]) === String(result._id)
-      })
-      _.each(this.pivotItems, (item) => {
-        result.attributes[`${this.pivotPrefix}${item}`] = _.get(pivotData, item)
-      })
-      return result
+  get $pivotColumns () {
+    return [this.relatedForeignKey, this.foreignKey].concat(this._pivot.withFields)
+  }
+
+  /**
+   * Returns the name of select statement on pivot collection
+   *
+   * @method _selectForPivot
+   *
+   * @param  {String}        field
+   *
+   * @return {String}
+   *
+   * @private
+   */
+  _selectForPivot (field) {
+    return `${this.$pivotCollection}.${field} as pivot_${field}`
+  }
+
+  /**
+   * Adds a where clause on pivot collection by prefixing
+   * the pivot collection name.
+   *
+   * @method _whereForPivot
+   *
+   * @param  {String}       operator
+   * @param  {String}       key
+   * @param  {...Spread}    args
+   *
+   * @return {void}
+   *
+   * @private
+   */
+  _whereForPivot (method, key, ...args) {
+    this.relatedQuery[method](`${this.$pivotCollection}.${key}`, ...args)
+  }
+
+  /**
+   * Decorates the query for read/update/delete
+   * operations
+   *
+   * @method _decorateQuery
+   *
+   * @return {void}
+   *
+   * @private
+   */
+  _decorateQuery () {
+    this.wherePivot(this.foreignKey, this.$primaryKeyValue)
+  }
+
+  /**
+   * Newup the pivot model set by user or the default
+   * pivot model
+   *
+   * @method _newUpPivotModel
+   *
+   * @return {Object}
+   *
+   * @private
+   */
+  _newUpPivotModel () {
+    return new (this._PivotModel || PivotModel)()
+  }
+
+  /**
+   * The pivot collection values are sideloaded, so we need to remove
+   * them sideload and instead set it as a relationship on
+   * model instance
+   *
+   * @method _addPivotValuesAsRelation
+   *
+   * @param  {Object}                  row
+   *
+   * @private
+   */
+  _addPivotValuesAsRelation (row) {
+    const pivotAttributes = {}
+
+    /**
+     * Removing pivot key/value pair from sideloaded object.
+     * This is only quirky part.
+     */
+    row.$sideLoaded = _.omitBy(row.$sideLoaded, (value, key) => {
+      if (key.startsWith('pivot_')) {
+        pivotAttributes[key.replace('pivot_', '')] = value
+        return true
+      }
     })
+
+    const pivotModel = this._newUpPivotModel()
+    pivotModel.newUp(pivotAttributes)
+    row.setRelated('pivot', pivotModel)
   }
 
   /**
-   * helper method to query the pivot collection. One
-   * can also do it manually by prefixing the
-   * pivot collection name.
+   * Saves the relationship to the pivot collection
+   *
+   * @method _attachSingle
+   * @async
+   *
+   * @param  {Number|String}      value
+   * @param  {Function}           [pivotCallback]
+   *
+   * @return {Object}                    Instance of pivot model
    *
    * @private
    */
-  _decorateQueryBuilder () {
-    const self = this
-    this.relatedQuery.wherePivot = function () {
-      const args = _.toArray(arguments)
-      args[0] = `${self.pivotCollection}.${args[0]}`
-      this.where.apply(this, args)
-      return this
+  async _attachSingle (value, pivotCallback) {
+    /**
+     * The relationship values
+     *
+     * @type {Object}
+     */
+    const pivotValues = {
+      [this.relatedForeignKey]: value,
+      [this.foreignKey]: this.$primaryKeyValue
+    }
+
+    const pivotModel = this._newUpPivotModel()
+    this._existingPivotInstances.push(pivotModel)
+    pivotModel.fill(pivotValues)
+
+    /**
+     * Set $collection, $timestamps, $connection when there
+     * is no pre-defined pivot model.
+     */
+    if (!this._PivotModel) {
+      pivotModel.$collection = this.$pivotCollection
+      pivotModel.$connection = this.RelatedModel.connection
+      pivotModel.$withTimestamps = this._pivot.withTimestamps
+    }
+
+    /**
+     * If pivot callback is defined, do call it. This gives
+     * chance to the user to set additional fields to the
+     * model.
+     */
+    if (typeof (pivotCallback) === 'function') {
+      pivotCallback(pivotModel)
+    }
+
+    await pivotModel.save()
+    return pivotModel
+  }
+
+  /**
+   * Persists the parent model instance if it's not
+   * persisted already. This is done before saving
+   * the related instance
+   *
+   * @method _persistParentIfRequired
+   * @async
+   *
+   * @return {void}
+   *
+   * @private
+   */
+  async _persistParentIfRequired () {
+    if (this.parentInstance.isNew) {
+      await this.parentInstance.save()
     }
   }
 
   /**
-   * defines pivot collection
+   * Loads the pivot relationship and then caches
+   * it inside memory, so that more calls to
+   * this function are not hitting database.
    *
-   * @param  {String}         pivotCollection
+   * @method _loadAndCachePivot
+   * @async
    *
-   * @private
-   */
-  _setUpPivotCollection (pivotCollection) {
-    this.pivotCollection = pivotCollection || util.makePivotCollectionName(this.parent.constructor, this.related)
-  }
-
-  /**
-   * defines keys to be used for resolving relationships
-   *
-   * @param  {String}   primaryKey
-   * @param  {String}   relatedPrimaryKey
-   * @param  {String}   pivotLocalKey
-   * @param  {String}   pivotOtherKey
+   * @return {void}
    *
    * @private
    */
-  _setUpKeys (primaryKey, relatedPrimaryKey, pivotLocalKey, pivotOtherKey) {
-    this.toKey = relatedPrimaryKey || this.related.primaryKey // comments -> id
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey // post -> id
-    this.pivotLocalKey = pivotLocalKey || util.makePivotModelKey(this.parent.constructor) // post_id
-    this.pivotOtherKey = pivotOtherKey || util.makePivotModelKey(this.related) // comment_id
-  }
-
-  /**
-   * decorates the current query chain before execution
-   */
-  _decorateRead () {
-    this.relatedQuery.where(`${this.pivotCollection}.${this.pivotLocalKey}`, this.parent[this.fromKey])
-  }
-
-  /**
-   * Returns an object of keys and values of timestamps to be
-   * set on pivot collection. All values/keys are derived from
-   * the parent model. Also if parent model disables
-   * timestamps, the withTimestamps function will
-   * have no effect.
-   *
-   * @return  {Object}
-   * @private
-   */
-  _getTimestampsForPivotCollection () {
-    const timestamps = {}
-    if (this.pivotTimestamps) {
-      this.parent.setCreateTimestamp(timestamps)
-      this.parent.setUpdateTimestamp(timestamps)
+  async _loadAndCachePivot () {
+    if (_.size(this._existingPivotInstances) === 0) {
+      this._existingPivotInstances = (await this.pivotQuery().fetch()).rows
     }
-    return timestamps
-  }
-
-  * _getPivotQuery () {
-    const query = this.relatedQuery.clone()
-    const connection = yield query.connect()
-    query.queryBuilder.collection(connection.collection(this.pivotCollection))
-    return query
   }
 
   /**
-   * getAlternate
+   * Returns the existing pivot instance for a given
+   * value.
+   *
+   * @method _getPivotInstance
+   *
+   * @param  {String|Number}          value
+   *
+   * @return {Object|Null}
    *
    * @private
    */
-  * _pivotOtherKeys () {
-    const query = this.relatedQuery.clone()
-    const connection = yield query.connect()
-    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
-    const pivots = yield pivotQuery.where(this.pivotLocalKey, this.parent[this.fromKey]).find()
-    return _.map(pivots, this.pivotOtherKey)
+  _getPivotInstance (value) {
+    return _.find(this._existingPivotInstances, (instance) => instance[this.relatedForeignKey] === value)
   }
 
   /**
-   * decorates the current query chain before execution
+   * Define a fully qualified model to be used for
+   * making pivot collection queries and using defining
+   * pivot collection settings.
+   *
+   * @method pivotModel
+   *
+   * @param  {Model}   pivotModel
+   *
+   * @chainable
    */
-  _getThroughQuery (pivotOtherKeys) {
-    return this.relatedQuery.whereIn(this.toKey, pivotOtherKeys)
+  pivotModel (pivotModel) {
+    this._PivotModel = pivotModel
+    return this
+  }
+
+  /**
+   * Define the pivot collection
+   *
+   * @method pivotCollection
+   *
+   * @param  {String}   collection
+   *
+   * @chainable
+   */
+  pivotCollection (collection) {
+    if (this._PivotModel) {
+      throw CE.ModelRelationException.pivotModelIsDefined('pivotCollection')
+    }
+
+    this._pivot.collection = collection
+    return this
+  }
+
+  /**
+   * Make sure `created_at` and `updated_at` timestamps
+   * are being used
+   *
+   * @method withTimestamps
+   *
+   * @chainable
+   */
+  withTimestamps () {
+    if (this._PivotModel) {
+      throw CE.ModelRelationException.pivotModelIsDefined('withTimestamps')
+    }
+
+    this._pivot.withTimestamps = true
+    return this
+  }
+
+  /**
+   * Fields to be selected from pivot collection
+   *
+   * @method withPivot
+   *
+   * @param  {Array}  fields
+   *
+   * @chainable
+   */
+  withPivot (fields) {
+    fields = _.isArray(fields) ? fields : [fields]
+    this._pivot.withFields = this._pivot.withFields.concat(fields)
+    return this
+  }
+
+  /**
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
+   *
+   * @method mapValues
+   *
+   * @param  {Array}  modelInstances - An array of model instances
+   *
+   * @return {Array}
+   */
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+  }
+
+  /**
+   * Make a where clause on the pivot collection
+   *
+   * @method whereInPivot
+   *
+   * @param  {String}     key
+   * @param  {...Spread}  args
+   *
+   * @chainable
+   */
+  whereInPivot (key, ...args) {
+    this._whereForPivot('whereIn', key, ...args)
+    return this
+  }
+
+  /**
+   * Make a orWhere clause on the pivot collection
+   *
+   * @method orWherePivot
+   *
+   * @param  {String}     key
+   * @param  {...Spread}  args
+   *
+   * @chainable
+   */
+  orWherePivot (key, ...args) {
+    this._whereForPivot('orWhere', key, ...args)
+    return this
+  }
+
+  /**
+   * Where clause on pivot collection
+   *
+   * @method wherePivot
+   *
+   * @param  {String}    key
+   * @param  {...Spread} args
+   *
+   * @chainable
+   */
+  wherePivot (key, ...args) {
+    this._whereForPivot('where', key, ...args)
+    return this
+  }
+
+  /**
+   * Returns the eagerLoad query for the relationship
+   *
+   * @method eagerLoad
+   * @async
+   *
+   * @param  {Array}          rows
+   *
+   * @return {Object}
+   */
+  async eagerLoad (rows) {
+    this._selectFields()
+    this._makeJoinQuery()
+    this.whereInPivot(this.foreignKey, this.mapValues(rows))
+
+    const relatedInstances = await this.relatedQuery.fetch()
+    return this.group(relatedInstances.rows)
+  }
+
+  /**
+   * Method called when eagerloading for a single
+   * instance
+   *
+   * @method load
+   * @async
+   *
+   * @return {Promise}
+   */
+  load () {
+    return this.fetch()
   }
 
   /**
    * Fetch over the related rows
    *
-   * @return {Object}
+   * @return {Serializer}
    */
-  * fetch () {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).fetch()
+  async fetch () {
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
+    const rows = await this.relatedQuery.whereIn(this.primaryKey, foreignKeyValues).fetch()
+    return rows
   }
 
   /**
-   * Fetch first over the related rows
+   * Groups related instances with their foriegn keys
    *
-   * @return {Object}
+   * @method group
+   *
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
    */
-  * first () {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).first()
-  }
+  group (relatedInstances) {
+    const Serializer = this.RelatedModel.Serializer
 
-  /**
-   * Paginates over the related rows
-   *
-   * @param  {Number} page
-   * @param  {Number} [perPage=20]
-   *
-   * @return {Object}
-   */
-  * paginate (page, perPage) {
-    this._validateRead()
-    /**
-     * creating the query clone to be used as countByQuery,
-     * since selecting fields in countBy requires unwanted
-     * groupBy clauses.
-     */
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).paginate(page, perPage)
-  }
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance.$sideLoaded[`pivot_${this.foreignKey}`]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
-  /**
-   * Returns count of rows for the related row
-   *
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * count (groupBy) {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).count(groupBy)
-  }
+      /**
+       * If there is an existing relation, add row to
+       * the relationship
+       */
+      if (existingRelation) {
+        existingRelation.value.addRow(relatedInstance)
+        return result
+      }
 
-  /**
-   * Returns sum for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * sum (key, groupBy) {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).sum(key, groupBy)
-  }
-
-  /**
-   * Returns avg for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * avg (key, groupBy) {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).avg(key, groupBy)
-  }
-
-  /**
-   * Returns min for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * min (key, groupBy) {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).min(key, groupBy)
-  }
-
-  /**
-   * Returns max for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * max (key, groupBy) {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).max(key, groupBy)
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
-   *
-   * @param {Array} values
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoad (values, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    // this._makeJoinQuery()
-    const query = this.relatedQuery.clone()
-    const connection = yield query.connect()
-    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
-    const pivots = yield pivotQuery.where(this.pivotLocalKey).in(values).find()
-    const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
-    let results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
-    results = this._addPivotKeys(results, pivots)
-    return results.groupBy((result) => {
-      return _.find(pivots, pivot => {
-        return String(pivot[this.pivotOtherKey]) === String(result._id)
-      })[this.pivotLocalKey]
-    }).mapValues(function (value) {
-      return helpers.toCollection(value)
-    }).value()
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
-   *
-   * @param  {Mixed} value
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoadSingle (value, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    // this._makeJoinQuery()
-    const query = this.relatedQuery.clone()
-    const connection = yield query.connect()
-    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
-    const pivots = yield pivotQuery.where(this.pivotLocalKey, value).find()
-    const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
-    let results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
-    results = this._addPivotKeys(results, pivots)
-    const response = {}
-    response[value] = results
-    return response
-  }
-
-  /**
-   * attach method will add relationship to the pivot collection
-   * with current instance and related model values
-   *
-   * @param  {Array|Object} references
-   * @param  {Object} [pivotValues]
-   * @return {Number}
-   *
-   * @example
-   * user.roles().attach([1,2])
-   * user.roles().attach([1,2], {is_admin: true})
-   * user.roles().attach({1: {is_admin: true}, 2: {is_admin: false} })
-   *
-   * @public
-   */
-  * attach (references, pivotValues) {
-    pivotValues = pivotValues || {}
-
-    if (!_.isArray(references) && !_.isObject(references)) {
-      throw CE.InvalidArgumentException.invalidParameter('attach expects an array of values or a plain object')
-    }
-
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('attach', this.parent.constructor.name, this.related.name)
-    }
-
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to attach values with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
-
-    if (_.isArray(references)) {
-      references = _.fromPairs(_.map(references, function (reference) {
-        return [reference, pivotValues]
-      }))
-    }
-
-    const values = _.map(references, (reference, value) => {
-      let result = {}
-      result[this.pivotOtherKey] = value
-      result[this.pivotLocalKey] = this.parent[this.fromKey]
-      result = _.merge(result, reference)
-      return result
-    })
-
-    const query = this.relatedQuery.clone()
-    const connection = yield query.connect()
-    const pivotQuery = connection.collection(this.pivotCollection)
-    yield pivotQuery.insert(values)
-  }
-
-  /**
-   * removes the relationship stored inside a pivot collection. If
-   * references are not defined all relationships will be
-   * deleted
-   * @method detach
-   * @param  {Array} [references]
-   * @return {Number}
-   *
-   * @public
-   */
-  * detach (references) {
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('detach', this.parent.constructor.name, this.related.name)
-    }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to attach values with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
-
-    const query = this.relatedQuery.clone()
-    const connection = yield query.connect()
-    const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
-    pivotQuery.where(this.pivotLocalKey, this.parent[this.fromKey])
-    if (_.isArray(references)) {
-      pivotQuery.where(this.pivotOtherKey).in(references)
-    }
-    return yield pivotQuery.remove()
-  }
-
-  /**
-   * shorthand for detach and then attach
-   *
-   * @param  {Array} [references]
-   * @param  {Object} [pivotValues]
-   * @return {Number}
-   *
-   * @public
-   */
-  * sync (references, pivotValues) {
-    yield this.detach()
-    return yield this.attach(references, pivotValues)
-  }
-
-  /**
-   * saves the related model and creates the relationship
-   * inside the pivot collection.
-   *
-   * @param  {Object} relatedInstance
-   * @param  {Object} [pivotValues]
-   * @return {Boolean}
-   *
-   * @public
-   */
-  * save (relatedInstance, pivotValues) {
-    if (relatedInstance instanceof this.related === false) {
-      throw CE.ModelRelationException.relationMisMatch('save expects an instance of related model')
-    }
-    if (this.parent.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('save', this.parent.constructor.name, this.related.name)
-    }
-    if (!this.parent[this.fromKey]) {
-      logger.warn(`Trying to save relationship from ${this.parent.constructor.name} model with ${this.fromKey} as primaryKey, whose value is falsy`)
-    }
-
-    const isSaved = yield relatedInstance.save()
-    if (isSaved) {
-      const pivotValuesToSave = _.merge({}, this._getTimestampsForPivotCollection(), pivotValues)
-      yield this.attach([relatedInstance[this.toKey]], pivotValuesToSave)
-      _.each(pivotValuesToSave, (value, key) => {
-        relatedInstance[`${this.pivotPrefix}${key}`] = value
+      result.push({
+        identity: foreignKeyValue,
+        value: new Serializer([relatedInstance])
       })
-    }
-    relatedInstance[`${this.pivotPrefix}${this.pivotLocalKey}`] = this.parent[this.fromKey]
-    relatedInstance[`${this.pivotPrefix}${this.pivotOtherKey}`] = relatedInstance[this.toKey]
-    return isSaved
+      return result
+    }, [])
+
+    return { key: this.primaryKey, values: transformedValues, defaultValue: new Serializer([]) }
   }
 
   /**
-   * creates the related model instance and calls save on it
+   * Returns the query for pivot collection
+   *
+   * @method pivotQuery
+   *
+   * @param {Boolean} selectFields
+   *
+   * @return {Object}
+   */
+  pivotQuery (selectFields = true) {
+    const query = this._PivotModel
+      ? this._PivotModel.query()
+      : new PivotModel().query(this.$pivotCollection, this.RelatedModel.$connection)
+    if (selectFields) {
+      query.select(this.$pivotColumns)
+    }
+
+    query.where(this.foreignKey, this.$primaryKeyValue)
+    return query
+  }
+
+  /**
+   * Adds a where clause to limit the select search
+   * to related rows only.
+   *
+   * @method relatedWhere
+   *
+   * @param  {Boolean}     count
+   *
+   * @return {Object}
+   */
+  relatedWhere (count) {
+    this._makeJoinQuery()
+    this.relatedQuery.whereRaw(`${this.$primaryCollection}.${this.primaryKey} = ${this.$pivotCollection}.${this.foreignKey}`)
+
+    /**
+     * Add count clause if count is required
+     */
+    if (count) {
+      this.relatedQuery.count('*')
+    }
+
+    return this.relatedQuery.query
+  }
+
+  addWhereOn (context) {
+    this._makeJoinQuery()
+    context.on(`${this.$primaryCollection}.${this.primaryKey}`, '=', `${this.$pivotCollection}.${this.foreignKey}`)
+  }
+
+  /**
+   * Attach existing rows inside pivot collection as a relationship
+   *
+   * @method attach
+   *
+   * @param  {Number|String|Array} relatedPrimaryKeyValue
+   * @param  {Function} [pivotCallback]
+   *
+   * @return {Promise}
+   */
+  async attach (references, pivotCallback = null) {
+    await this._loadAndCachePivot()
+    const rows = references instanceof Array === false ? [references] : references
+
+    return Promise.all(rows.map((row) => {
+      const pivotInstance = this._getPivotInstance(row)
+      return pivotInstance ? Promise.resolve(pivotInstance) : this._attachSingle(row, pivotCallback)
+    }))
+  }
+
+  /**
+   * Delete related model rows in bulk and also detach
+   * them from the pivot collection.
+   *
+   * NOTE: This method will run 3 queries in total. First is to
+   * fetch the related rows, next is to delete them and final
+   * is to remove the relationship from pivot collection.
+   *
+   * @method delete
+   * @async
+   *
+   * @return {Number} Number of effected rows
+   */
+  async delete () {
+    const foreignKeyValues = await this.ids()
+    const effectedRows = await this.RelatedModel
+      .query()
+      .whereIn(this.RelatedModel.primaryKey, foreignKeyValues)
+      .delete()
+
+    await this.detach(foreignKeyValues)
+    return effectedRows
+  }
+
+  /**
+   * Update related rows
+   *
+   * @method update
    *
    * @param  {Object} values
-   * @param  {Object} [pivotValues]
-   * @return {Boolean}
    *
-   * @public
+   * @return {Number}        Number of effected rows
    */
-  * create (values, pivotValues) {
-    const RelatedModel = this.related
-    const relatedInstance = new RelatedModel(values)
-    yield this.save(relatedInstance, pivotValues)
+  async update (values) {
+    const foreignKeyValues = await this.ids()
+    return this.RelatedModel
+      .query()
+      .whereIn(this.RelatedModel.primaryKey, foreignKeyValues)
+      .update(values)
+  }
+
+  /**
+   * Detach existing relations from the pivot collection
+   *
+   * @method detach
+   * @async
+   *
+   * @param  {Array} references
+   *
+   * @return {Number}  The number of effected rows
+   */
+  detach (references) {
+    const query = this.pivotQuery(false)
+    if (references) {
+      const rows = references instanceof Array === false ? [references] : references
+      query.whereIn(this.relatedForeignKey, rows)
+      _.remove(this._existingPivotInstances, (pivotInstance) => {
+        return _.includes(rows, pivotInstance[this.relatedForeignKey])
+      })
+    } else {
+      this._existingPivotInstances = []
+    }
+    return query.delete()
+  }
+
+  /**
+   * Save the related model instance and setup the relationship
+   * inside pivot collection
+   *
+   * @method save
+   *
+   * @param  {Object} relatedInstance
+   * @param  {Function} pivotCallback
+   *
+   * @return {void}
+   */
+  async save (relatedInstance, pivotCallback) {
+    await this._persistParentIfRequired()
+
+    /**
+     * Only save related instance when not persisted already. This is
+     * only required in belongsToMany since relatedInstance is not
+     * made dirty by this method.
+     */
+    if (relatedInstance.isNew || relatedInstance.isDirty) {
+      await relatedInstance.save()
+    }
+
+    /**
+     * Attach the pivot rows
+     */
+    const pivotRows = await this.attach(relatedInstance.primaryKeyValue, pivotCallback)
+
+    /**
+     * Set saved pivot row as a relationship
+     */
+    relatedInstance.setRelated('pivot', pivotRows[0])
+  }
+
+  /**
+   * Save multiple relationships to the database. This method
+   * will run queries in parallel
+   *
+   * @method saveMany
+   * @async
+   *
+   * @param  {Array}    arrayOfRelatedInstances
+   * @param  {Function} [pivotCallback]
+   *
+   * @return {void}
+   */
+  async saveMany (arrayOfRelatedInstances, pivotCallback) {
+    if (arrayOfRelatedInstances instanceof Array === false) {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('belongsToMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)
+    }
+
+    await this._persistParentIfRequired()
+    return Promise.all(arrayOfRelatedInstances.map((relatedInstance) => this.save(relatedInstance, pivotCallback)))
+  }
+
+  /**
+   * Creates a new related model instance and persist
+   * the relationship inside pivot collection
+   *
+   * @method create
+   * @async
+   *
+   * @param  {Object}   row
+   * @param  {Function} [pivotCallback]
+   *
+   * @return {Object}               Instance of related model
+   */
+  async create (row, pivotCallback) {
+    await this._persistParentIfRequired()
+
+    const relatedInstance = new this.RelatedModel()
+    relatedInstance.fill(row)
+    await this.save(relatedInstance, pivotCallback)
+
     return relatedInstance
   }
 
   /**
-   * Throws an exception since deleting the related model
-   * should be done via relation and detach should be
-   * used instead.
-   */
-  * delete () {
-    throw new CE.ModelRelationException('delete is not supported by BelongsToMany, use detach instead')
-  }
-
-  /**
-   * update
+   * Creates multiple related relationships. This method will
+   * call all queries in parallel
    *
-   * @public
+   * @method createMany
+   * @async
    *
-   * @return {Object}
-   */
-  * update (values) {
-    this._validateRead()
-    const pivotOtherKeys = yield this._pivotOtherKeys()
-    return yield this._getThroughQuery(pivotOtherKeys).update(values)
-  }
-
-  /**
-   * Pick selected fields from the pivot collection.
+   * @param  {Array}   rows
+   * @param  {Function}   pivotCallback
    *
-   * @return {Object} this for chaining
+   * @return {Array}
    */
-  withPivot () {
-    this.pivotItems = _.concat(this.pivotItems, _.toArray(arguments))
-    return this
-  }
-
-  /**
-   * Updates pivot collection with an object of values. Optionally
-   * you can define the foriegn keys to be updated.
-   *
-   * @param  {Object} values
-   * @param  {Array} otherKeyValue
-   * @return {Promise}
-   */
-  updatePivot (values, otherKeyValue) {
-    if (otherKeyValue && !_.isArray(otherKeyValue)) {
-      otherKeyValue = [otherKeyValue]
+  async createMany (rows, pivotCallback) {
+    if (rows instanceof Array === false) {
+      throw GE
+        .InvalidArgumentException
+        .invalidParameter('belongsToMany.createMany expects an array of related model instances', rows)
     }
 
-    const query = this.relatedQuery.queryBuilder
-      .collection(this.pivotCollection)
-      .where(`${this.pivotLocalKey}`, this.parent[this.fromKey])
-
-    if (_.size(otherKeyValue)) {
-      query.whereIn(`${this.pivotOtherKey}`, otherKeyValue)
-    }
-
-    return query.update(values)
-  }
-
-  /**
-   * Makes sure to respect the timestamps on pivot collection. Also timestamps fields
-   * and values are derived by the parent model. Disabling timestamps on parent
-   * model results in no impact even after using pivotTimestamps.
-   */
-  withTimestamps () {
-    this.pivotTimestamps = true
-    this.withPivot(this.parent.constructor.createTimestamp, this.parent.constructor.updateTimestamp)
-    return this
+    await this._persistParentIfRequired()
+    return Promise.all(rows.map((relatedInstance) => this.create(relatedInstance, pivotCallback)))
   }
 }
 

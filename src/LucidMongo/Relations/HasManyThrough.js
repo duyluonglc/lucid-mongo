@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,260 +9,275 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
-const CE = require('../../Exceptions')
-const helpers = require('../QueryBuilder/helpers')
 const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
+const CE = require('../../Exceptions')
 
-class HasManyThrough extends Relation {
-  constructor (parent, related, through, primaryKey, foreignKey, throughPrimaryKey, throughForeignKey) {
-    super(parent, related)
-    this.through = this._resolveModel(through)
-    this.fromKey = primaryKey || this.parent.constructor.primaryKey // id
-    this.toKey = foreignKey || this.parent.constructor.foreignKey // country_id
-    this.viaKey = throughPrimaryKey || this.through.primaryKey // authors.id
-    this.viaForeignKey = throughForeignKey || this.through.foreignKey // author_id
-    this.relatedQuery = this.through.query()
-    this.alternateQuery = this.related.query()
+/**
+ * BelongsToMany class builds relationship between
+ * two models with the help of pivot collection/model
+ *
+ * @class BelongsToMany
+ * @constructor
+ */
+class HasManyThrough extends BaseRelation {
+  constructor (parentInstance, RelatedModel, relatedMethod, primaryKey, foreignKey) {
+    super(parentInstance, RelatedModel, primaryKey, foreignKey)
+    this._relatedModelRelation = new RelatedModel()[relatedMethod]()
+    this.relatedQuery = this._relatedModelRelation.relatedQuery
+    this._relatedFields = []
+    this._throughFields = []
+    this._fields = []
   }
 
   /**
-   * getAlternate
+   * The join query to target the right set of
+   * rows
+   *
+   * @method _makeJoinQuery
+   *
+   * @return {void}
    *
    * @private
    */
-  * _getAlternateIds () {
-    const alternates = yield this.alternateQuery.select([this.fromKey, this.toKey])
-      .where(this.toKey, this.parent[this.fromKey]).fetch()
-    return alternates.map(this.viaKey).value()
+  _makeJoinQuery () {
+    const self = this
+    this.relatedQuery.innerJoin(this.$foreignCollection, function () {
+      self._relatedModelRelation.addWhereOn(this)
+    })
   }
 
   /**
-   * decorates the current query chain before execution
+   * Selects fields with proper collection prefixes, also
+   * all through model fields are set for sideloading,
+   * so that model properties are not polluted.
+   *
+   * @method _selectFields
+   *
+   * @return {void}
+   *
+   * @private
    */
-  _getThroughQuery (alternateIds) {
-    return this.relatedQuery.whereIn(this.viaForeignKey, alternateIds)
+  _selectFields () {
+    if (!_.size(this._relatedFields)) {
+      this.selectRelated()
+    }
+
+    const relatedFields = _.map(_.uniq(this._relatedFields), (field) => {
+      return `${field}`
+    })
+
+    const throughFields = _.map(_.uniq(this._throughFields), (field) => {
+      this.relatedQuery._sideLoaded.push(`through_${field}`)
+      return `${this.$foreignCollection}.${field} as through_${field}`
+    })
+
+    const fields = _.map(_.uniq(this._fields), (field) => `${this.$primaryCollection}.${field}`)
+
+    this.relatedQuery.select(fields.concat(relatedFields).concat(throughFields))
+  }
+
+  /**
+   * Decorate the query for reads, updates and
+   * deletes
+   *
+   * @method _decorateQuery
+   *
+   * @return {void}
+   *
+   * @private
+   */
+  _decorateQuery () {
+    this._selectFields()
+    // this._makeJoinQuery()
+    // this.relatedQuery.where(`${this.$foreignCollection}.${this.foreignKey}`, this.$primaryKeyValue)
+  }
+
+  /**
+   * Select fields from the primary collection
+   *
+   * @method select
+   *
+   * @param  {Array} columns
+   *
+   * @chainable
+   */
+  select (columns) {
+    const columnsArray = _.isArray(columns) ? columns : _.toArray(arguments)
+    this._fields = this._fields.concat(columnsArray)
+    return this
+  }
+
+  /**
+   * Select fields from the through collection.
+   *
+   * @method selectThrough
+   *
+   * @param  {Array}      columns
+   *
+   * @chainable
+   */
+  selectThrough (columns) {
+    const columnsArray = _.isArray(columns) ? columns : _.toArray(arguments)
+    this._throughFields = this._throughFields.concat(columnsArray)
+    return this
+  }
+
+  /**
+   * Select fields from the related collection
+   *
+   * @method selectRelated
+   *
+   * @param  {Array}      columns
+   *
+   * @chainable
+   */
+  selectRelated (columns) {
+    const columnsArray = _.isArray(columns) ? columns : _.toArray(arguments)
+    this._relatedFields = this._relatedFields.concat(columnsArray)
+    return this
+  }
+
+  /**
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
+   *
+   * @method mapValues
+   *
+   * @param  {Array}  modelInstances - An array of model instances
+   *
+   * @return {Array}
+   */
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+  }
+
+  /**
+   * Returns the eagerLoad query for the relationship
+   *
+   * @method eagerLoad
+   * @async
+   *
+   * @param  {Array}          rows
+   *
+   * @return {Object}
+   */
+  async eagerLoad (rows) {
+    // this.selectThrough(this.foreignKey)
+    this._selectFields()
+    // this._makeJoinQuery()
+    const thoughInstances = await this.RelatedModel.query()
+      .whereIn(this.foreignKey, this.mapValues(rows))
+      .fetch()
+    const foreignKeyValues = _.map(thoughInstances.rows, this.RelatedModel.primaryKey)
+
+    const relatedInstances = await this.relatedQuery
+      .whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues)
+      .fetch()
+
+    const relatedRows = _.map(relatedInstances.rows, related => {
+      const thoughInstance = _.find(thoughInstances.rows, through => {
+        return String(related[this._relatedModelRelation.foreignKey]) === String(through[this.RelatedModel.primaryKey])
+      })
+      related.$sideLoaded[`through_${this.foreignKey}`] = thoughInstance[this.foreignKey]
+      return related
+    })
+    return this.group(relatedRows)
+  }
+
+  /**
+   * Takes an array of related instances and returns an array
+   * for each parent record.
+   *
+   * @method group
+   *
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
+   */
+  group (relatedInstances) {
+    const Serializer = this.RelatedModel.Serializer
+
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance.$sideLoaded[`through_${this.foreignKey}`]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
+      /**
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
+       */
+      if (existingRelation) {
+        existingRelation.value.addRow(relatedInstance)
+        return result
+      }
+
+      result.push({
+        identity: foreignKeyValue,
+        value: new Serializer([relatedInstance])
+      })
+      return result
+    }, [])
+
+    return { key: this.primaryKey, values: transformedValues, defaultValue: new Serializer([]) }
+  }
+
+  /**
+   * Adds `on` clause to the innerjoin context. This
+   * method is mainly used by HasManyThrough
+   *
+   * @method addWhereOn
+   *
+   * @param  {Object}   context
+   */
+  relatedWhere (count) {
+    this._makeJoinQuery()
+    this.relatedQuery.whereRaw(`${this.$primaryCollection}.${this.primaryKey} = ${this.$foreignCollection}.${this.foreignKey}`)
+
+    /**
+     * Add count clause if count is required
+     */
+    if (count) {
+      this.relatedQuery.count('*')
+    }
+
+    return this.relatedQuery.query
   }
 
   /**
    * Fetch over the related rows
    *
-   * @return {Object}
+   * @return {Serializer}
    */
-  * fetch () {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).fetch()
+  async fetch () {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    const rows = await this.relatedQuery
+      .whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues)
+      .fetch()
+    return rows
   }
 
-  /**
-   * Fetch first over the related rows
-   *
-   * @return {Object}
-   */
-  * first () {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).first()
+  /* istanbul ignore next */
+  create () {
+    throw CE.ModelRelationException.unSupportedMethod('create', 'HasManyThrough')
   }
 
-  /**
-   * Paginates over the related rows
-   *
-   * @param  {Number} page
-   * @param  {Number} [perPage=20]
-   *
-   * @return {Object}
-   */
-  * paginate (page, perPage) {
-    this._validateRead()
-    /**
-     * creating the query clone to be used as countByQuery,
-     * since selecting fields in countBy requires unwanted
-     * groupBy clauses.
-     */
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).paginate(page, perPage)
+  /* istanbul ignore next */
+  save () {
+    throw CE.ModelRelationException.unSupportedMethod('save', 'HasManyThrough')
   }
 
-  /**
-   * Returns count of rows for the related row
-   *
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * count (groupBy) {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).count(groupBy)
+  /* istanbul ignore next */
+  createMany () {
+    throw CE.ModelRelationException.unSupportedMethod('createMany', 'HasManyThrough')
   }
 
-  /**
-   * Returns sum for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * sum (key, groupBy) {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).sum(key, groupBy)
-  }
-
-  /**
-   * Returns avg for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * avg (key, groupBy) {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).avg(key, groupBy)
-  }
-
-  /**
-   * Returns min for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * min (key, groupBy) {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).min(key, groupBy)
-  }
-
-  /**
-   * Returns max for a given key
-   *
-   * @param  {String} key
-   * @param  {String} groupBy
-   *
-   * @return {Array}
-   */
-  * max (key, groupBy) {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).max(key, groupBy)
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
-   *
-   * @param {Array} values
-   * @param {Function} [scopeMethod] [description]
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoad (values, scopeMethod) {
-    const viaQuery = this.through.query()
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(viaQuery)
-    }
-    const relates = yield this.relatedQuery.select([this.toKey, this.fromKey])
-      .whereIn(this.toKey, values).fetch()
-    const viaIds = _(relates).map(this.fromKey).value()
-    const results = yield viaQuery.whereIn(this.viaForeignKey, viaIds).fetch()
-    return results.groupBy((item) => {
-      const relate = relates.find(relate => String(relate[this.viaKey]) === String(item[this.viaForeignKey]))
-      return relate[this.toKey]
-    }).mapValues(function (value) {
-      return helpers.toCollection(value)
-    })
-    .value()
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
-   *
-   * @param  {Mixed} value
-   * @param {Function} [scopeMethod] [description]
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoadSingle (value, scopeMethod) {
-    const viaQuery = this.through.query()
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(viaQuery)
-    }
-    const relates = yield this.relatedQuery.select([this.toKey, this.fromKey])
-      .where(this.toKey, value).fetch()
-    const viaIds = _(relates).map(this.fromKey).value()
-    const results = yield viaQuery.whereIn(this.viaForeignKey, viaIds).fetch()
-    const response = {}
-    response[value] = results
-    return response
-  }
-
-  /**
-   * Throws exception since save should be
-   * done after getting the instance.
-   */
-  * save () {
-    throw CE.ModelRelationException.unSupportedMethod('save', this.constructor.name)
-  }
-
-  /**
-   * Throws exception since create should be
-   * done after getting the instance.
-   */
-  * create () {
-    throw CE.ModelRelationException.unSupportedMethod('create', this.constructor.name)
-  }
-
-  /**
-   * Throws exception since createMany should be
-   * done after getting the instance.
-   */
-  * createMany () {
-    throw CE.ModelRelationException.unSupportedMethod('createMany', this.constructor.name)
-  }
-
-  /**
-   * Throws exception since saveMany should be
-   * done after getting the instance.
-   */
-  * saveMany () {
-    throw CE.ModelRelationException.unSupportedMethod('saveMany', this.constructor.name)
-  }
-
-  /**
-   * Throws an exception since deleting the related model
-   * should be done via relation and detach should be
-   * used instead.
-   */
-  * delete () {
-    throw CE.ModelRelationException.unSupportedMethod('delete', this.constructor.name)
-  }
-
-  /**
-   * update
-   *
-   * @public
-   *
-   * @return {Object}
-   */
-  * update (values) {
-    this._validateRead()
-    const alternateIds = yield this._getAlternateIds()
-    return yield this._getThroughQuery(alternateIds).update(values)
+  /* istanbul ignore next */
+  saveMany () {
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'HasManyThrough')
   }
 }
 

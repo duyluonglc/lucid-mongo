@@ -1,7 +1,7 @@
 'use strict'
 
-/**
- * adonis-LucidMongo
+/*
+ * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
  *
@@ -9,381 +9,373 @@
  * file that was distributed with this source code.
 */
 
-/* global describe, it, after, before */
-const chai = require('chai')
-const expect = chai.expect
+const test = require('japa')
+const path = require('path')
+const fs = require('fs-extra')
+const { ioc } = require('@adonisjs/fold')
+const { Config, setupResolver } = require('@adonisjs/sink')
 const Model = require('../../src/LucidMongo/Model')
-const Database = require('../../src/Database')
 const Factory = require('../../src/Factory')
-const filesFixtures = require('./fixtures/files')
-const modelFixtures = require('./fixtures/model')
 const ModelFactory = require('../../src/Factory/ModelFactory')
-const config = require('./helpers/config')
-const _ = require('lodash')
-const Ioc = require('adonis-fold').Ioc
-require('co-mocha')
+const helpers = require('./helpers')
+const DatabaseManager = require('../../src/Database/Manager')
 
-describe('Factory', function () {
-  before(function * () {
-    Database._setConfigProvider(config)
-    yield filesFixtures.createDir()
-    yield modelFixtures.up(Database)
-    Ioc.bind('Adonis/Src/Database', function () {
-      return Database
+test.group('Factory', (group) => {
+  group.beforeEach(() => {
+    Factory.clear()
+    ioc.restore()
+  })
+
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
     })
-    Ioc.bind('Adonis/Src/Helpers', function () {
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createTables(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').table('users').truncate()
+    await ioc.use('Database').table('my_users').truncate()
+  })
+
+  group.after(async () => {
+    await helpers.dropTables(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
+  test('add a new blueprint', (assert) => {
+    const fn = function () {}
+    Factory.blueprint('App/Model/User', fn)
+    assert.deepEqual(Factory._blueprints, [{ name: 'App/Model/User', callback: fn }])
+  })
+
+  test('get model factory when accessing the blueprint', (assert) => {
+    const fn = function () {}
+    Factory.blueprint('App/Model/User', fn)
+    assert.instanceOf(Factory.model('App/Model/User'), ModelFactory)
+  })
+
+  test('return data object from blueprint', async (assert) => {
+    const fn = function () {
       return {
-        makeNameSpace: function (hook) {
-          return `App/${hook}`
+        name: 'virk'
+      }
+    }
+    Factory.blueprint('App/Model/User', fn)
+    const val = await Factory.model('App/Model/User')._makeOne(1)
+    assert.deepEqual(val, { name: 'virk' })
+  })
+
+  test('evaluate functions in data object', async (assert) => {
+    const fn = function () {
+      return {
+        name: () => 'virk'
+      }
+    }
+    Factory.blueprint('App/Model/User', fn)
+    const val = await Factory.model('App/Model/User')._makeOne(1)
+    assert.deepEqual(val, { name: 'virk' })
+  })
+
+  test('evaluate async functions in data object', async (assert) => {
+    const fn = function () {
+      return {
+        name: () => {
+          return new Promise((resolve) => {
+            resolve('virk')
+          })
+        }
+      }
+    }
+    Factory.blueprint('App/Model/User', fn)
+    const val = await Factory.model('App/Model/User')._makeOne(1)
+    assert.deepEqual(val, { name: 'virk' })
+  })
+
+  test('make a single model instance', async (assert) => {
+    Factory.blueprint('App/Model/User', () => {
+      return {
+        username: 'virk'
+      }
+    })
+
+    class User extends Model {
+    }
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    const user = await Factory.model('App/Model/User').make()
+    assert.instanceOf(user, User)
+    assert.deepEqual(user.$attributes, { username: 'virk' })
+  })
+
+  test('make an array of model instances', async (assert) => {
+    Factory.blueprint('App/Model/User', () => {
+      return {
+        username: 'virk'
+      }
+    })
+
+    class User extends Model {
+    }
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    const users = await Factory.model('App/Model/User').makeMany(2)
+    assert.lengthOf(users, 2)
+    assert.deepEqual(users[0].$attributes, { username: 'virk' })
+    assert.deepEqual(users[1].$attributes, { username: 'virk' })
+  })
+
+  test('make an array of model instances with async attributes', async (assert) => {
+    Factory.blueprint('App/Model/User', () => {
+      return {
+        username: 'virk',
+        age: () => {
+          return new Promise((resolve) => {
+            resolve(22)
+          })
         }
       }
     })
-    Factory.clear()
-  })
 
-  after(function * () {
-    yield modelFixtures.down(Database)
-    Database.close()
-  })
-
-  it('should throw an error when blueprint callback is not a function', function () {
-    const fn = function () {
-      Factory.blueprint('App/Model/User', 'foo')
+    class User extends Model {
     }
-    expect(fn).to.throw('InvalidArgumentException: E_INVALID_PARAMETER: Factory blueprint expects callback to be a function')
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    const users = await Factory.model('App/Model/User').makeMany(2)
+    assert.lengthOf(users, 2)
+    assert.deepEqual(users[0].$attributes, { username: 'virk', age: 22 })
+    assert.deepEqual(users[1].$attributes, { username: 'virk', age: 22 })
   })
 
-  it('should throw an error when unable to resolve model factory', function () {
-    const fn = function () {
-      Factory.model('App/Model/User')
-    }
-    expect(fn).to.throw('RuntimeException: E_MISSING_MODEL_FACTORY: Cannot find model factory for App/Model/User')
-  })
-
-  it('should throw an error when unable to resolve database factory', function () {
-    const fn = function () {
-      Factory.get('users')
-    }
-    expect(fn).to.throw('RuntimeException: E_MISSING_DATABASE_FACTORY: Cannot find database factory for users')
-  })
-
-  it('should be able to define a factory blueprint', function () {
-    Factory.blueprint('App/Model/User', function (fake) {
+  test('create model instance', async (assert) => {
+    Factory.blueprint('App/Model/User', () => {
       return {
-        username: fake.username(),
-        email: fake.email()
+        username: 'virk'
       }
     })
-    const blueprints = Factory.blueprints()
-    expect(blueprints).to.be.an('object')
-    expect(blueprints['App/Model/User']).to.be.a('function')
+
+    class User extends Model {
+    }
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    const user = await Factory.model('App/Model/User').create()
+    assert.isTrue(user.$persisted)
   })
 
-  it('should return instance of model factory when using model method', function () {
-    Ioc.bind('App/Model/User', function () {
+  test('create many model instances', async (assert) => {
+    Factory.blueprint('App/Model/User', () => {
+      return {
+        username: 'virk'
+      }
+    })
+
+    class User extends Model {
+    }
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    const users = await Factory.model('App/Model/User').createMany(2)
+    assert.lengthOf(users, 2)
+    assert.isTrue(users[0].$persisted)
+    assert.isTrue(users[1].$persisted)
+  })
+
+  test('throw exception when factory blueprint doesn\'t have a callback', async (assert) => {
+    const fn = () => Factory.blueprint('App/Model/User')
+    assert.throw(fn, 'E_INVALID_PARAMETER: Factory.blueprint expects a callback as 2nd parameter')
+  })
+
+  test('blueprint should receive faker instance', async (assert) => {
+    assert.plan(1)
+
+    class User extends Model {}
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    Factory.blueprint('App/Model/User', (faker) => {
+      assert.isFunction(faker.age)
+    })
+    await Factory.model('App/Model/User').make()
+  })
+
+  test('blueprint should receive index', async (assert) => {
+    const indexes = []
+    class User extends Model {}
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    Factory.blueprint('App/Model/User', (faker, index) => {
+      indexes.push(index)
+    })
+    await Factory.model('App/Model/User').makeMany(2)
+    assert.deepEqual(indexes, [0, 1])
+  })
+
+  test('blueprint should receive extra data', async (assert) => {
+    const stack = []
+    class User extends Model {}
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    Factory.blueprint('App/Model/User', (faker, index, data) => {
+      stack.push(data)
+    })
+    await Factory.model('App/Model/User').makeMany(2, { username: 'virk' })
+    assert.deepEqual(stack, [{ username: 'virk' }, { username: 'virk' }])
+  })
+
+  test('get data object for table', async (assert) => {
+    Factory.blueprint('users', () => {
+      return {
+        username: 'virk'
+      }
+    })
+
+    const user = await Factory.get('users').make()
+    assert.deepEqual(user, { username: 'virk' })
+  })
+
+  test('get array of data objects for table', async (assert) => {
+    Factory.blueprint('users', (faker, i) => {
+      return {
+        id: i + 1,
+        username: 'virk'
+      }
+    })
+
+    const user = await Factory.get('users').makeMany(2)
+    assert.deepEqual(user, [{ username: 'virk', id: 1 }, { username: 'virk', id: 2 }])
+  })
+
+  test('save data to table', async (assert) => {
+    Factory.blueprint('users', (faker, i) => {
+      return {
+        id: i + 1,
+        username: 'virk'
+      }
+    })
+
+    await Factory.get('users').create()
+    const user = await ioc.use('Database').table('users').first()
+    assert.equal(user.id, 1)
+    assert.equal(user.username, 'virk')
+  })
+
+  test('define table name at runtime', async (assert) => {
+    Factory.blueprint('User', (faker, i) => {
+      return {
+        id: i + 1,
+        username: 'virk'
+      }
+    })
+
+    await Factory.get('User').table('users').create()
+    const user = await ioc.use('Database').table('users').first()
+    assert.equal(user.id, 1)
+    assert.equal(user.username, 'virk')
+  })
+
+  test('define returning value', async (assert) => {
+    Factory.blueprint('User', (faker, i) => {
+      return {
+        id: i + 1,
+        username: 'virk'
+      }
+    })
+
+    const returned = await Factory.get('User').table('users').returning('id').create()
+    const user = await ioc.use('Database').table('users').first()
+    assert.deepEqual(returned, [1])
+    assert.equal(user.id, 1)
+    assert.equal(user.username, 'virk')
+  })
+
+  test('define connection', async (assert) => {
+    Factory.blueprint('User', (faker, i) => {
+      return {
+        id: i + 1,
+        username: 'virk'
+      }
+    })
+
+    await Factory.get('User').table('users').connection('').create()
+    const user = await ioc.use('Database').table('users').first()
+    assert.equal(user.id, 1)
+    assert.equal(user.username, 'virk')
+  })
+
+  test('truncate table', async (assert) => {
+    Factory.blueprint('User', (faker, i) => {
+      return {
+        id: i + 1,
+        username: 'virk'
+      }
+    })
+
+    await ioc.use('Database').table('users').insert({ username: 'virk' })
+    await Factory.get('User').table('users').reset()
+    const user = await ioc.use('Database').table('users').first()
+    assert.isUndefined(user)
+  })
+
+  test('reset table via model factory', async (assert) => {
+    class User extends Model {}
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    Factory.blueprint('App/Model/User', (faker, index, data) => {
       return {}
     })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        email: fake.email()
-      }
-    })
-    const userModelFactory = Factory.model('App/Model/User')
-    expect(userModelFactory instanceof ModelFactory).to.equal(true)
-  })
-
-  it('should return the model instance from ModelFactory make method', function () {
-    class User {
-      constructor (values) {
-        this.attributes = values
-      }
-    }
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        email: fake.email()
-      }
-    })
-    const user = Factory.model('App/Model/User').make()
-    expect(user instanceof User).to.equal(true)
-    expect(user.attributes.username).to.be.a('string')
-    expect(user.attributes.email).to.be.a('string')
-  })
-
-  it('should return an array of model instances from ModelFactory make method is called with a count', function () {
-    class User {
-      constructor (values) {
-        this.attributes = values
-      }
-    }
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        email: fake.email()
-      }
-    })
-    const users = Factory.model('App/Model/User').make(4)
-    expect(users).is.an('array')
-    expect(users.length).to.equal(4)
-    users.forEach(function (user) {
-      expect(user instanceof User).to.equal(true)
-      expect(user.attributes.username).to.be.a('string')
-      expect(user.attributes.email).to.be.a('string')
-    })
-  })
-
-  it('should return the model instance from ModelFactory make method is asked to return 1 instance', function () {
-    class User {
-      constructor (values) {
-        this.attributes = values
-      }
-    }
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        email: fake.email()
-      }
-    })
-    const user = Factory.model('App/Model/User').make(1)
-    expect(user instanceof User).to.equal(true)
-    expect(user.attributes.username).to.be.a('string')
-    expect(user.attributes.email).to.be.a('string')
-  })
-
-  it('should call user model create method to create given rows inside the database', function * () {
-    class User {
-      constructor (values) {
-        this.attributes = values
-      }
-      static * create (values) {
-        const instance = new this(values)
-        return instance
-      }
-    }
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        email: fake.email()
-      }
-    })
-    const userModelFactory = yield Factory.model('App/Model/User').create(10)
-    expect(userModelFactory.instances.length).to.equal(10)
-    userModelFactory.instances.forEach(function (user) {
-      expect(user instanceof User).to.equal(true)
-    })
-  })
-
-  it('should be able to loop through each created instance and call generator methods inside it', function * () {
-    class User {
-      constructor (values) {
-        this.attributes = values
-      }
-      static * create (values) {
-        const instance = new this(values)
-        return instance
-      }
-    }
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        email: fake.email()
-      }
-    })
-    const userModelFactory = yield Factory.model('App/Model/User').create(10)
-    userModelFactory.each(function * (user) {
-      user.attributes.touched = true
-    })
-    userModelFactory.instances.forEach(function (user) {
-      expect(user.attributes.touched).to.equal(true)
-    })
-  })
-
-  it('should create rows inside associated collection for a given model', function * () {
-    class User extends Model {}
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        firstname: fake.first()
-      }
-    })
-    yield Factory.model('App/Model/User').create(10)
-    const users = yield User.all()
-    expect(users.size()).to.equal(10)
-    yield modelFixtures.truncate(Database)
-  })
-
-  it('should truncate rows inside associated collection for a given model', function * () {
-    class User extends Model {}
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake) {
-      return {
-        username: fake.username(),
-        firstname: fake.first()
-      }
-    })
-    const userModelFactory = yield Factory.model('App/Model/User').create(10)
-    const users = yield User.all()
-    expect(users.size()).to.equal(10)
-    yield userModelFactory.reset()
-    const afterReset = yield User.all()
-    expect(afterReset.size()).to.equal(0)
-  })
-
-  it('should be able to create records using the database factory', function * () {
-    Factory.blueprint('users', function (fake) {
-      return {
-        username: fake.username(),
-        firstname: fake.first()
-      }
-    })
-    const ids = yield Factory.get('users').create(10)
-    expect(ids).to.be.an('array')
-    expect(ids.length).to.equal(10)
-    yield modelFixtures.truncate(Database)
-  })
-
-  it('should be able to define different collection name when using database factory', function * () {
-    Factory.blueprint('forUsers', function (fake) {
-      return {
-        username: fake.username(),
-        firstname: fake.first()
-      }
-    })
-    const ids = yield Factory.get('forUsers').collection('users').create(10)
-    expect(ids).to.be.an('array')
-    expect(ids.length).to.equal(10)
-    yield modelFixtures.truncate(Database)
-  })
-
-  it('should be able to define different returning field when using database factory', function * () {
-    Factory.blueprint('forUsers', function (fake) {
-      return {
-        username: fake.username(),
-        firstname: fake.first()
-      }
-    })
-    const dbFactory = Factory.get('forUsers').collection('users').returning('username')
-    yield dbFactory.create(10)
-    expect(dbFactory.returningField).to.equal('username')
-    yield modelFixtures.truncate(Database)
-  })
-
-  it('should be able to truncate the database collection using the reset method', function * () {
-    Factory.blueprint('users', function (fake) {
-      return {
-        username: fake.username(),
-        firstname: fake.first()
-      }
-    })
-    yield Factory.get('users').create(10)
-    yield Factory.get('users').reset()
-    const ids = yield Database.collection('users').pluck('_id')
-    expect(ids).to.be.an('array')
-    expect(ids.length).to.equal(0)
-  })
-
-  it('should get the iteration count when making multiple instances', function * () {
-    class User extends Model {}
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake, i) {
-      return {
-        username: fake.username(),
-        firstname: fake.first(),
-        custom_id: i
-      }
-    })
-    const users = Factory.model('App/Model/User').make(5)
-    expect(_.map(users, 'custom_id')).deep.equal([1, 2, 3, 4, 5])
-  })
-
-  it('should get the iteration count when creating multiple instances', function * () {
-    class User extends Model {}
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake, i) {
-      return {
-        username: i,
-        firstname: fake.first()
-      }
-    })
-    yield Factory.model('App/Model/User').create(5)
-    const users = yield User.all()
-    expect(users.size()).to.equal(5)
-    expect(users.map('username').value()).deep.equal(['1', '2', '3', '4', '5'])
-    yield modelFixtures.truncate(Database)
-  })
-
-  it('should able to pass custom data to the factory blueprint via make method', function * () {
-    class User extends Model {}
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake, i, user) {
-      return {
-        username: user.username,
-        firstname: user.firstname
-      }
-    })
-    const user = Factory.model('App/Model/User').make(1, {username: 'foo', firstname: 'bar'})
-    expect(user.username).to.equal('foo')
-    expect(user.firstname).to.equal('bar')
-  })
-
-  it('should able to pass custom data to the factory blueprint via create method', function * () {
-    class User extends Model {}
-    Ioc.bind('App/Model/User', function () {
-      return User
-    })
-    Factory.blueprint('App/Model/User', function (fake, i, user) {
-      return {
-        username: user.username,
-        firstname: user.firstname
-      }
-    })
-    yield Factory.model('App/Model/User').create(1, {username: 'foo', firstname: 'bar'})
-    const users = yield User.all()
-    expect(users.size()).to.equal(1)
-    expect(users.first().username).to.equal('foo')
-    expect(users.first().firstname).to.equal('bar')
-    yield modelFixtures.truncate(Database)
-  })
-
-  it('should be able to pass custom values when using database factory', function * () {
-    Factory.blueprint('forUsers', function (fake, i, user) {
-      return {
-        username: user.username,
-        firstname: user.firstname
-      }
-    })
-    const dbFactory = Factory.get('forUsers').collection('users')
-    yield dbFactory.create(1, {username: 'foo', firstname: 'bar'})
-    const users = yield Database.collection('users')
-    expect(users[0].username).to.equal('foo')
-    expect(users[0].firstname).to.equal('bar')
-    yield modelFixtures.truncate(Database)
+    await ioc.use('Database').table('users').insert({ username: 'virk' })
+    await Factory.model('App/Model/User').reset()
+    const user = await ioc.use('Database').table('users').first()
+    assert.isUndefined(user)
   })
 })

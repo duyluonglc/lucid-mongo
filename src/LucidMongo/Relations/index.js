@@ -20,6 +20,5 @@ module.exports = {
   MorphOne: require('./MorphOne'),
   EmbedsOne: require('./EmbedsOne'),
   EmbedsMany: require('./EmbedsMany'),
-  ReferMany: require('./ReferMany'),
-  EagerLoad: require('./EagerLoad')
+  ReferMany: require('./ReferMany')
 }

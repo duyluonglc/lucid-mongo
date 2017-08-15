@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,336 +9,242 @@
  * file that was distributed with this source code.
 */
 
-/* global describe, it, beforeEach, after, before */
+const test = require('japa')
+const chance = require('chance').Chance()
+const _ = require('lodash')
+const fs = require('fs-extra')
+const path = require('path')
+const { Config } = require('@adonisjs/sink')
 const Database = require('../../src/Database')
-const chai = require('chai')
-const filesFixtures = require('./fixtures/files')
-const modelFixtures = require('./fixtures/model')
-const config = require('./helpers/config')
-const queryHelpers = require('./helpers/query')
-const expect = chai.expect
-require('co-mocha')
+const DatabaseManager = require('../../src/Database/Manager')
+const helpers = require('./helpers')
 
-describe('Database provider', function () {
-  beforeEach(function () {
-    Database.close()
+test.group('Database | QueryBuilder', (group) => {
+  group.before(async () => {
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    this.database = new Database(helpers.getConfig())
+    await helpers.createTables(this.database)
   })
 
-  before(function * () {
-    Database._setConfigProvider(config)
-    yield filesFixtures.createDir()
-    yield modelFixtures.up(Database)
-  })
-
-  after(function * () {
-    yield modelFixtures.down(Database)
-    yield modelFixtures.down(Database.connection('alternateConnection'))
-    Database.close()
-  })
-
-  it('should set config provider', function () {
-    Database._setConfigProvider(config)
-    const settings = Database._resolveConnectionKey('sqlite3')
-    expect(settings).to.equal('sqlite3')
-  })
-
-  it('should setup a knex instance of default connection', function () {
-    Database._setConfigProvider(config)
-    const instance = Database.collection('users')
-    expect(instance.client.config.client).to.equal(process.env.DB)
-  })
-
-  it('should throw an error when unable to find connection property on config object', function () {
-    const Config = {
-      get: function () {
-        return null
+  group.after(async () => {
+    await helpers.dropTables(this.database)
+    this.database.close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
       }
     }
-    Database._setConfigProvider(Config)
-    const fn = function () {
-      Database.where()
-    }
-    expect(fn).to.throw('InvalidArgumentException: E_MISSING_CONFIG: Make sure to define a connection inside the database config file')
+  }).timeout(0)
+
+  test('get instance of query builder', (assert) => {
+    const queryBuilder = this.database.query()
+    assert.property(queryBuilder, 'client')
   })
 
-  it('should throw an error when unable to find connection settings using connection key', function () {
-    const Config = {
-      get: function (key) {
-        if (key === 'database.connection') {
-          return 'sqlite'
-        }
-        return null
-      }
-    }
-    Database._setConfigProvider(Config)
-    const fn = function () {
-      Database.where()
-    }
-    expect(fn).to.throw('InvalidArgumentException: E_MISSING_CONFIG: Unable to get database client configuration for sqlite')
+  test('proxy query builder methods', (assert) => {
+    const selectQuery = this.database.from('users').toSQL()
+    assert.equal(selectQuery.sql, helpers.formatQuery('select * from "users"'))
   })
 
-  it('should reuse the old pool if exists', function () {
-    Database._setConfigProvider(config)
-    Database.collection('users')
-    Database.collection('accounts')
-    const pools = Database.getConnectionPools()
-    expect(Object.keys(pools).length).to.equal(1)
+  test('prefix table when defined inside config', (assert) => {
+    const dbConfig = helpers.getConfig()
+    dbConfig.prefix = 'my_'
+
+    const selectQuery = new Database(dbConfig).from('users').toSQL()
+    assert.equal(selectQuery.sql, helpers.formatQuery('select * from "my_users"'))
   })
 
-  it('should reuse the same connection when default connection is same as the named connection', function () {
-    Database._setConfigProvider(config)
-    Database.collection('users')
-    Database.connection(process.env.DB).collection('accounts')
-    const pools = Database.getConnectionPools()
-    expect(Object.keys(pools).length).to.equal(1)
+  test('ignore prefix at runtime', (assert) => {
+    const dbConfig = helpers.getConfig()
+    dbConfig.prefix = 'my_'
+
+    const selectQuery = new Database(dbConfig).withOutPrefix().from('users').toSQL()
+    assert.equal(selectQuery.sql, helpers.formatQuery('select * from "users"'))
   })
 
-  it('should be able to chain all knex methods', function () {
-    Database._setConfigProvider(config)
-    const sql = Database.collection('users').where('username', 'bar').toSQL().sql
-    expect(sql).to.equal(queryHelpers.formatQuery('select * from "users" where "username" = ?'))
+  test('create a raw query', (assert) => {
+    const selectQuery = this.database.raw(helpers.formatQuery('select * from "users"'))
+    assert.equal(selectQuery.sql, helpers.formatQuery('select * from "users"'))
   })
 
-  it('should not use global scope for query chain', function () {
-    Database._setConfigProvider(config)
-    const user = Database.collection('users').where('username', 'foo')
-    const accounts = Database.collection('accounts').where('_id', 1)
-    expect(user.toSQL().sql).to.equal(queryHelpers.formatQuery('select * from "users" where "username" = ?'))
-    expect(accounts.toSQL().sql).to.equal(queryHelpers.formatQuery('select * from "accounts" where "id" = ?'))
-  })
-
-  it('should spawn a new connection pool when connection method is used', function () {
-    Database._setConfigProvider(config)
-    Database.select()
-    const instance = Database.connection('alternateConnection')
-    expect(Object.keys(Database.getConnectionPools()).length).to.equal(2)
-    expect(instance.client.config.client).not.equal(undefined)
-  })
-
-  it('should be able to chain query incrementally', function () {
-    Database._setConfigProvider(config)
-    const user = Database.collection('users')
-    user.where('age', 22)
-    user.where('username', 'virk')
-    expect(user.toSQL().sql).to.equal(queryHelpers.formatQuery('select * from "users" where "age" = ? and "username" = ?'))
-  })
-
-  it('should close a given connection', function () {
-    Database._setConfigProvider(config)
-    Database.collection('users')
-    Database.connection('alternateConnection')
-    Database.close('default')
-    expect(Object.keys(Database.getConnectionPools()).length).to.equal(1)
-  })
-
-  it('should close all connection', function () {
-    Database._setConfigProvider(config)
-    Database.collection('users')
-    Database.connection('alternateConnection')
-    Database.close()
-    expect(Object.keys(Database.getConnectionPools()).length).to.equal(0)
-  })
-
-  it('should be able to create lean transactions', function * () {
-    const trx = yield Database.beginTransaction()
-    yield trx.collection('users').insert({username: 'db-trx'})
-    trx.commit()
-    const user = yield Database.collection('users').where('username', 'db-trx')
-    expect(user).to.be.an('array')
-    expect(user[0].username).to.equal('db-trx')
-  })
-
-  it('should be able to rollback transactions', function * () {
-    const trx = yield Database.beginTransaction()
-    yield trx.collection('users').insert({username: 'db-trx1'})
+  test('create db transactions', async (assert) => {
+    const trx = await this.database.beginTransaction()
+    assert.isDefined(trx)
     trx.rollback()
-    const user = yield Database.collection('users').where('username', 'db-trx1')
-    expect(user).to.be.an('array')
-    expect(user.length).to.equal(0)
   })
 
-  it('should be able to have multiple transactions', function * () {
-    const trx = yield Database.beginTransaction()
-    yield trx.collection('users').insert({username: 'multi-trx'})
+  test('commit transactions', async (assert) => {
+    const trx = await this.database.beginTransaction()
+    await trx.table('users').insert({ username: 'virk' })
     trx.commit()
-
-    const trx1 = yield Database.beginTransaction()
-    yield trx1.collection('users').insert({username: 'multi-trx1'})
-    trx1.rollback()
-
-    const user = yield Database.collection('users').where('username', 'multi-trx')
-    const user1 = yield Database.collection('users').where('username', 'multi-trx1')
-    expect(user).to.be.an('array')
-    expect(user1).to.be.an('array')
-    expect(user.length).to.equal(1)
-    expect(user1.length).to.equal(0)
+    const firstUser = await this.database.table('users').first()
+    assert.equal(firstUser.username, 'virk')
+    await this.database.truncate('users')
   })
 
-  it('should be able to call beginTransaction to a different connection', function * () {
-    yield modelFixtures.up(Database.connection('alternateConnection'))
-    const trx = yield Database.connection('alternateConnection').beginTransaction()
-    yield trx.collection('users').insert({username: 'conn2-trx'})
-    trx.commit()
-
-    const user = yield Database.connection('alternateConnection').collection('users').where('username', 'conn2-trx')
-    expect(user).to.be.an('array')
-    expect(user.length).to.equal(1)
+  test('rollback transactions', async (assert) => {
+    const trx = await this.database.beginTransaction()
+    await trx.table('users').insert({ username: 'virk' })
+    trx.rollback()
+    const users = await this.database.table('users')
+    assert.lengthOf(users, 0)
   })
 
-  it('should be able to commit transactions automatically', function * () {
-    const response = yield Database.transaction(function * (trx) {
-      return yield trx.collection('users').insert({username: 'auto-trx'}).returning('_id')
-    })
-    expect(response).to.be.an('array')
-    expect(response.length).to.equal(1)
+  test('transaction should not collide with other queries', async (assert) => {
+    const trx = await this.database.beginTransaction()
+    setTimeout(() => {
+      trx.rollback()
+    }, 20)
+    await this.database.table('users').insert({ username: 'virk' })
+    const users = await this.database.table('users')
+    assert.lengthOf(users, 1)
+    await this.database.truncate('users')
   })
 
-  it('should rollback transactions automatically on error', function * () {
+  test('create global transactions', async (assert) => {
+    await this.database.beginGlobalTransaction()
+    await this.database.table('users').insert({ username: 'virk' })
+    this.database.rollbackGlobalTransaction()
+    const users = await this.database.table('users')
+    assert.lengthOf(users, 0)
+  })
+
+  test('commit global transactions', async (assert) => {
+    await this.database.beginGlobalTransaction()
+    await this.database.table('users').insert({ username: 'virk' })
+    this.database.commitGlobalTransaction()
+    const users = await this.database.table('users')
+    assert.lengthOf(users, 1)
+    await this.database.truncate('users')
+  })
+
+  test('destroy database connection', async (assert) => {
+    await this.database.close()
+    assert.plan(1)
     try {
-      yield Database.transaction(function * (trx) {
-        return yield trx.collection('users').insert({u: 'auto-trx'})
-      })
-      expect(true).to.equal(false)
-    } catch (e) {
-      expect(e.message).not.equal(undefined)
+      await this.database.table('users')
+    } catch ({ message }) {
+      assert.equal(message, 'Unable to acquire a connection')
+      this.database = new Database(helpers.getConfig())
     }
   })
 
-  it('should be able to run transactions on different connection', function * () {
-    yield Database.connection('alternateConnection').transaction(function * (trx) {
-      return yield trx.collection('users').insert({username: 'different-trx'})
+  test('add orderBy and limit clause using forPage method', async (assert) => {
+    const query = this.database.table('users').forPage(1).toSQL()
+    assert.equal(query.sql, helpers.formatQuery('select * from "users" limit ?'))
+    assert.deepEqual(query.bindings, [20])
+  })
+
+  test('add orderBy and limit clause using forPage greater than 1', async (assert) => {
+    const query = this.database.table('users').forPage(3).toSQL()
+    assert.equal(query.sql, helpers.formatQuery('select * from "users" limit ? offset ?'))
+    assert.deepEqual(query.bindings, [20, 40])
+    await this.database.table('users').truncate()
+  })
+
+  test('paginate results', async (assert) => {
+    const users = _.map(_.range(10), () => {
+      return { username: chance.word() }
     })
-    const user = yield Database.connection('alternateConnection').collection('users').where('username', 'different-trx')
-    expect(user).to.be.an('array')
-    expect(user[0].username).to.equal('different-trx')
+    await this.database.insert(users).into('users')
+    const result = await this.database.table('users').orderBy('username').paginate(1, 5)
+    assert.equal(result.perPage, 5)
+    assert.equal(result.total, 10)
+    assert.equal(result.page, 1)
+    assert.equal(result.lastPage, 2)
+    assert.isAtMost(result.data.length, result.perPage)
+    await this.database.table('users').truncate()
   })
 
-  it('should be able to paginate results', function * () {
-    const paginatedUsers = yield Database.collection('users').paginate(1)
-    expect(paginatedUsers).to.have.property('total')
-    expect(paginatedUsers).to.have.property('lastPage')
-    expect(paginatedUsers).to.have.property('perPage')
-    expect(paginatedUsers).to.have.property('data')
-    expect(paginatedUsers.total).to.equal(paginatedUsers.data.length)
-  })
-
-  it('should throw an error when page is not passed', function * () {
-    try {
-      yield Database.collection('users').paginate()
-      expect(true).to.equal(false)
-    } catch (e) {
-      expect(e.message).to.match(/cannot paginate results for page less than 1/)
-    }
-  })
-
-  it('should throw an error when page equals 0', function * () {
-    try {
-      yield Database.collection('users').paginate(0)
-      expect(true).to.equal(false)
-    } catch (e) {
-      expect(e.message).to.match(/cannot paginate results for page less than 1/)
-    }
-  })
-
-  it('should return proper meta data when paginate returns zero results', function * () {
-    const paginatedUsers = yield Database.collection('users').where('status', 'published').paginate(1)
-    expect(paginatedUsers.total).to.equal(0)
-    expect(paginatedUsers.lastPage).to.equal(0)
-  })
-
-  it('should return proper meta data when there are results but page is over the last page', function * () {
-    const paginatedUsers = yield Database.collection('users').paginate(10)
-    expect(paginatedUsers.total).to.equal(3)
-    expect(paginatedUsers.lastPage).to.equal(1)
-  })
-
-  it('should be able paginate results using order by on the original query', function * () {
-    const paginatedUsers = yield Database.collection('users').orderBy('_id', 'desc').paginate(1)
-    expect(paginatedUsers).to.have.property('total')
-    expect(paginatedUsers).to.have.property('lastPage')
-    expect(paginatedUsers).to.have.property('perPage')
-    expect(paginatedUsers).to.have.property('data')
-    expect(paginatedUsers.total).to.equal(paginatedUsers.data.length)
-  })
-
-  it('should be able to get results in chunks', function * () {
-    let callbackCalledForTimes = 0
-    const allUsers = yield Database.collection('users')
-    yield Database.collection('users').chunk(1, function (user) {
-      expect(user[0].id).to.equal(allUsers[callbackCalledForTimes].id)
-      callbackCalledForTimes++
+  test('paginate results when records are less than perPage', async (assert) => {
+    const users = _.map(_.range(4), () => {
+      return { username: chance.word() }
     })
-    expect(callbackCalledForTimes).to.equal(allUsers.length)
+    await this.database.insert(users).into('users')
+    const result = await this.database.table('users').orderBy('username').paginate(1, 5)
+    assert.equal(result.perPage, 5)
+    assert.equal(result.total, 4)
+    assert.equal(result.page, 1)
+    assert.equal(result.lastPage, 1)
+    assert.isAtMost(result.data.length, result.perPage)
+    await this.database.table('users').truncate()
   })
 
-  it('should be able to pluck multiple fields using the pluckAll method', function * () {
-    const users = yield Database.collection('users').withoutPrefix().pluckAll('_id', 'username')
-    expect(users[0]).to.have.property('_id')
-    expect(users[0]).to.have.property('username')
+  test('paginate data inside transactions', async (assert) => {
+    const trx = await this.database.beginTransaction()
+    assert.equal(typeof (trx.table('users').paginate), 'function')
+    trx.rollback()
   })
 
-  it('should be able to prefix the database collection using a configuration option', function * () {
-    Database._setConfigProvider(config.withPrefix)
-    const query = Database.collection('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users"'))
+  test('throw exception when proxy property is not a method', (assert) => {
+    const fn = () => this.database.foo()
+    assert.throw(fn, 'Database.foo is not a function')
+  })
+})
+
+test.group('Database | Manager', () => {
+  test('get instance of database using connection method', (assert) => {
+    const config = new Config()
+    config.set('database', {
+      connection: 'testing',
+      testing: helpers.getConfig()
+    })
+    const db = new DatabaseManager(config).connection()
+    assert.instanceOf(db, Database)
   })
 
-  it('should be able to prefix the database collection when collection method is called after other methods', function * () {
-    const query = Database.where('username', 'foo').collection('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users" where "username" = ?'))
+  test('throw exception when unable to connect to database', (assert) => {
+    const config = new Config()
+    config.set('database', {
+      connection: 'testing',
+      testing: {}
+    })
+    const db = () => new DatabaseManager(config).connection()
+    assert.throw(db, 'knex: Required configuration option \'client\' is missing')
   })
 
-  it('should be able to prefix the database collection when from method is used', function * () {
-    const query = Database.from('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users"'))
+  test('throw exception when connection does not exists', (assert) => {
+    const config = new Config()
+    config.set('database', {
+      connection: 'testing',
+      testing: {}
+    })
+    const db = () => new DatabaseManager(config).connection('foo')
+    assert.throw(db, 'E_MISSING_DB_CONNECTION: Missing database connection {foo}. Make sure you define it inside config/database.js file')
   })
 
-  it('should be able to prefix the database collection when from method is called after other methods', function * () {
-    const query = Database.where('username', 'foo').from('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users" where "username" = ?'))
+  test('proxy database methods', (assert) => {
+    const config = new Config()
+    config.set('database', {
+      connection: 'testing',
+      testing: helpers.getConfig()
+    })
+    const query = new DatabaseManager(config).table('users').toSQL()
+    assert.equal(query.sql, helpers.formatQuery('select * from "users"'))
   })
 
-  it('should be able to prefix the database collection when into method is used', function * () {
-    const query = Database.into('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users"'))
+  test('proxy database properties', (assert) => {
+    const config = new Config()
+    config.set('database', {
+      connection: 'testing',
+      testing: helpers.getConfig()
+    })
+    assert.isNull(new DatabaseManager(config)._globalTrx)
   })
 
-  it('should be able to prefix the database collection when into method is called after other methods', function * () {
-    const query = Database.where('username', 'foo').into('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users" where "username" = ?'))
-  })
+  test('reuse existing database connection', (assert) => {
+    const config = new Config()
+    config.set('database', {
+      connection: 'testing',
+      testing: helpers.getConfig()
+    })
+    const dbManager = new DatabaseManager(config)
+    dbManager.connection()
+    assert.lengthOf(Object.keys(dbManager._connectionPools), 1)
 
-  it('should be able to remove the prefix using the withoutPrefix method', function * () {
-    const query = Database.withoutPrefix().collection('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "users"'))
-  })
-
-  it('should be able to remove the prefix when withoutPrefix method is called after other methods', function * () {
-    const query = Database.where('username', 'foo').withoutPrefix().collection('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "users" where "username" = ?'))
-  })
-
-  it('should be able to change the prefix using the withPrefix method', function * () {
-    const query = Database.withPrefix('k_').collection('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "k_users"'))
-  })
-
-  it('should be able to remove the prefix when withPrefix method is called after other methods', function * () {
-    const query = Database.where('username', 'foo').withPrefix('k_').collection('users').toSQL()
-    expect(queryHelpers.formatQuery(query.sql)).to.equal(queryHelpers.formatQuery('select * from "k_users" where "username" = ?'))
-  })
-
-  it('should not mess the query builder instance when withPrefix is called on multiple queries at same time', function * () {
-    const query = Database.where('username', 'foo').withPrefix('k_').collection('users')
-    const query1 = Database.where('username', 'foo').collection('users')
-    expect(queryHelpers.formatQuery(query.toSQL().sql)).to.equal(queryHelpers.formatQuery('select * from "k_users" where "username" = ?'))
-    expect(queryHelpers.formatQuery(query1.toSQL().sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users" where "username" = ?'))
-  })
-
-  it('should not mess the query builder instance when withoutPrefix is called on multiple queries at same time', function * () {
-    const query = Database.where('username', 'foo').withoutPrefix().collection('users')
-    const query1 = Database.where('username', 'foo').collection('users')
-    expect(queryHelpers.formatQuery(query.toSQL().sql)).to.equal(queryHelpers.formatQuery('select * from "users" where "username" = ?'))
-    expect(queryHelpers.formatQuery(query1.toSQL().sql)).to.equal(queryHelpers.formatQuery('select * from "ad_users" where "username" = ?'))
+    dbManager.connection()
+    assert.lengthOf(Object.keys(dbManager._connectionPools), 1)
   })
 })

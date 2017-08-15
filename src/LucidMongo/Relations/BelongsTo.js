@@ -1,6 +1,6 @@
 'use strict'
 
-/**
+/*
  * adonis-lucid
  *
  * (c) Harminder Virk <virk@adonisjs.com>
@@ -9,171 +9,152 @@
  * file that was distributed with this source code.
 */
 
-const Relation = require('./Relation')
+const _ = require('lodash')
+const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
-const CatLog = require('cat-log')
-const logger = new CatLog('adonis:lucid')
 
-class BelongsTo extends Relation {
-  constructor (parent, related, primaryKey, foreignKey) {
-    super(parent, related)
-    this.toKey = primaryKey || this.related.primaryKey
-    this.fromKey = foreignKey || this.related.foreignKey
-  }
-
+/**
+ * The BelongsTo relationship defines a relation between
+ * two models
+ *
+ * @class BelongsTo
+ * @constructor
+ */
+class BelongsTo extends BaseRelation {
   /**
-   * empty placeholder to be used when unable to eagerload
-   * relations. It needs to be an array of many to many
-   * relationships.
+   * Map values from model instances to an array. It is required
+   * to make `whereIn` query when eagerloading results.
    *
-   * @method eagerLoadFallbackValue
+   * @method mapValues
    *
-   * @return {Null}
+   * @param  {Array}  modelInstances
+   *
+   * @return {Array}
    */
-  get eagerLoadFallbackValue () {
-    return null
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
   }
 
   /**
-   * returns result of this.first
+   * Groups related instances with their foriegn keys
    *
-   * @see this.first()
+   * @method group
+   *
+   * @param  {Array} relatedInstances
+   *
+   * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
+   */
+  group (relatedInstances) {
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance[this.foreignKey]
+      result.push({
+        identity: foreignKeyValue,
+        value: relatedInstance
+      })
+      return result
+    }, [])
+
+    return { key: this.primaryKey, values: transformedValues, defaultValue: null }
+  }
+
+  /**
+   * Overriding fetch to call first, since belongsTo
+   * can never have many rows
+   *
+   * @method fetch
+   * @async
+   *
    * @return {Object}
-   *
-   * @public
    */
   fetch () {
     return this.first()
   }
 
   /**
-   * belongsTo cannot have paginate, since it
-   * maps one to one relationship
+   * Adds a where clause to limit the select search
+   * to related rows only.
    *
-   * @public
+   * @method relatedWhere
    *
-   * @throws CE.ModelRelationException
+   * @param  {Boolean}     count
+   *
+   * @return {Object}
    */
-  paginate () {
-    throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
+  relatedWhere (count) {
+    this.relatedQuery.whereRaw(`${this.$primaryTable}.${this.primaryKey} = ${this.$foreignTable}.${this.foreignKey}`)
+    if (count) {
+      this.relatedQuery.count('*')
+    }
+    return this.relatedQuery.query
   }
 
   /**
-   * overrides base save method to throw an error, as
-   * belongsTo does not support save method
+   * Adds `on` clause to the innerjoin context. This
+   * method is mainly used by HasManyThrough
    *
-   * @public
+   * @method addWhereOn
+   *
+   * @param  {Object}   context
    */
-  * save () {
-    throw CE.ModelRelationException.unSupportedMethod('save', this.constructor.name)
+  addWhereOn (context) {
+    context.on(`${this.$primaryTable}.${this.primaryKey}`, '=', `${this.$foreignTable}.${this.foreignKey}`)
+  }
+
+  /* istanbul ignore next */
+  create () {
+    throw CE.ModelRelationException.unSupportedMethod('create', 'belongsTo')
+  }
+
+  /* istanbul ignore next */
+  save () {
+    throw CE.ModelRelationException.unSupportedMethod('save', 'belongsTo')
+  }
+
+  /* istanbul ignore next */
+  createMany () {
+    throw CE.ModelRelationException.unSupportedMethod('createMany', 'belongsTo')
+  }
+
+  /* istanbul ignore next */
+  saveMany () {
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'belongsTo')
   }
 
   /**
-   * overrides base create method to throw an error, as
-   * belongsTo does not support create method
+   * Associate 2 models together, also this method will save
+   * the related model if not already persisted
    *
-   * @public
-   */
-  * create () {
-    throw CE.ModelRelationException.unSupportedMethod('create', this.constructor.name)
-  }
-
-  /**
-   * belongsTo cannot have createMany, since it
-   * maps one to one relationship
-   *
-   * @public
-   *
-   * @throws CE.ModelRelationException
-   */
-  * createMany () {
-    throw CE.ModelRelationException.unSupportedMethod('createMany', this.constructor.name)
-  }
-
-  /**
-   * belongsTo cannot have saveMany, since it
-   * maps one to one relationship
-   *
-   * @public
-   *
-   * @throws CE.ModelRelationException
-   */
-  * saveMany () {
-    throw CE.ModelRelationException.unSupportedMethod('saveMany', this.constructor.name)
-  }
-
-  /**
-   * associates a related model to the parent model by setting
-   * up foreignKey value
+   * @method associate
+   * @async
    *
    * @param  {Object}  relatedInstance
    *
-   * @public
+   * @return {Promise}
    */
-  associate (relatedInstance) {
-    if (relatedInstance instanceof this.related === false) {
-      throw CE.ModelRelationException.relationMisMatch('associate accepts an instance of related model')
+  async associate (relatedInstance) {
+    if (relatedInstance.isNew) {
+      await relatedInstance.save()
     }
-    if (relatedInstance.isNew()) {
-      throw CE.ModelRelationException.unSavedTarget('associate', this.parent.constructor.name, this.related.name)
-    }
-    if (!relatedInstance[this.toKey]) {
-      logger.warn(`Trying to associate relationship with ${this.toKey} as foriegnKey, whose value is falsy`)
-    }
-    this.parent[this.fromKey] = relatedInstance[this.toKey]
+
+    this.parentInstance[this.primaryKey] = relatedInstance[this.foreignKey]
+    return this.parentInstance.save()
   }
 
   /**
-   * dissociate a related model from the parent model by setting
-   * foreignKey to null
+   * Dissociate relationship from database by setting `foriegnKey` to null
    *
-   * @public
+   * @method dissociate
+   * @async
+   *
+   * @return {Promise}
    */
-  dissociate () {
-    this.parent[this.fromKey] = null
-  }
-
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key.
-   *
-   * @param {Array} values
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoad (values, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
+  async dissociate () {
+    if (this.parentInstance.isNew) {
+      throw CE.ModelRelationException.unsavedModelInstance('Cannot dissociate relationship since model instance is not persisted')
     }
-    const results = yield this.relatedQuery.whereIn(this.toKey, values).fetch()
-    return results.keyBy((item) => {
-      return item[this.toKey]
-    }).value()
-  }
 
-  /**
-   * will eager load the relation for multiple values on related
-   * model and returns an object with values grouped by foreign
-   * key. It is equivalent to eagerLoad but query defination
-   * is little different.
-   *
-   * @param  {Mixed} value
-   * @return {Object}
-   *
-   * @public
-   *
-   */
-  * eagerLoadSingle (value, scopeMethod) {
-    if (typeof (scopeMethod) === 'function') {
-      scopeMethod(this.relatedQuery)
-    }
-    const results = yield this.relatedQuery.where(this.toKey, value).first()
-    const response = {}
-    response[value] = results
-    return response
+    this.parentInstance[this.primaryKey] = null
+    return this.parentInstance.save()
   }
 }
 
