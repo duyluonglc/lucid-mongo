@@ -14,6 +14,7 @@ const proxyHandler = exports = module.exports = {}
 const queryExecMethods = [
   'increment',
   'decrement',
+  'sum',
   'avg',
   'min',
   'max',
