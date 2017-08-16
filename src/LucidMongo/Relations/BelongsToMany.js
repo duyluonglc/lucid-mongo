@@ -118,7 +118,7 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _selectForPivot (field) {
-    return `${this.$pivotCollection}.${field} as pivot_${field}`
+    return `${field} as pivot_${field}`
   }
 
   /**
@@ -136,7 +136,7 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _whereForPivot (method, key, ...args) {
-    this.relatedQuery[method](`${this.$pivotCollection}.${key}`, ...args)
+    this.relatedQuery[method](key, ...args)
   }
 
   /**
@@ -464,9 +464,63 @@ class BelongsToMany extends BaseRelation {
    */
   async fetch () {
     const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
-    const rows = await this.relatedQuery.whereIn(this.primaryKey, foreignKeyValues).fetch()
-    return rows
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).fetch()
+  }
+
+  /**
+   * @method count
+   *
+   * @return {Object|Number}
+   */
+  async count (...args) {
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).count(...args)
+  }
+
+  /**
+   * @method max
+   *
+   * @return {Object|Number}
+   */
+  async max (...args) {
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).max(...args)
+  }
+
+  /**
+   * @method min
+   *
+   * @return {Object|Number}
+   */
+  async min (...args) {
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).min(...args)
+  }
+
+  /**
+   * @method sum
+   *
+   * @return {Object|Number}
+   */
+  async sum (...args) {
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).sum(...args)
+  }
+
+  /**
+   * @method avg
+   *
+   * @return {Object|Number}
+   */
+  async avg (...args) {
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).avg(...args)
   }
 
   /**
@@ -588,12 +642,11 @@ class BelongsToMany extends BaseRelation {
    * @return {Number} Number of effected rows
    */
   async delete () {
-    const foreignKeyValues = await this.ids()
-    const effectedRows = await this.RelatedModel
-      .query()
-      .whereIn(this.RelatedModel.primaryKey, foreignKeyValues)
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    const effectedRows = await this.relatedQuery
+      .whereIn(this.relatedPrimaryKey, foreignKeyValues)
       .delete()
-
     await this.detach(foreignKeyValues)
     return effectedRows
   }
@@ -608,10 +661,10 @@ class BelongsToMany extends BaseRelation {
    * @return {Number}        Number of effected rows
    */
   async update (values) {
-    const foreignKeyValues = await this.ids()
-    return this.RelatedModel
-      .query()
-      .whereIn(this.RelatedModel.primaryKey, foreignKeyValues)
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery
+      .whereIn(this.relatedPrimaryKey, foreignKeyValues)
       .update(values)
   }
 

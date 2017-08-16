@@ -11,6 +11,7 @@
 
 const _ = require('lodash')
 const query = require('mquery')
+const debug = require('debug')('mquery')
 
 const EagerLoad = require('../EagerLoad')
 const RelationsParser = require('../Relations/Parser')
@@ -376,7 +377,7 @@ class QueryBuilder {
   async delete () {
     this._applyScopes()
     const collection = await this.db.collection(this.collection)
-    return this.query.collection(collection).remove()
+    return this.query.collection(collection).setOptions({ multi: true }).remove()
   }
 
   /**
@@ -388,6 +389,7 @@ class QueryBuilder {
    * @returns {Promise}
    */
   async insert (attributes) {
+    debug('insert', this.collection, attributes)
     const collection = await this.db.collection(this.collection)
     return collection.insert(attributes)
   }
@@ -790,7 +792,7 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async count (groupBy) {
+  count (groupBy) {
     this._applyScopes()
     return this._aggregate('count', null, groupBy)
   }
@@ -814,7 +816,7 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async min (key, groupBy) {
+  min (key, groupBy) {
     this._applyScopes()
     return this._aggregate('min', key, groupBy)
   }
@@ -826,7 +828,7 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async sum (key, groupBy) {
+  sum (key, groupBy) {
     this._applyScopes()
     return this._aggregate('sum', key, groupBy)
   }
@@ -838,7 +840,7 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async avg (key, groupBy) {
+  avg (key, groupBy) {
     this._applyScopes()
     return this._aggregate('avg', key, groupBy)
   }
@@ -851,8 +853,8 @@ class QueryBuilder {
    * @return {Object}
    */
   async _aggregate (aggregator, key, groupBy) {
-    const $match = this.conditions
-    const $group = { _id: '$' + groupBy }
+    const $match = this.query._conditions
+    const $group = { _id: groupBy ? ('$' + groupBy) : '' }
     switch (aggregator) {
       case 'count':
         $group[aggregator] = { $sum: 1 }
@@ -872,9 +874,11 @@ class QueryBuilder {
       default:
         break
     }
-    // debug('count', this.collectionName, $match, $group)
+    const connection = await this.db.connect()
+    const collection = connection.collection(this.collection)
+    debug(aggregator, this.collection, $match, $group)
     return new Promise((resolve, reject) => {
-      this.db.collection.aggregate([{ $match }, { $group }], (err, result) => {
+      collection.aggregate([{ $match }, { $group }], (err, result) => {
         if (err) {
           reject(err)
         } else {

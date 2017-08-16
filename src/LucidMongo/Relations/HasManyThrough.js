@@ -260,6 +260,90 @@ class HasManyThrough extends BaseRelation {
     return rows
   }
 
+  /**
+   * @method count
+   *
+   * @return {Object|Number}
+   */
+  async count (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).count(...args)
+  }
+
+  /**
+   * @method max
+   *
+   * @return {Object|Number}
+   */
+  async max (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).max(...args)
+  }
+
+  /**
+   * @method min
+   *
+   * @return {Object|Number}
+   */
+  async min (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).min(...args)
+  }
+
+  /**
+   * @method sum
+   *
+   * @return {Object|Number}
+   */
+  async sum (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).sum(...args)
+  }
+
+  /**
+   * @method avg
+   *
+   * @return {Object|Number}
+   */
+  async avg (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).avg(...args)
+  }
+
+  /**
+   * @method update
+   *
+   * @return {Object|Number}
+   */
+  async update (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).update(...args)
+  }
+
+  /**
+   * @method delete
+   *
+   * @return {Object|Number}
+   */
+  async delete (...args) {
+    const foreignKeyValues = await this.RelatedModel.query()
+      .where(this.foreignKey, this.$primaryKeyValue)
+      .ids()
+    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).delete(...args)
+  }
+
   /* istanbul ignore next */
   create () {
     throw CE.ModelRelationException.unSupportedMethod('create', 'HasManyThrough')
