@@ -13,7 +13,7 @@ const _ = require('lodash')
 const moment = require('moment')
 const GeoPoint = require('geopoint')
 const ObjectID = require('mongodb').ObjectID
-const { resolver } = require('../../../lib/iocResolver')
+const { resolver, ioc } = require('../../../lib/iocResolver')
 const GE = require('@adonisjs/generic-exceptions')
 const BaseModel = require('./Base')
 const Hooks = require('../Hooks')
@@ -212,8 +212,8 @@ class Model extends BaseModel {
      */
     query.on('query', (builder) => {
       _(this.$queryListeners)
-      .filter((listener) => typeof (listener) === 'function')
-      .each((listener) => listener(builder))
+        .filter((listener) => typeof (listener) === 'function')
+        .each((listener) => listener(builder))
     })
 
     if (_.isObject(params)) {
@@ -309,7 +309,7 @@ class Model extends BaseModel {
      * then add methods to it's prototype.
      */
     if (!this.QueryBuilder) {
-      this.QueryBuilder = class ExtendedQueryBuilder extends QueryBuilder {}
+      this.QueryBuilder = class ExtendedQueryBuilder extends QueryBuilder { }
     }
 
     this.QueryBuilder.prototype[name] = fn
@@ -1058,8 +1058,8 @@ class Model extends BaseModel {
      * the $parent.
      */
     _(value.rows)
-    .filter((val) => !!val)
-    .each((val) => (val.$parent = this.constructor.name))
+      .filter((val) => !!val)
+      .each((val) => (val.$parent = this.constructor.name))
   }
 
   /**
@@ -1124,7 +1124,11 @@ class Model extends BaseModel {
    *
    * @return {HasOne}
    */
-  hasOne (relatedModel, primaryKey = this.constructor.primaryKey, foreignKey = this.constructor.foreignKey) {
+  hasOne (relatedModel, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+    foreignKey = foreignKey || this.constructor.foreignKey
     return new HasOne(this, relatedModel, primaryKey, foreignKey)
   }
 
@@ -1139,7 +1143,11 @@ class Model extends BaseModel {
    *
    * @return {HasMany}
    */
-  hasMany (relatedModel, primaryKey = this.constructor.primaryKey, foreignKey = this.constructor.foreignKey) {
+  hasMany (relatedModel, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+    foreignKey = foreignKey || this.constructor.foreignKey
     return new HasMany(this, relatedModel, primaryKey, foreignKey)
   }
 
@@ -1154,7 +1162,11 @@ class Model extends BaseModel {
    *
    * @return {BelongsTo}
    */
-  belongsTo (relatedModel, primaryKey = relatedModel.foreignKey, foreignKey = relatedModel.primaryKey) {
+  belongsTo (relatedModel, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || relatedModel.foreignKey
+    foreignKey = foreignKey || relatedModel.primaryKey
     return new BelongsTo(this, relatedModel, primaryKey, foreignKey)
   }
 
@@ -1171,13 +1183,14 @@ class Model extends BaseModel {
    *
    * @return {BelongsToMany}
    */
-  belongsToMany (
-    relatedModel,
-    foreignKey = this.constructor.foreignKey,
-    relatedForeignKey = relatedModel.foreignKey,
-    primaryKey = this.constructor.primaryKey,
-    relatedPrimaryKey = relatedModel.primaryKey
-  ) {
+  belongsToMany (relatedModel, foreignKey, relatedForeignKey, primaryKey, relatedPrimaryKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    foreignKey = foreignKey || this.constructor.foreignKey
+    relatedForeignKey = relatedForeignKey || relatedModel.foreignKey
+    primaryKey = primaryKey || this.constructor.primaryKey
+    relatedPrimaryKey = relatedPrimaryKey || relatedModel.primaryKey
+
     return new BelongsToMany(this, relatedModel, primaryKey, foreignKey, relatedPrimaryKey, relatedForeignKey)
   }
 
@@ -1193,12 +1206,12 @@ class Model extends BaseModel {
    *
    * @return {HasManyThrough}
    */
-  manyThrough (
-    relatedModel,
-    relatedMethod,
-    primaryKey = this.constructor.primaryKey,
-    foreignKey = this.constructor.foreignKey
-  ) {
+  manyThrough (relatedModel, relatedMethod, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+    foreignKey = foreignKey || this.constructor.foreignKey
+
     return new HasManyThrough(this, relatedModel, relatedMethod, primaryKey, foreignKey)
   }
 
@@ -1214,12 +1227,11 @@ class Model extends BaseModel {
    *
    * @return {MorphMany}
    */
-  morphMany (
-    relatedModel,
-    determiner,
-    localKey,
-    primaryKey = this.constructor.primaryKey
-  ) {
+  morphMany (relatedModel, determiner, localKey, primaryKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+
     return new MorphMany(this, relatedModel, determiner, localKey, primaryKey)
   }
 
@@ -1233,14 +1245,13 @@ class Model extends BaseModel {
    * @param  {String}    localKey
    * @param  {String}    primaryKey
    *
-   * @return {MorphMany}
+   * @return {MorphOne}
    */
-  morphOne (
-    relatedModel,
-    determiner,
-    localKey,
-    primaryKey = this.constructor.primaryKey
-  ) {
+  morphOne (relatedModel, determiner, localKey, primaryKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+
     return new MorphOne(this, relatedModel, determiner, localKey, primaryKey)
   }
 
@@ -1257,13 +1268,11 @@ class Model extends BaseModel {
    *
    * @return {MorphMany}
    */
-  morphTo (
-    relatedModel,
-    modelPath,
-    determiner,
-    localKey,
-    primaryKey = this.constructor.primaryKey
-  ) {
+  morphTo (relatedModel, modelPath, determiner, localKey, primaryKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+
     return new MorphTo(this, relatedModel, modelPath, determiner, localKey, primaryKey)
   }
 
@@ -1279,11 +1288,11 @@ class Model extends BaseModel {
    *
    * @return {EmbedsMany}
    */
-  embedsMany (
-    relatedModel,
-    primaryKey = this.constructor.primaryKey,
-    foreignKey
-  ) {
+  embedsMany (relatedModel, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+
     return new EmbedsMany(this, relatedModel, primaryKey, foreignKey)
   }
 
@@ -1299,11 +1308,11 @@ class Model extends BaseModel {
    *
    * @return {EmbedsOne}
    */
-  embedsOne (
-    relatedModel,
-    primaryKey = this.constructor.primaryKey,
-    foreignKey
-  ) {
+  embedsOne (relatedModel, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+
     return new EmbedsOne(this, relatedModel, primaryKey, foreignKey)
   }
 
@@ -1319,11 +1328,12 @@ class Model extends BaseModel {
    *
    * @return {ReferMany}
    */
-  referMany (
-    relatedModel,
-    primaryKey = this.constructor.primaryKey,
-    foreignKey = relatedModel.foreignKey
-  ) {
+  referMany (relatedModel, primaryKey, foreignKey) {
+    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
+
+    primaryKey = primaryKey || this.constructor.primaryKey
+    foreignKey = foreignKey || relatedModel.foreignKey
+
     return new ReferMany(this, relatedModel, primaryKey, foreignKey)
   }
 
