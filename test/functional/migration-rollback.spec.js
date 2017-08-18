@@ -44,19 +44,19 @@ test.group('Migration Rollback', (group) => {
       ]).registerAndBoot()
 
     await fs.ensureDir(path.join(__dirname, '../unit/tmp'))
-    await helpers.createTables(ioc.use('Database'))
+    await helpers.createCollections(ioc.use('Database'))
     setupResolver()
   })
 
   group.afterEach(async () => {
     ace.commands = {}
-    await ioc.use('Database').table('adonis_schema').remove()
-    await ioc.use('Database').schema.dropTableIfExists('schema_users')
+    await ioc.use('Database').collection('adonis_schema').remove()
+    await ioc.use('Database').schema.dropCollectionIfExists('schema_users')
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Database'))
-    await ioc.use('Database').schema.dropTableIfExists('adonis_schema')
+    await helpers.dropCollections(ioc.use('Database'))
+    await ioc.use('Database').schema.dropCollectionIfExists('adonis_schema')
     ioc.use('Database').close()
 
     try {
@@ -83,9 +83,9 @@ test.group('Migration Rollback', (group) => {
       const Schema = use('Schema')
       class User extends Schema {
         up () {
-          this.createTable('schema_users', (table) => {
-            table.increments()
-            table.string('username')
+          this.createCollection('schema_users', (collection) => {
+            collection.increments()
+            collection.string('username')
           })
         }
 
@@ -100,7 +100,7 @@ test.group('Migration Rollback', (group) => {
     await ace.call('migration:run')
     const result = await ace.call('migration:rollback')
     assert.deepEqual(result, { migrated: ['User'], status: 'completed', queries: undefined })
-    const migrations = await ioc.use('Database').table('adonis_schema')
+    const migrations = await ioc.use('Database').collection('adonis_schema')
     assert.lengthOf(migrations, 0)
   })
 
@@ -112,9 +112,9 @@ test.group('Migration Rollback', (group) => {
       const Schema = use('Schema')
       class User extends Schema {
         up () {
-          this.createTable('schema_users', (table) => {
-            table.increments()
-            table.string('username')
+          this.createCollection('schema_users', (collection) => {
+            collection.increments()
+            collection.string('username')
           })
         }
 

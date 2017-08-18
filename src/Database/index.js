@@ -92,14 +92,14 @@ class Database {
    * ```js
    * // WRONG
    * const schema = Database.schema
-   * schema.createTable('users')
-   * schema.createTable('profiles')
+   * schema.createCollection('users')
+   * schema.createCollection('profiles')
    * ```
    *
    * ```js
    * // RIGHT
-   * Database.schema.createTable('users')
-   * Database.schema.createTable('profiles')
+   * Database.schema.createCollection('users')
+   * Database.schema.createCollection('profiles')
    * ```
    *
    * @attribute schema
@@ -107,7 +107,14 @@ class Database {
    * @return {Object}
    */
   get schema () {
-    return this.mquery.schema
+    return {
+      createCollection: async () => {
+
+      },
+      dropCollection: async () => {
+
+      }
+    }
   }
 
   /**

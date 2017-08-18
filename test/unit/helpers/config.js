@@ -7,7 +7,7 @@
 */
 const mongodbConnections = require('./mongodbConnections')
 const get = function (key, hasPrefix) {
-  if (key === 'database.migrationsTable') {
+  if (key === 'database.migrationsCollection') {
     return 'adonis_migrations'
   }
 

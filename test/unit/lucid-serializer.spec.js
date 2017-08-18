@@ -33,18 +33,18 @@ test.group('Relations | Serializer', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Adonis/Src/Database'))
+    await helpers.createCollections(ioc.use('Adonis/Src/Database'))
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('users').remove()
-    await ioc.use('Adonis/Src/Database').table('my_users').remove()
-    await ioc.use('Adonis/Src/Database').table('profiles').remove()
-    await ioc.use('Adonis/Src/Database').table('pictures').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').remove()
+    await ioc.use('Adonis/Src/Database').collection('my_users').remove()
+    await ioc.use('Adonis/Src/Database').collection('profiles').remove()
+    await ioc.use('Adonis/Src/Database').collection('pictures').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Adonis/Src/Database'))
+    await helpers.dropCollections(ioc.use('Adonis/Src/Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -61,7 +61,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
     assert.instanceOf(users, VanillaSerializer)
@@ -73,7 +73,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
 
@@ -92,7 +92,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
 
@@ -113,7 +113,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
 
@@ -134,8 +134,8 @@ test.group('Relations | Serializer', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, profile_name: 'virk' }, { user_id: 2, profile_name: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, profile_name: 'virk' }, { user_id: 2, profile_name: 'nikk' }])
 
     const users = await User.query().with('profile').fetch()
 
@@ -166,9 +166,9 @@ test.group('Relations | Serializer', (group) => {
     Profile._bootIfNotBooted()
     Picture._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, profile_name: 'virk' }, { user_id: 2, profile_name: 'nikk' }])
-    await ioc.use('Database').table('pictures').insert({ profile_id: 1, storage_path: '/foo' })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, profile_name: 'virk' }, { user_id: 2, profile_name: 'nikk' }])
+    await ioc.use('Database').collection('pictures').insert({ profile_id: 1, storage_path: '/foo' })
 
     const users = await User.query().with('profile.picture').fetch()
 
@@ -183,7 +183,7 @@ test.group('Relations | Serializer', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.query().paginate()
 
@@ -209,8 +209,8 @@ test.group('Relations | Serializer', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, profile_name: 'virk' }, { user_id: 2, profile_name: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, profile_name: 'virk' }, { user_id: 2, profile_name: 'nikk' }])
 
     const users = await User.query().withCount('profile').paginate()
 

@@ -33,17 +33,17 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Adonis/Src/Database'))
+    await helpers.createCollections(ioc.use('Adonis/Src/Database'))
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('countries').remove()
-    await ioc.use('Adonis/Src/Database').table('users').remove()
-    await ioc.use('Adonis/Src/Database').table('posts').remove()
+    await ioc.use('Adonis/Src/Database').collection('countries').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').remove()
+    await ioc.use('Adonis/Src/Database').collection('posts').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Adonis/Src/Database'))
+    await helpers.dropCollections(ioc.use('Adonis/Src/Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -158,9 +158,9 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     Country._bootIfNotBooted()
     Post._bootIfNotBooted()
 
-    await ioc.use('Database').table('countries').insert({ name: 'India', id: 2 })
-    await ioc.use('Database').table('users').insert({ country_id: 2, id: 20, username: 'virk' })
-    await ioc.use('Database').table('posts').insert({ user_id: 20, title: 'Adonis 101' })
+    await ioc.use('Database').collection('countries').insert({ name: 'India', id: 2 })
+    await ioc.use('Database').collection('users').insert({ country_id: 2, id: 20, username: 'virk' })
+    await ioc.use('Database').collection('posts').insert({ user_id: 20, title: 'Adonis 101' })
 
     const country = await Country.find(2)
     const posts = await country.posts().fetch()
@@ -198,9 +198,9 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     Country._bootIfNotBooted()
     Post._bootIfNotBooted()
 
-    await ioc.use('Database').table('countries').insert({ name: 'India', id: 2 })
-    await ioc.use('Database').table('users').insert({ country_id: 2, id: 20, username: 'virk' })
-    await ioc.use('Database').table('posts').insert({ user_id: 20, title: 'Adonis 101' })
+    await ioc.use('Database').collection('countries').insert({ name: 'India', id: 2 })
+    await ioc.use('Database').collection('users').insert({ country_id: 2, id: 20, username: 'virk' })
+    await ioc.use('Database').collection('posts').insert({ user_id: 20, title: 'Adonis 101' })
 
     const countries = await Country.query().with('posts', (builder) => {
       builder.selectThrough('id')
@@ -237,7 +237,7 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     let countryQuery = null
     Country.onQuery((query) => (countryQuery = query))
 
-    await ioc.use('Database').table('countries').insert({ name: 'India', id: 2 })
+    await ioc.use('Database').collection('countries').insert({ name: 'India', id: 2 })
 
     await Country.query().has('posts').fetch()
     assert.equal(countryQuery.sql, helpers.formatQuery('select * from "countries" where exists (select * from "posts" inner join "users" on "users"."id" = "posts"."user_id" where countries.id = users.country_id)'))
@@ -266,7 +266,7 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     let countryQuery = null
     Country.onQuery((query) => (countryQuery = query))
 
-    await ioc.use('Database').table('countries').insert({ name: 'India', id: 2 })
+    await ioc.use('Database').collection('countries').insert({ name: 'India', id: 2 })
 
     await Country.query().has('posts', '>', 1).fetch()
     assert.equal(countryQuery.sql, helpers.formatQuery('select * from "countries" where (select count(*) from "posts" inner join "users" on "users"."id" = "posts"."user_id" where countries.id = users.country_id) > ?'))
@@ -295,9 +295,9 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     let countryQuery = null
     Country.onQuery((query) => (countryQuery = query))
 
-    await ioc.use('Database').table('countries').insert([{ name: 'India', id: 2 }, { name: 'UK', id: 3 }])
-    await ioc.use('Database').table('users').insert([{ country_id: 2, id: 20, username: 'virk' }, { country_id: 3, username: 'nikk' }])
-    await ioc.use('Database').table('posts').insert({ user_id: 20, title: 'Adonis 101' })
+    await ioc.use('Database').collection('countries').insert([{ name: 'India', id: 2 }, { name: 'UK', id: 3 }])
+    await ioc.use('Database').collection('users').insert([{ country_id: 2, id: 20, username: 'virk' }, { country_id: 3, username: 'nikk' }])
+    await ioc.use('Database').collection('posts').insert({ user_id: 20, title: 'Adonis 101' })
 
     const countries = await Country.query().has('posts').fetch()
     assert.equal(countries.size(), 1)
@@ -328,9 +328,9 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
     let countryQuery = null
     Country.onQuery((query) => (countryQuery = query))
 
-    await ioc.use('Database').table('countries').insert([{ name: 'India', id: 2 }, { name: 'UK', id: 3 }])
-    await ioc.use('Database').table('users').insert([{ country_id: 2, id: 20, username: 'virk' }, { country_id: 3, username: 'nikk' }])
-    await ioc.use('Database').table('posts').insert({ user_id: 20, title: 'Adonis 101' })
+    await ioc.use('Database').collection('countries').insert([{ name: 'India', id: 2 }, { name: 'UK', id: 3 }])
+    await ioc.use('Database').collection('users').insert([{ country_id: 2, id: 20, username: 'virk' }, { country_id: 3, username: 'nikk' }])
+    await ioc.use('Database').collection('posts').insert({ user_id: 20, title: 'Adonis 101' })
 
     const countries = await Country.query().has('posts').paginate()
     assert.equal(countries.size(), 1)
@@ -352,17 +352,17 @@ test.group('Relations | Has Many Through - Belongs To', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Adonis/Src/Database'))
+    await helpers.createCollections(ioc.use('Adonis/Src/Database'))
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('countries').remove()
-    await ioc.use('Adonis/Src/Database').table('users').remove()
-    await ioc.use('Adonis/Src/Database').table('profiles').remove()
+    await ioc.use('Adonis/Src/Database').collection('countries').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').remove()
+    await ioc.use('Adonis/Src/Database').collection('profiles').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Adonis/Src/Database'))
+    await helpers.dropCollections(ioc.use('Adonis/Src/Database'))
     try {
       await fs.remove(path.join(__dirname, './tmp'))
     } catch (error) {
@@ -420,14 +420,14 @@ test.group('Relations | Has Many Through - Belongs To', (group) => {
     Country._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('countries').insert([{ name: 'India', id: 2 }, { name: 'Uk', id: 3 }])
+    await ioc.use('Database').collection('countries').insert([{ name: 'India', id: 2 }, { name: 'Uk', id: 3 }])
 
-    await ioc.use('Database').table('users').insert([
+    await ioc.use('Database').collection('users').insert([
       { username: 'virk' },
       { username: 'nikk' }
     ])
 
-    await ioc.use('Database').table('profiles').insert([
+    await ioc.use('Database').collection('profiles').insert([
       { user_id: 1, profile_name: 'Virk', country_id: 2 },
       { user_id: 1, profile_name: 'Virk', country_id: 3 },
       { user_id: 2, profile_name: 'Nikk', country_id: 2 }
@@ -464,14 +464,14 @@ test.group('Relations | Has Many Through - Belongs To', (group) => {
     Country._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('countries').insert([{ name: 'India', id: 2 }, { name: 'Uk', id: 3 }])
+    await ioc.use('Database').collection('countries').insert([{ name: 'India', id: 2 }, { name: 'Uk', id: 3 }])
 
-    await ioc.use('Database').table('users').insert([
+    await ioc.use('Database').collection('users').insert([
       { username: 'virk' },
       { username: 'nikk' }
     ])
 
-    await ioc.use('Database').table('profiles').insert([
+    await ioc.use('Database').collection('profiles').insert([
       { user_id: 1, profile_name: 'Virk', country_id: 2 },
       { user_id: 1, profile_name: 'Virk', country_id: 3 },
       { user_id: 2, profile_name: 'Nikk', country_id: 2 }
@@ -497,18 +497,18 @@ test.group('Relations | Has Many Through - Belongs To Many', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Adonis/Src/Database'))
+    await helpers.createCollections(ioc.use('Adonis/Src/Database'))
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('categories').remove()
-    await ioc.use('Adonis/Src/Database').table('sections').remove()
-    await ioc.use('Adonis/Src/Database').table('posts').remove()
-    await ioc.use('Adonis/Src/Database').table('post_section').remove()
+    await ioc.use('Adonis/Src/Database').collection('categories').remove()
+    await ioc.use('Adonis/Src/Database').collection('sections').remove()
+    await ioc.use('Adonis/Src/Database').collection('posts').remove()
+    await ioc.use('Adonis/Src/Database').collection('post_section').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Adonis/Src/Database'))
+    await helpers.dropCollections(ioc.use('Adonis/Src/Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -567,13 +567,13 @@ test.group('Relations | Has Many Through - Belongs To Many', (group) => {
     Section._bootIfNotBooted()
     Post._bootIfNotBooted()
 
-    await ioc.use('Database').table('categories').insert([{ name: 'Sql' }, { name: 'Javascript' }])
-    await ioc.use('Database').table('sections').insert([
+    await ioc.use('Database').collection('categories').insert([{ name: 'Sql' }, { name: 'Javascript' }])
+    await ioc.use('Database').collection('sections').insert([
       { name: 'Loops', category_id: 2 },
       { name: 'Conditionals', category_id: 2 }
     ])
-    await ioc.use('Database').table('posts').insert({ title: 'For each loop' })
-    await ioc.use('Database').table('post_section').insert({ post_id: 1, section_id: 1 })
+    await ioc.use('Database').collection('posts').insert({ title: 'For each loop' })
+    await ioc.use('Database').collection('post_section').insert({ post_id: 1, section_id: 1 })
 
     const js = await Category.find(2)
     const posts = await js.posts().fetch()
@@ -601,17 +601,17 @@ test.group('Relations | Has Many Through - Belongs To Many', (group) => {
     Section._bootIfNotBooted()
     Post._bootIfNotBooted()
 
-    await ioc.use('Database').table('categories').insert([{ name: 'Sql' }, { name: 'Javascript' }])
+    await ioc.use('Database').collection('categories').insert([{ name: 'Sql' }, { name: 'Javascript' }])
 
-    await ioc.use('Database').table('sections').insert([
+    await ioc.use('Database').collection('sections').insert([
       { name: 'Loops', category_id: 2 },
       { name: 'Conditionals', category_id: 2 },
       { name: 'Transactions', category_id: 1 }
     ])
 
-    await ioc.use('Database').table('posts').insert([{ title: 'For each loop' }, { title: 'Transactions 101' }])
+    await ioc.use('Database').collection('posts').insert([{ title: 'For each loop' }, { title: 'Transactions 101' }])
 
-    await ioc.use('Database').table('post_section').insert([
+    await ioc.use('Database').collection('post_section').insert([
       { post_id: 1, section_id: 1 },
       { post_id: 2, section_id: 3 }
     ])
@@ -648,17 +648,17 @@ test.group('Relations | Has Many Through - Belongs To Many', (group) => {
     let postsQuery = null
     Post.onQuery((query) => (postsQuery = query))
 
-    await ioc.use('Database').table('categories').insert([{ name: 'Sql' }, { name: 'Javascript' }])
+    await ioc.use('Database').collection('categories').insert([{ name: 'Sql' }, { name: 'Javascript' }])
 
-    await ioc.use('Database').table('sections').insert([
+    await ioc.use('Database').collection('sections').insert([
       { name: 'Loops', category_id: 2, is_active: true },
       { name: 'Conditionals', category_id: 2, is_active: true },
       { name: 'Transactions', category_id: 1 }
     ])
 
-    await ioc.use('Database').table('posts').insert([{ title: 'For each loop' }, { title: 'Transactions 101' }])
+    await ioc.use('Database').collection('posts').insert([{ title: 'For each loop' }, { title: 'Transactions 101' }])
 
-    await ioc.use('Database').table('post_section').insert([
+    await ioc.use('Database').collection('post_section').insert([
       { post_id: 1, section_id: 1 },
       { post_id: 2, section_id: 3 }
     ])

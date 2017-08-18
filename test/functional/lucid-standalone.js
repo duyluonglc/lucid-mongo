@@ -23,7 +23,7 @@ const { db, Models, Model } = require('../../')({
 test.group('Database', (group) => {
   group.before(async () => {
     await fs.ensureDir(path.join(__dirname, '../unit/tmp'))
-    await helpers.createTables(db)
+    await helpers.createCollections(db)
   })
 
   group.beforeEach(() => {
@@ -31,12 +31,12 @@ test.group('Database', (group) => {
   })
 
   group.afterEach(async () => {
-    await db.table('users').truncate()
-    await db.table('profiles').truncate()
+    await db.collection('users').remove()
+    await db.collection('profiles').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(db)
+    await helpers.dropCollections(db)
     try {
       await fs.remove(path.join(__dirname, './tmp'))
     } catch (error) {
@@ -47,7 +47,7 @@ test.group('Database', (group) => {
   }).timeout(0)
 
   test('should be able to make queries via database provider', async (assert) => {
-    const users = await db.table('users')
+    const users = await db.collection('users')
     assert.deepEqual(users, [])
   })
 
@@ -72,8 +72,8 @@ test.group('Database', (group) => {
     Models.add('Profile', Profile)
     Models.add('User', User)
 
-    await db.table('users').insert({ username: 'virk' })
-    await db.table('profiles').insert({ profile_name: 'virk', user_id: 1 })
+    await db.collection('users').insert({ username: 'virk' })
+    await db.collection('profiles').insert({ profile_name: 'virk', user_id: 1 })
 
     const user = await Models.get('User').find(1)
     assert.instanceOf(user, User)

@@ -33,17 +33,17 @@ test.group('Relations | Has Many', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Adonis/Src/Database'))
+    await helpers.createCollections(ioc.use('Adonis/Src/Database'))
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('users').remove()
-    await ioc.use('Adonis/Src/Database').table('cars').remove()
-    await ioc.use('Adonis/Src/Database').table('parts').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').remove()
+    await ioc.use('Adonis/Src/Database').collection('cars').remove()
+    await ioc.use('Adonis/Src/Database').collection('parts').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Adonis/Src/Database'))
+    await helpers.dropCollections(ioc.use('Adonis/Src/Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -70,8 +70,8 @@ test.group('Relations | Has Many', (group) => {
     let carQuery = null
     Car.onQuery((query) => (carQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
@@ -100,8 +100,8 @@ test.group('Relations | Has Many', (group) => {
     let carQuery = null
     Car.onQuery((query) => (carQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
@@ -130,8 +130,8 @@ test.group('Relations | Has Many', (group) => {
     let carQuery = null
     Car.onQuery((query) => (carQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
@@ -160,8 +160,8 @@ test.group('Relations | Has Many', (group) => {
     let carQuery = null
     Car.onQuery((query) => (carQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
@@ -192,7 +192,7 @@ test.group('Relations | Has Many', (group) => {
     let carQuery = null
     Car.onQuery((query) => (carQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const users = await User.query().with('cars').fetch()
     const user = users.first()
     assert.equal(user.getRelated('cars').size(), 0)
@@ -213,8 +213,8 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 2, name: 'audi', model: '2001' }
     ])
@@ -238,8 +238,8 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 2, name: 'audi', model: '2001' }
     ])
@@ -263,8 +263,8 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'merc', model: '1990' },
       { user_id: 2, name: 'audi', model: '2001' }
     ])
@@ -300,12 +300,12 @@ test.group('Relations | Has Many', (group) => {
     Car.onQuery((query) => (carQuery = query))
     Part.onQuery((query) => (partQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
-    await ioc.use('Database').table('parts').insert([
+    await ioc.use('Database').collection('parts').insert([
       { car_id: 1, part_name: 'wheels' },
       { car_id: 1, part_name: 'engine' },
       { car_id: 2, part_name: 'wheels' },
@@ -345,12 +345,12 @@ test.group('Relations | Has Many', (group) => {
     Car.onQuery((query) => (carQuery = query))
     Part.onQuery((query) => (partQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
-    await ioc.use('Database').table('parts').insert([
+    await ioc.use('Database').collection('parts').insert([
       { car_id: 1, part_name: 'wheels' },
       { car_id: 1, part_name: 'engine' },
       { car_id: 2, part_name: 'wheels' },
@@ -390,12 +390,12 @@ test.group('Relations | Has Many', (group) => {
     Car.onQuery((query) => (carQuery = query))
     Part.onQuery((query) => (partQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
-    await ioc.use('Database').table('parts').insert([
+    await ioc.use('Database').collection('parts').insert([
       { car_id: 1, part_name: 'wheels' },
       { car_id: 1, part_name: 'engine' },
       { car_id: 2, part_name: 'wheels' },
@@ -428,8 +428,8 @@ test.group('Relations | Has Many', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
@@ -455,8 +455,8 @@ test.group('Relations | Has Many', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' }
     ])
@@ -482,8 +482,8 @@ test.group('Relations | Has Many', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' },
       { user_id: 2, name: 'audi', model: '2001' }
@@ -510,8 +510,8 @@ test.group('Relations | Has Many', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' },
       { user_id: 2, name: 'audi', model: '2001' }
@@ -540,8 +540,8 @@ test.group('Relations | Has Many', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' },
       { user_id: 2, name: 'audi', model: '2001' }
@@ -570,8 +570,8 @@ test.group('Relations | Has Many', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' },
       { user_id: 2, name: 'audi', model: '2001' }
@@ -597,8 +597,8 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' },
       { user_id: 2, name: 'audi', model: '2001' }
@@ -622,8 +622,8 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('cars').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('cars').insert([
       { user_id: 1, name: 'mercedes', model: '1990' },
       { user_id: 1, name: 'audi', model: '2001' },
       { user_id: 2, name: 'audi', model: '2001' }
@@ -830,7 +830,7 @@ test.group('Relations | Has Many', (group) => {
 
     await user.cars().createMany([{ name: 'mercedes', model: '1992' }, { name: 'ferrari', model: '2002' }])
     await user.cars().delete()
-    const cars = await ioc.use('Database').table('cars')
+    const cars = await ioc.use('Database').collection('cars')
     assert.lengthOf(cars, 0)
     assert.equal(carQuery.sql, helpers.formatQuery('delete from "cars" where "user_id" = ?'))
   })
@@ -855,7 +855,7 @@ test.group('Relations | Has Many', (group) => {
 
     await user.cars().createMany([{ name: 'mercedes', model: '1992' }, { name: 'ferrari', model: '2002' }])
     await user.cars().where('name', 'mercedes').delete()
-    const cars = await ioc.use('Database').table('cars')
+    const cars = await ioc.use('Database').collection('cars')
     assert.lengthOf(cars, 1)
     assert.equal(cars[0].name, 'ferrari')
     assert.equal(carQuery.sql, helpers.formatQuery('delete from "cars" where "name" = ? and "user_id" = ?'))

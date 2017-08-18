@@ -31,17 +31,17 @@ test.group('Schema', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Database'))
+    await helpers.createCollections(ioc.use('Database'))
     setupResolver()
   })
 
   group.afterEach(async () => {
-    await ioc.use('Database').schema.dropTableIfExists('schema_users')
-    await ioc.use('Database').schema.dropTableIfExists('schema_profiles')
+    await ioc.use('Database').schema.dropCollectionIfExists('schema_users')
+    await ioc.use('Database').schema.dropCollectionIfExists('schema_profiles')
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Database'))
+    await helpers.dropCollections(ioc.use('Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -57,51 +57,51 @@ test.group('Schema', (group) => {
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     const fn = function () {}
-    userSchema.createTable('users', fn)
-    assert.deepEqual(userSchema._deferredActions, [{ name: 'createTable', args: ['users', fn] }])
+    userSchema.createCollection('users', fn)
+    assert.deepEqual(userSchema._deferredActions, [{ name: 'createCollection', args: ['users', fn] }])
   })
 
-  test('add deferred action for createTableIfNotExists', (assert) => {
+  test('add deferred action for createCollectionIfNotExists', (assert) => {
     class UserSchema extends Schema {
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     const fn = function () {}
-    userSchema.createTableIfNotExists('users', fn)
-    assert.deepEqual(userSchema._deferredActions, [{ name: 'createTableIfNotExists', args: ['users', fn] }])
+    userSchema.createCollectionIfNotExists('users', fn)
+    assert.deepEqual(userSchema._deferredActions, [{ name: 'createCollectionIfNotExists', args: ['users', fn] }])
   })
 
-  test('add deferred action for renameTable', (assert) => {
+  test('add deferred action for renameCollection', (assert) => {
     class UserSchema extends Schema {
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     const fn = function () {}
-    userSchema.renameTable('users', fn)
-    assert.deepEqual(userSchema._deferredActions, [{ name: 'renameTable', args: ['users', fn] }])
+    userSchema.renameCollection('users', fn)
+    assert.deepEqual(userSchema._deferredActions, [{ name: 'renameCollection', args: ['users', fn] }])
   })
 
-  test('add deferred action for table', (assert) => {
+  test('add deferred action for collection', (assert) => {
     class UserSchema extends Schema {
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     const fn = function () {}
     userSchema.alter('users', fn)
-    assert.deepEqual(userSchema._deferredActions, [{ name: 'table', args: ['users', fn] }])
+    assert.deepEqual(userSchema._deferredActions, [{ name: 'collection', args: ['users', fn] }])
   })
 
-  test('add deferred action for dropTableIfExists', (assert) => {
+  test('add deferred action for dropCollectionIfExists', (assert) => {
     class UserSchema extends Schema {
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     userSchema.dropIfExists('users')
-    assert.deepEqual(userSchema._deferredActions, [{ name: 'dropTableIfExists', args: ['users'] }])
+    assert.deepEqual(userSchema._deferredActions, [{ name: 'dropCollectionIfExists', args: ['users'] }])
   })
 
-  test('add deferred action for rename table', (assert) => {
+  test('add deferred action for rename collection', (assert) => {
     class UserSchema extends Schema {
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     userSchema.rename('users', 'my_users')
-    assert.deepEqual(userSchema._deferredActions, [{ name: 'renameTable', args: ['users', 'my_users'] }])
+    assert.deepEqual(userSchema._deferredActions, [{ name: 'renameCollection', args: ['users', 'my_users'] }])
   })
 
   test('should have access to knex fn', async (assert) => {
@@ -114,35 +114,35 @@ test.group('Schema', (group) => {
   test('execute schema actions in sequence', async (assert) => {
     class UserSchema extends Schema {
       up () {
-        this.createTable('schema_users', (table) => {
-          table.increments()
+        this.createCollection('schema_users', (collection) => {
+          collection.increments()
         })
 
-        this.createTable('schema_profile', (table) => {
-          table.increments()
+        this.createCollection('schema_profile', (collection) => {
+          collection.increments()
         })
       }
     }
     const userSchema = new UserSchema(ioc.use('Database'))
     userSchema.up()
     await userSchema.executeActions()
-    const hasUsers = await userSchema.hasTable('schema_users')
-    const hasProfile = await userSchema.hasTable('schema_profile')
+    const hasUsers = await userSchema.hasCollection('schema_users')
+    const hasProfile = await userSchema.hasCollection('schema_profile')
     assert.isTrue(hasUsers)
     assert.isTrue(hasProfile)
-    await ioc.use('Database').schema.dropTable('schema_users')
-    await ioc.use('Database').schema.dropTable('schema_profile')
+    await ioc.use('Database').schema.dropCollection('schema_users')
+    await ioc.use('Database').schema.dropCollection('schema_profile')
   })
 
   test('rollback schema actions on exception', async (assert) => {
     class UserSchema extends Schema {
       up () {
-        this.createTable('schema_users', (table) => {
-          table.increments()
+        this.createCollection('schema_users', (collection) => {
+          collection.increments()
         })
 
-        this.createTable('users', (table) => {
-          table.increments()
+        this.createCollection('users', (collection) => {
+          collection.increments()
         })
       }
     }
@@ -155,7 +155,7 @@ test.group('Schema', (group) => {
     } catch ({ message }) {
       assert.include(message, helpers.formatQuery('already exists'))
       if (process.env.DB !== 'mysql') {
-        const hasSchemaUsers = await ioc.use('Database').schema.hasTable('schema_users')
+        const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
         assert.isFalse(hasSchemaUsers)
       }
     }
@@ -164,12 +164,12 @@ test.group('Schema', (group) => {
   test('get actions sql over executing them', async (assert) => {
     class UserSchema extends Schema {
       up () {
-        this.createTable('schema_users', (table) => {
-          table.increments()
+        this.createCollection('schema_users', (collection) => {
+          collection.increments()
         })
 
-        this.createTable('users', (table) => {
-          table.increments()
+        this.createCollection('users', (collection) => {
+          collection.increments()
         })
       }
     }
@@ -178,7 +178,7 @@ test.group('Schema', (group) => {
     userSchema.up()
     const queries = await userSchema.executeActions(true)
     assert.lengthOf(queries, 2)
-    const hasSchemaUsers = await ioc.use('Database').schema.hasTable('schema_users')
+    const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
     assert.isFalse(hasSchemaUsers)
   })
 })

@@ -10,7 +10,7 @@
 */
 
 /**
- * The schema is used to define SQL table schemas. This makes
+ * The schema is used to define SQL collection schemas. This makes
  * use of all the methods from http://knexjs.org/#Schema
  *
  * @binding Adonis/Src/Schema
@@ -61,102 +61,102 @@ class Schema {
   }
 
   /**
-   * Create a new table.
+   * Create a new collection.
    *
    * NOTE: This action is deferred
    *
-   * @method createTable
+   * @method createCollection
    *
-   * @param  {String}    tableName
+   * @param  {String}    collectionName
    * @param  {Function}  callback
    *
    * @chainable
    */
-  createTable (tableName, callback) {
-    this._deferredActions.push({ name: 'createTable', args: [tableName, callback] })
+  createCollection (collectionName, callback) {
+    this._deferredActions.push({ name: 'createCollection', args: [collectionName, callback] })
     return this
   }
 
   /**
-   * Create a new table if not already exists.
+   * Create a new collection if not already exists.
    *
    * NOTE: This action is deferred
    *
-   * @method createTableIfNotExists
+   * @method createCollectionIfNotExists
    *
-   * @param  {String}    tableName
+   * @param  {String}    collectionName
    * @param  {Function}  callback
    *
    * @chainable
    */
-  createTableIfNotExists (tableName, callback) {
-    this._deferredActions.push({ name: 'createTableIfNotExists', args: [tableName, callback] })
+  createCollectionIfNotExists (collectionName, callback) {
+    this._deferredActions.push({ name: 'createCollectionIfNotExists', args: [collectionName, callback] })
     return this
   }
 
   /**
-   * Rename existing table.
+   * Rename existing collection.
    *
    * NOTE: This action is deferred
    *
-   * @method renameTable
+   * @method renameCollection
    *
-   * @param  {String}    fromTable
-   * @param  {String}    toTable
+   * @param  {String}    fromCollection
+   * @param  {String}    toCollection
    *
    * @chainable
    */
-  renameTable (fromTable, toTable) {
-    this._deferredActions.push({ name: 'renameTable', args: [fromTable, toTable] })
+  renameCollection (fromCollection, toCollection) {
+    this._deferredActions.push({ name: 'renameCollection', args: [fromCollection, toCollection] })
     return this
   }
 
   /**
-   * Drop existing table.
+   * Drop existing collection.
    *
    * NOTE: This action is deferred
    *
-   * @method dropTable
+   * @method dropCollection
    *
-   * @param  {String}    tableName
+   * @param  {String}    collectionName
    *
    * @chainable
    */
-  dropTable (tableName) {
-    this._deferredActions.push({ name: 'dropTable', args: [tableName] })
+  dropCollection (collectionName) {
+    this._deferredActions.push({ name: 'dropCollection', args: [collectionName] })
     return this
   }
 
   /**
-   * Drop table only if it exists.
+   * Drop collection only if it exists.
    *
    * NOTE: This action is deferred
    *
-   * @method dropTableIfExists
+   * @method dropCollectionIfExists
    *
-   * @param  {String}    tableName
+   * @param  {String}    collectionName
    *
    * @chainable
    */
-  dropTableIfExists (tableName) {
-    this._deferredActions.push({ name: 'dropTableIfExists', args: [tableName] })
+  dropCollectionIfExists (collectionName) {
+    this._deferredActions.push({ name: 'dropCollectionIfExists', args: [collectionName] })
     return this
   }
 
   /**
-   * Select table for altering it.
+   * Select collection for altering it.
    *
    * NOTE: This action is deferred
    *
-   * @method table
+   * @method collection
    *
-   * @param  {String}    tableName
+   * @param  {String}    collectionName
    * @param  {Function}  callback
    *
    * @chainable
    */
-  table (tableName, callback) {
-    this._deferredActions.push({ name: 'table', args: [tableName, callback] })
+  collection (collectionName, callback) {
+    this._deferredActions.push({ name: 'collection', args: [collectionName, callback] })
     return this
   }
 
@@ -175,78 +175,78 @@ class Schema {
   }
 
   /**
-   * Returns a boolean indicating if a table
+   * Returns a boolean indicating if a collection
    * already exists or not
    *
-   * @method hasTable
+   * @method hasCollection
    *
-   * @param  {String}  tableName
+   * @param  {String}  collectionName
    *
    * @return {Boolean}
    */
-  hasTable (tableName) {
-    return this.schema.hasTable(tableName)
+  hasCollection (collectionName) {
+    return this.schema.hasCollection(collectionName)
   }
 
   /* istanbul ignore next */
   /**
    * Returns a boolean indicating if a column exists
-   * inside a table or not.
+   * inside a collection or not.
    *
    * @method hasColumn
    *
-   * @param  {String}  tableName
+   * @param  {String}  collectionName
    * @param  {String}  columnName
    *
    * @return {Boolean}
    */
-  hasColumn (tableName, columnName) {
-    return this.schema.hasTable(tableName, columnName)
+  hasColumn (collectionName, columnName) {
+    return this.schema.hasCollection(collectionName, columnName)
   }
 
   /**
-   * Alias for @ref('Schema.table')
+   * Alias for @ref('Schema.collection')
    *
    * @method alter
    */
   alter (...args) {
-    return this.table(...args)
+    return this.collection(...args)
   }
 
   /**
-   * Alias for @ref('Schema.createTable')
+   * Alias for @ref('Schema.createCollection')
    *
    * @method create
    */
   create (...args) {
-    return this.createTable(...args)
+    return this.createCollection(...args)
   }
 
   /**
-   * Alias for @ref('Schema.dropTable')
+   * Alias for @ref('Schema.dropCollection')
    *
    * @method drop
    */
   drop (...args) {
-    return this.dropTable(...args)
+    return this.dropCollection(...args)
   }
 
   /**
-   * Alias for @ref('Schema.dropTableIfExists')
+   * Alias for @ref('Schema.dropCollectionIfExists')
    *
    * @method dropIfExists
    */
   dropIfExists (...args) {
-    return this.dropTableIfExists(...args)
+    return this.dropCollectionIfExists(...args)
   }
 
   /**
-   * Alias for @ref('Schema.renameTable')
+   * Alias for @ref('Schema.renameCollection')
    *
    * @method rename
    */
   rename (...args) {
-    return this.renameTable(...args)
+    return this.renameCollection(...args)
   }
 
   /**

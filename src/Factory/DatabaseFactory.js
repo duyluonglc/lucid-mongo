@@ -21,8 +21,8 @@ const { ioc } = require('../../lib/iocResolver')
  * @constructor
  */
 class DatabaseFactory {
-  constructor (tableName, dataCallback) {
-    this.tableName = tableName
+  constructor (collectionName, dataCallback) {
+    this.collectionName = collectionName
     this.dataCallback = dataCallback
     this._returningColumn = null
     this._connection = null
@@ -80,17 +80,17 @@ class DatabaseFactory {
   }
 
   /**
-   * Set table to used for the database
+   * Set collection to used for the database
    * operations
    *
-   * @method table
+   * @method collection
    *
-   * @param  {String} tableName
+   * @param  {String} collectionName
    *
    * @chainable
    */
-  table (tableName) {
-    this.tableName = tableName
+  collection (collectionName) {
+    this.collectionName = collectionName
     return this
   }
 
@@ -195,7 +195,7 @@ class DatabaseFactory {
   }
 
   /**
-   * Truncate the database table
+   * Truncate the database collection
    *
    * @method reset
    * @async
@@ -203,7 +203,7 @@ class DatabaseFactory {
    * @return {Number}
    */
   async reset () {
-    return this._getQueryBuilder().truncate()
+    return this._getQueryBuilder().remove()
   }
 }
 

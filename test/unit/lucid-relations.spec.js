@@ -33,19 +33,19 @@ test.group('Relations | HasOne', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Adonis/Src/Database'))
+    await helpers.createCollections(ioc.use('Adonis/Src/Database'))
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('users').remove()
-    await ioc.use('Adonis/Src/Database').table('profiles').remove()
-    await ioc.use('Adonis/Src/Database').table('pictures').remove()
-    await ioc.use('Adonis/Src/Database').table('identities').remove()
-    await ioc.use('Adonis/Src/Database').table('cars').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').remove()
+    await ioc.use('Adonis/Src/Database').collection('profiles').remove()
+    await ioc.use('Adonis/Src/Database').collection('pictures').remove()
+    await ioc.use('Adonis/Src/Database').collection('identities').remove()
+    await ioc.use('Adonis/Src/Database').collection('cars').remove()
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Adonis/Src/Database'))
+    await helpers.dropCollections(ioc.use('Adonis/Src/Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -72,8 +72,8 @@ test.group('Relations | HasOne', (group) => {
     let profileQuery = null
     Profile.onQuery((query) => (profileQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk' })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk' })
     const user = new User()
     user.id = 1
     user.$persisted = true
@@ -103,7 +103,7 @@ test.group('Relations | HasOne', (group) => {
     const user = new User()
     user.username = 'virk'
     await user.save()
-    await ioc.use('Database').table('profiles').insert({ user_id: user.id, profile_name: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: user.id, profile_name: 'virk' })
     const profile = await user.profile().fetch()
     assert.instanceOf(profile, Profile)
     assert.equal(profileQuery.sql, helpers.formatQuery('select * from "profiles" where "user_id" = ? limit ?'))
@@ -125,7 +125,7 @@ test.group('Relations | HasOne', (group) => {
     Profile._bootIfNotBooted()
 
     const user = new User()
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk' })
     try {
       await user.profile().fetch()
     } catch ({ message }) {
@@ -152,7 +152,7 @@ test.group('Relations | HasOne', (group) => {
     const user = new User()
     user.username = 'virk'
     await user.save()
-    await ioc.use('Database').table('profiles').insert({ user_id: user.id, profile_name: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: user.id, profile_name: 'virk' })
     await user.profile().where('profile_name', 'virk').update({ profile_name: 'hv' })
     assert.equal(profileQuery.sql, helpers.formatQuery('update "profiles" set "profile_name" = ?, "updated_at" = ? where "profile_name" = ? and "user_id" = ?'))
     assert.deepEqual(profileQuery.bindings, ['hv', profileQuery.bindings[1], 'virk', 1])
@@ -177,7 +177,7 @@ test.group('Relations | HasOne', (group) => {
     const user = new User()
     user.username = 'virk'
     await user.save()
-    await ioc.use('Database').table('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
     await user.profile().increment('likes', 1)
     assert.equal(profileQuery.sql, helpers.formatQuery('update "profiles" set "likes" = "likes" + 1 where "user_id" = ?'))
   })
@@ -201,7 +201,7 @@ test.group('Relations | HasOne', (group) => {
     const user = new User()
     user.username = 'virk'
     await user.save()
-    await ioc.use('Database').table('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
     await user.load('profile')
     assert.instanceOf(user.$relations.profile, Profile)
     assert.equal(profileQuery.sql, helpers.formatQuery('select * from "profiles" where "user_id" = ? limit ?'))
@@ -226,7 +226,7 @@ test.group('Relations | HasOne', (group) => {
     const user = new User()
     user.username = 'virk'
     await user.save()
-    await ioc.use('Database').table('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
     await user.load('profile', (builder) => {
       builder.where('profile_name', 'nikk')
     })
@@ -258,8 +258,8 @@ test.group('Relations | HasOne', (group) => {
     const user = new User()
     user.username = 'virk'
     await user.save()
-    await ioc.use('Database').table('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
-    await ioc.use('Database').table('identities').insert({ user_id: user.id })
+    await ioc.use('Database').collection('profiles').insert({ user_id: user.id, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('identities').insert({ user_id: user.id })
 
     await user.load('profile')
     await user.load('identities')
@@ -419,8 +419,8 @@ test.group('Relations | HasOne', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    const user = await ioc.use('Database').table('users').insert({ username: 'virk' }).returning('id')
-    await ioc.use('Database').table('profiles').insert({ user_id: user[0], profile_name: 'virk', likes: 3 })
+    const user = await ioc.use('Database').collection('users').insert({ username: 'virk' }).returning('id')
+    await ioc.use('Database').collection('profiles').insert({ user_id: user[0], profile_name: 'virk', likes: 3 })
 
     const result = await User.query().with('profile').fetch()
     assert.instanceOf(result.first().getRelated('profile'), Profile)
@@ -443,8 +443,8 @@ test.group('Relations | HasOne', (group) => {
 
     Profile.onQuery((query) => (profileQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
       { user_id: 1, profile_name: 'virk', likes: 3 },
       { user_id: 2, profile_name: 'nikk', likes: 2 }
     ])
@@ -474,8 +474,8 @@ test.group('Relations | HasOne', (group) => {
     let profileQuery = null
     Profile.onQuery((query) => (profileQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
       { user_id: 1, profile_name: 'virk', likes: 3 },
       { user_id: 2, profile_name: 'nikk', likes: 2 }
     ])
@@ -515,9 +515,9 @@ test.group('Relations | HasOne', (group) => {
     Profile.onQuery((query) => (profileQuery = query))
     Picture.onQuery((query) => (pictureQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
-    await ioc.use('Database').table('pictures').insert({ profile_id: 1, storage_path: '/foo' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('pictures').insert({ profile_id: 1, storage_path: '/foo' })
 
     const user = await User.query().with('profile.picture').fetch()
     assert.instanceOf(user.first().getRelated('profile').getRelated('picture'), Picture)
@@ -550,9 +550,9 @@ test.group('Relations | HasOne', (group) => {
     Profile.onQuery((query) => (profileQuery = query))
     Picture.onQuery((query) => (pictureQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
-    await ioc.use('Database').table('pictures').insert({ profile_id: 1, storage_path: '/foo' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('pictures').insert({ profile_id: 1, storage_path: '/foo' })
 
     const user = await User.query().with('profile.picture', (builder) => {
       builder.where('storage_path', '/bar')
@@ -587,9 +587,9 @@ test.group('Relations | HasOne', (group) => {
     Profile.onQuery((query) => (profileQuery = query))
     Picture.onQuery((query) => (pictureQuery = query))
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
-    await ioc.use('Database').table('pictures').insert({ profile_id: 1, storage_path: '/foo' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('pictures').insert({ profile_id: 1, storage_path: '/foo' })
 
     const user = await User.query().with('profile', (builder) => {
       builder.where('likes', '>', 3).with('picture')
@@ -615,8 +615,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const users = await User.query().has('profile').fetch()
     assert.equal(users.size(), 1)
@@ -646,9 +646,9 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
-    await ioc.use('Database').table('pictures').insert({ profile_id: 1, storage_path: 'foo' })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('pictures').insert({ profile_id: 1, storage_path: 'foo' })
 
     const users = await User.query().has('profile.picture').fetch()
     assert.equal(users.size(), 1)
@@ -678,8 +678,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const users = await User.query().has('profile.picture').fetch()
     assert.equal(users.size(), 0)
@@ -719,8 +719,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const users = await User.query().has('profile', '>', 1).fetch()
     assert.equal(users.size(), 0)
@@ -751,8 +751,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const users = await User.query().has('profile.picture', '>', 1).fetch()
     assert.equal(users.size(), 0)
@@ -784,8 +784,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('identities').insert({ user_id: 1 })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('identities').insert({ user_id: 1 })
 
     const users = await User.query().has('profile').orHas('identity').fetch()
     assert.equal(users.size(), 1)
@@ -812,8 +812,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1 })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1 })
 
     const users = await User.query().hasProfile().fetch()
     assert.equal(users.size(), 1)
@@ -836,8 +836,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
 
     const users = await User.query().whereHas('profile', function (builder) {
       builder.where('likes', '>', 2)
@@ -862,8 +862,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
 
     const users = await User.query().whereHas('profile', function (builder) {
       builder.where('likes', '>', 2)
@@ -888,8 +888,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
 
     const users = await User.query().whereDoesntHave('profile', function (builder) {
       builder.where('likes', '>', 2)
@@ -923,9 +923,9 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
-    await ioc.use('Database').table('identities').insert([{ user_id: 1, is_active: false }, { user_id: 2, is_active: true }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
+    await ioc.use('Database').collection('identities').insert([{ user_id: 1, is_active: false }, { user_id: 2, is_active: true }])
 
     const users = await User.query().whereHas('profile', function (builder) {
       builder.where('likes', '>', 2)
@@ -960,9 +960,9 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
-    await ioc.use('Database').table('identities').insert([{ user_id: 1, is_active: false }, { user_id: 2, is_active: true }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }, { user_id: 2, likes: 2 }])
+    await ioc.use('Database').collection('identities').insert([{ user_id: 1, is_active: false }, { user_id: 2, is_active: true }])
 
     const users = await User.query().whereHas('profile', function (builder) {
       builder.where('likes', '>', 2)
@@ -987,8 +987,8 @@ test.group('Relations | HasOne', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
       { user_id: 1, profile_name: 'virk', likes: 3 },
       { user_id: 2, profile_name: 'nikk', likes: 2 }
     ])
@@ -1016,8 +1016,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = await User.query().has('profile', '=', 1).paginate(1)
     assert.equal(users.size(), 1)
@@ -1041,8 +1041,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = await User.query().withCount('profile').fetch()
     assert.equal(users.size(), 2)
@@ -1067,8 +1067,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = await User.query().withCount('profile').paginate()
     assert.equal(users.size(), 2)
@@ -1093,8 +1093,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = await User.query().withCount('profile as my_profile').fetch()
     assert.equal(users.size(), 2)
@@ -1119,8 +1119,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = await User.query().withCount('profile', function (builder) {
       builder.where('likes', '>', 3)
@@ -1144,8 +1144,8 @@ test.group('Relations | HasOne', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = () => User.query().withCount('profile.picture')
     assert.throw(users, `E_CANNOT_NEST_RELATION: withCount does not allowed nested relations. Instead use .with('profile', (builder) => builder.withCount('picture'))`)
@@ -1177,9 +1177,9 @@ test.group('Relations | HasOne', (group) => {
     User.onQuery((query) => (userQuery = query))
     Profile.onQuery((query) => (profileQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
-    await ioc.use('Database').table('pictures').insert([{ profile_id: 1, storage_path: '/foo' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('pictures').insert([{ profile_id: 1, storage_path: '/foo' }])
 
     const users = await User.query().with('profile', (builder) => builder.withCount('picture')).fetch()
     assert.equal(users.size(), 2)
@@ -1202,8 +1202,8 @@ test.group('Relations | HasOne', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const user = await User.query().with('profile').first()
     assert.instanceOf(user.getRelated('profile'), Profile)
@@ -1222,8 +1222,8 @@ test.group('Relations | HasOne', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const user = await User.query().with('profile').first()
     assert.equal(user.getRelated('profile').$parent, 'User')
@@ -1243,8 +1243,8 @@ test.group('Relations | HasOne', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk', likes: 3 })
 
     const user = await User.query().with('profile').fetch()
     assert.equal(user.first().getRelated('profile').$parent, 'User')
@@ -1267,8 +1267,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([{ user_id: 1, likes: 3 }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: 1, likes: 3 }])
 
     const users = await User.query().select('username').withCount('profile').fetch()
     assert.equal(users.size(), 2)
@@ -1301,9 +1301,9 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk' })
-    await ioc.use('Database').table('cars').insert({ user_id: 2, name: 'audi', model: '2001' })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk' })
+    await ioc.use('Database').collection('cars').insert({ user_id: 2, name: 'audi', model: '2001' })
 
     const users = await User.query().has('cars').orHas('profile').fetch()
     assert.equal(users.size(), 2)
@@ -1326,8 +1326,8 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert({ user_id: 1, profile_name: 'virk' })
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk' })
 
     const users = await User.query().doesntHave('profile').fetch()
     assert.equal(users.size(), 1)
@@ -1359,12 +1359,12 @@ test.group('Relations | HasOne', (group) => {
     let userQuery = null
     User.onQuery((query) => (userQuery = query))
 
-    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').table('profiles').insert([
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
       { user_id: 1, profile_name: 'virk' },
       { user_id: 2, profile_name: 'nikk' }
     ])
-    await ioc.use('Database').table('cars').insert({ user_id: 2, name: 'audi', model: '2001' })
+    await ioc.use('Database').collection('cars').insert({ user_id: 2, name: 'audi', model: '2001' })
 
     const users = await User.query().doesntHave('profile').orDoesntHave('cars').paginate()
     assert.equal(users.size(), 1)
@@ -1387,8 +1387,8 @@ test.group('Relations | HasOne', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await ioc.use('Database').table('cars').insert({ user_id: 1, name: 'audi', model: '2001' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert({ user_id: 1, name: 'audi', model: '2001' })
 
     const user = await User.query().with('cars').first()
     assert.instanceOf(user.getRelated('cars'), VanillaSerializer)
@@ -1556,7 +1556,7 @@ test.group('Relations | HasOne', (group) => {
     await user.save()
     await user.profile().create({ profile_name: 'virk' })
     await user.profile().delete()
-    const profiles = await ioc.use('Database').table('profiles')
+    const profiles = await ioc.use('Database').collection('profiles')
     assert.lengthOf(profiles, 0)
     assert.equal(profileQuery.sql, helpers.formatQuery('delete from "profiles" where "user_id" = ?'))
   })

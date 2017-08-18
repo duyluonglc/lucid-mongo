@@ -81,7 +81,7 @@ class BelongsTo extends BaseRelation {
    * @return {Object}
    */
   relatedWhere (count) {
-    this.relatedQuery.whereRaw(`${this.$primaryTable}.${this.primaryKey} = ${this.$foreignTable}.${this.foreignKey}`)
+    this.relatedQuery.whereRaw(`${this.$primaryCollection}.${this.primaryKey} = ${this.$foreignCollection}.${this.foreignKey}`)
     if (count) {
       this.relatedQuery.count('*')
     }
@@ -97,7 +97,7 @@ class BelongsTo extends BaseRelation {
    * @param  {Object}   context
    */
   addWhereOn (context) {
-    context.on(`${this.$primaryTable}.${this.primaryKey}`, '=', `${this.$foreignTable}.${this.foreignKey}`)
+    context.on(`${this.$primaryCollection}.${this.primaryKey}`, '=', `${this.$foreignCollection}.${this.foreignKey}`)
   }
 
   /* istanbul ignore next */

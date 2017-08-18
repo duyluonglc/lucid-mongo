@@ -43,7 +43,7 @@ test.group('Seed Database', (group) => {
       ]).registerAndBoot()
 
     await fs.ensureDir(path.join(__dirname, '../unit/tmp'))
-    await helpers.createTables(ioc.use('Database'))
+    await helpers.createCollections(ioc.use('Database'))
     setupResolver()
   })
 
@@ -52,7 +52,7 @@ test.group('Seed Database', (group) => {
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Database'))
+    await helpers.dropCollections(ioc.use('Database'))
     ioc.use('Database').close()
 
     try {

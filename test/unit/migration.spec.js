@@ -32,19 +32,19 @@ test.group('Migration', (group) => {
     ioc.alias('Adonis/Src/Database', 'Database')
 
     await fs.ensureDir(path.join(__dirname, './tmp'))
-    await helpers.createTables(ioc.use('Database'))
+    await helpers.createCollections(ioc.use('Database'))
     setupResolver()
   })
 
   group.afterEach(async () => {
-    await ioc.use('Database').schema.dropTableIfExists('adonis_schema')
-    await ioc.use('Database').schema.dropTableIfExists('adonis_schema_lock')
-    await ioc.use('Database').schema.dropTableIfExists('schema_users')
-    await ioc.use('Database').schema.dropTableIfExists('schema_profiles')
+    await ioc.use('Database').schema.dropCollectionIfExists('adonis_schema')
+    await ioc.use('Database').schema.dropCollectionIfExists('adonis_schema_lock')
+    await ioc.use('Database').schema.dropCollectionIfExists('schema_users')
+    await ioc.use('Database').schema.dropCollectionIfExists('schema_profiles')
   })
 
   group.after(async () => {
-    await helpers.dropTables(ioc.use('Database'))
+    await helpers.dropCollections(ioc.use('Database'))
     ioc.use('Database').close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -55,52 +55,52 @@ test.group('Migration', (group) => {
     }
   }).timeout(0)
 
-  test('create migration table', async (assert) => {
+  test('create migration collection', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    const hasTable = await ioc.use('Database').schema.hasTable('adonis_schema')
-    assert.isTrue(hasTable)
+    await migration._makeMigrationsCollection()
+    const hasCollection = await ioc.use('Database').schema.hasCollection('adonis_schema')
+    assert.isTrue(hasCollection)
   })
 
-  test('create migration lock table', async (assert) => {
+  test('create migration lock collection', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeLockTable()
-    const hasTable = await ioc.use('Database').schema.hasTable('adonis_schema_lock')
-    assert.isTrue(hasTable)
+    await migration._makeLockCollection()
+    const hasCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
+    assert.isTrue(hasCollection)
   })
 
-  test('add lock to lock table', async (assert) => {
+  test('add lock to lock collection', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await migration._makeLockTable()
+    await migration._makeMigrationsCollection()
+    await migration._makeLockCollection()
     await migration._addLock()
-    const lock = await ioc.use('Database').table('adonis_schema_lock')
+    const lock = await ioc.use('Database').collection('adonis_schema_lock')
     assert.deepEqual(lock, [{ id: 1, is_locked: helpers.formatBoolean(true) }])
   })
 
   test('remove lock', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await migration._makeLockTable()
+    await migration._makeMigrationsCollection()
+    await migration._makeLockCollection()
     await migration._addLock()
-    const lock = await ioc.use('Database').table('adonis_schema_lock')
+    const lock = await ioc.use('Database').collection('adonis_schema_lock')
     assert.deepEqual(lock, [{ id: 1, is_locked: helpers.formatBoolean(true) }])
     await migration._removeLock()
-    const hasTable = await ioc.use('Database').schema.hasTable('adonis_schema_lock')
-    assert.isFalse(hasTable)
+    const hasCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
+    assert.isFalse(hasCollection)
   })
 
   test('get last schema batch as 0 when there is no batch', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
+    await migration._makeMigrationsCollection()
     const batch = await migration._getLatestBatch()
     assert.equal(batch, 0)
   })
 
   test('get the max batch number when there is an existing batch', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await ioc.use('Database').table('adonis_schema').insert([
+    await migration._makeMigrationsCollection()
+    await ioc.use('Database').collection('adonis_schema').insert([
       {
         batch: 1,
         name: 'foo'
@@ -116,31 +116,31 @@ test.group('Migration', (group) => {
 
   test('add new row for a given batch', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
+    await migration._makeMigrationsCollection()
     await migration._addForBatch('foo', 1)
-    const migrations = await ioc.use('Database').table('adonis_schema')
+    const migrations = await ioc.use('Database').collection('adonis_schema')
     assert.equal(migrations[0].name, 'foo')
     assert.equal(migrations[0].batch, 1)
   })
 
   test('remove a given row', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
+    await migration._makeMigrationsCollection()
 
     await migration._addForBatch('foo', 1)
-    let migrations = await ioc.use('Database').table('adonis_schema')
+    let migrations = await ioc.use('Database').collection('adonis_schema')
     assert.equal(migrations[0].name, 'foo')
     assert.equal(migrations[0].batch, 1)
 
     await migration._remove('foo')
-    migrations = await ioc.use('Database').table('adonis_schema')
+    migrations = await ioc.use('Database').collection('adonis_schema')
     assert.lengthOf(migrations, 0)
   })
 
   test('get all rows till a batch in reverse order', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await ioc.use('Database').table('adonis_schema').insert([
+    await migration._makeMigrationsCollection()
+    await ioc.use('Database').collection('adonis_schema').insert([
       {
         batch: 1,
         name: 'foo'
@@ -166,8 +166,8 @@ test.group('Migration', (group) => {
 
   test('get all the rows when batch is zero', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await ioc.use('Database').table('adonis_schema').insert([
+    await migration._makeMigrationsCollection()
+    await ioc.use('Database').collection('adonis_schema').insert([
       {
         batch: 1,
         name: 'foo'
@@ -193,15 +193,15 @@ test.group('Migration', (group) => {
 
   test('get diff of schemas to be executes', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
+    await migration._makeMigrationsCollection()
     const diff = await migration._getDiff(['2017-30-20', '2017-30-19'])
     assert.deepEqual(diff, ['2017-30-20', '2017-30-19'])
   })
 
   test('get diff of schema not executed yet', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await ioc.use('Database').table('adonis_schema').insert([
+    await migration._makeMigrationsCollection()
+    await ioc.use('Database').collection('adonis_schema').insert([
       {
         batch: 1,
         name: '2017-30-20'
@@ -213,8 +213,8 @@ test.group('Migration', (group) => {
 
   test('get diff for rollback', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
-    await migration._makeMigrationsTable()
-    await ioc.use('Database').table('adonis_schema').insert([
+    await migration._makeMigrationsCollection()
+    await ioc.use('Database').collection('adonis_schema').insert([
       {
         batch: 1,
         name: '2017-30-20'
@@ -233,15 +233,15 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
     }
 
     await migration.up({ '2017-07-20': UserSchema })
-    const info = await migration.db.table('schema_users').columnInfo()
+    const info = await migration.db.collection('schema_users').columnInfo()
     assert.deepEqual(Object.keys(info), ['id', 'username'])
   })
 
@@ -250,58 +250,58 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
 
-        this.create('schema_profiles', (table) => {
-          table.increments()
-          table.integer('user_id').unsigned().references('schema_users.id')
-          table.string('profile_name')
+        this.create('schema_profiles', (collection) => {
+          collection.increments()
+          collection.integer('user_id').unsigned().references('schema_users.id')
+          collection.string('profile_name')
         })
       }
     }
 
     await migration.up({ '2017-07-20': UserSchema })
-    await migration.db.schema.hasTable('schema_users')
-    await migration.db.schema.hasTable('schema_profiles')
+    await migration.db.schema.hasCollection('schema_users')
+    await migration.db.schema.hasCollection('schema_profiles')
 
     if (process.env.DB !== 'sqlite') {
-      await ioc.use('Database').schema.table('schema_profiles', (table) => {
-        table.dropForeign('user_id')
+      await ioc.use('Database').schema.collection('schema_profiles', (collection) => {
+        collection.dropForeign('user_id')
       })
     }
   })
 
-  test('save executed schemas to the migrations table', async (assert) => {
+  test('save executed schemas to the migrations collection', async (assert) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
 
     class UserSchema extends Schema {
       up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
 
-        this.create('schema_profiles', (table) => {
-          table.increments()
-          table.integer('user_id').unsigned().references('schema_users.id')
-          table.string('profile_name')
+        this.create('schema_profiles', (collection) => {
+          collection.increments()
+          collection.integer('user_id').unsigned().references('schema_users.id')
+          collection.string('profile_name')
         })
       }
     }
 
     const result = await migration.up({ '2017-07-20': UserSchema })
-    const schemas = await migration.db.table('adonis_schema')
+    const schemas = await migration.db.collection('adonis_schema')
     assert.lengthOf(schemas, 1)
     assert.equal(schemas[0].name, '2017-07-20')
     assert.equal(schemas[0].batch, 1)
     assert.deepEqual(result, { migrated: ['2017-07-20'], status: 'completed' })
 
     if (process.env.DB !== 'sqlite') {
-      await ioc.use('Database').schema.table('schema_profiles', (table) => {
-        table.dropForeign('user_id')
+      await ioc.use('Database').schema.collection('schema_profiles', (collection) => {
+        collection.dropForeign('user_id')
       })
     }
   })
@@ -311,15 +311,15 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
 
-        this.create('schema_profiles', (table) => {
-          table.increments()
-          table.integer('user_id').unsigned().references('schema_users.id')
-          table.string('profile_name')
+        this.create('schema_profiles', (collection) => {
+          collection.increments()
+          collection.integer('user_id').unsigned().references('schema_users.id')
+          collection.string('profile_name')
         })
       }
 
@@ -335,9 +335,9 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
@@ -348,9 +348,9 @@ test.group('Migration', (group) => {
 
     class UserProfileSchema extends Schema {
       up () {
-        this.create('schema_profile', (table) => {
-          table.increments()
-          table.string('profile_name')
+        this.create('schema_profile', (collection) => {
+          collection.increments()
+          collection.string('profile_name')
         })
       }
 
@@ -363,7 +363,7 @@ test.group('Migration', (group) => {
     await migration.up({ '2017-08-11': UserProfileSchema })
     const result = await migration.down({ '2017-08-10': UserSchema, '2017-08-11': UserProfileSchema })
     assert.deepEqual(result, { migrated: ['2017-08-11'], status: 'completed' })
-    const schemas = await ioc.use('Database').table('adonis_schema')
+    const schemas = await ioc.use('Database').collection('adonis_schema')
     assert.lengthOf(schemas, 1)
     assert.equal(schemas[0].name, '2017-08-10')
   })
@@ -373,9 +373,9 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
@@ -386,9 +386,9 @@ test.group('Migration', (group) => {
 
     class UserProfileSchema extends Schema {
       up () {
-        this.create('schema_profile', (table) => {
-          table.increments()
-          table.string('profile_name')
+        this.create('schema_profile', (collection) => {
+          collection.increments()
+          collection.string('profile_name')
         })
       }
 
@@ -401,7 +401,7 @@ test.group('Migration', (group) => {
     await migration.up({ '2017-08-11': UserProfileSchema })
     const result = await migration.down({ '2017-08-10': UserSchema, '2017-08-11': UserProfileSchema }, 0)
     assert.deepEqual(result, { migrated: ['2017-08-11', '2017-08-10'], status: 'completed' })
-    const schemas = await ioc.use('Database').table('adonis_schema')
+    const schemas = await ioc.use('Database').collection('adonis_schema')
     assert.lengthOf(schemas, 0)
   })
 
@@ -411,9 +411,9 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       up () {
-        this.create('users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
@@ -426,10 +426,10 @@ test.group('Migration', (group) => {
       await migration.up({ '2017-08-10': UserSchema })
     } catch ({ message }) {
       assert.include(message, 'already exists')
-      const hasLockTable = await ioc.use('Database').schema.hasTable('adonis_schema_lock')
-      const migrated = await ioc.use('Database').table('adonis_schema')
+      const hasLockCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
+      const migrated = await ioc.use('Database').collection('adonis_schema')
       assert.lengthOf(migrated, 0)
-      assert.isFalse(hasLockTable)
+      assert.isFalse(hasLockCollection)
     }
   })
 
@@ -438,14 +438,14 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       async up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
 
-        this.create('users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
@@ -458,13 +458,13 @@ test.group('Migration', (group) => {
       assert.isFalse(true)
     } catch ({ message }) {
       assert.include(message, 'already exists')
-      const hasLockTable = await ioc.use('Database').schema.hasTable('adonis_schema_lock')
-      const migrated = await ioc.use('Database').table('adonis_schema')
+      const hasLockCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
+      const migrated = await ioc.use('Database').collection('adonis_schema')
       assert.lengthOf(migrated, 0)
-      assert.isFalse(hasLockTable)
+      assert.isFalse(hasLockCollection)
 
       if (process.env.DB !== 'mysql') {
-        const hasSchemaUsers = await ioc.use('Database').schema.hasTable('schema_users')
+        const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
         assert.isFalse(hasSchemaUsers)
       }
     }
@@ -475,9 +475,9 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       async up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
@@ -507,9 +507,9 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       async up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
@@ -518,11 +518,11 @@ test.group('Migration', (group) => {
     }
 
     try {
-      await migration._makeLockTable()
+      await migration._makeLockCollection()
       await migration._addLock()
       await migration.up({ '2017-08-10': UserSchema })
     } catch ({ message }) {
-      assert.equal(message, 'Migrations are locked. Make sure you are not multiple migration scripts or delete `adonis_schema_lock` table manually')
+      assert.equal(message, 'Migrations are locked. Make sure you are not multiple migration scripts or delete `adonis_schema_lock` collection manually')
     }
   })
 
@@ -532,9 +532,9 @@ test.group('Migration', (group) => {
 
     class UserSchema extends Schema {
       async up () {
-        this.create('schema_users', (table) => {
-          table.increments()
-          table.string('username')
+        this.create('schema_users', (collection) => {
+          collection.increments()
+          collection.string('username')
         })
       }
 
