@@ -41,8 +41,8 @@ test.group('Model', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Database').table('users').truncate()
-    await ioc.use('Database').table('my_users').truncate()
+    await ioc.use('Database').table('users').remove()
+    await ioc.use('Database').table('my_users').remove()
   })
 
   group.after(async () => {
@@ -1354,7 +1354,7 @@ test.group('Model', (group) => {
     await user.save()
     assert.isUndefined(user.type)
 
-    await ioc.use('Database').table('users').truncate()
+    await ioc.use('Database').table('users').remove()
     try {
       await user.reload()
     } catch ({ message }) {

@@ -43,8 +43,8 @@ test.group('Factory', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Database').table('users').truncate()
-    await ioc.use('Database').table('my_users').truncate()
+    await ioc.use('Database').collection('users').remove()
+    await ioc.use('Database').collection('my_users').remove()
   })
 
   group.after(async () => {
@@ -268,7 +268,7 @@ test.group('Factory', (group) => {
     assert.deepEqual(stack, [{ username: 'virk' }, { username: 'virk' }])
   })
 
-  test('get data object for table', async (assert) => {
+  test('get data object for collection', async (assert) => {
     Factory.blueprint('users', () => {
       return {
         username: 'virk'
@@ -279,7 +279,7 @@ test.group('Factory', (group) => {
     assert.deepEqual(user, { username: 'virk' })
   })
 
-  test('get array of data objects for table', async (assert) => {
+  test('get array of data objects for collection', async (assert) => {
     Factory.blueprint('users', (faker, i) => {
       return {
         id: i + 1,
@@ -291,7 +291,7 @@ test.group('Factory', (group) => {
     assert.deepEqual(user, [{ username: 'virk', id: 1 }, { username: 'virk', id: 2 }])
   })
 
-  test('save data to table', async (assert) => {
+  test('save data to collection', async (assert) => {
     Factory.blueprint('users', (faker, i) => {
       return {
         id: i + 1,
@@ -300,12 +300,12 @@ test.group('Factory', (group) => {
     })
 
     await Factory.get('users').create()
-    const user = await ioc.use('Database').table('users').first()
+    const user = await ioc.use('Database').collection('users').first()
     assert.equal(user.id, 1)
     assert.equal(user.username, 'virk')
   })
 
-  test('define table name at runtime', async (assert) => {
+  test('define collection name at runtime', async (assert) => {
     Factory.blueprint('User', (faker, i) => {
       return {
         id: i + 1,
@@ -313,8 +313,8 @@ test.group('Factory', (group) => {
       }
     })
 
-    await Factory.get('User').table('users').create()
-    const user = await ioc.use('Database').table('users').first()
+    await Factory.get('User').collection('users').create()
+    const user = await ioc.use('Database').collection('users').first()
     assert.equal(user.id, 1)
     assert.equal(user.username, 'virk')
   })
@@ -327,8 +327,8 @@ test.group('Factory', (group) => {
       }
     })
 
-    const returned = await Factory.get('User').table('users').returning('id').create()
-    const user = await ioc.use('Database').table('users').first()
+    const returned = await Factory.get('User').collection('users').returning('id').create()
+    const user = await ioc.use('Database').collection('users').first()
     assert.deepEqual(returned, [1])
     assert.equal(user.id, 1)
     assert.equal(user.username, 'virk')
@@ -342,13 +342,13 @@ test.group('Factory', (group) => {
       }
     })
 
-    await Factory.get('User').table('users').connection('').create()
-    const user = await ioc.use('Database').table('users').first()
+    await Factory.get('User').collection('users').connection('').create()
+    const user = await ioc.use('Database').collection('users').first()
     assert.equal(user.id, 1)
     assert.equal(user.username, 'virk')
   })
 
-  test('truncate table', async (assert) => {
+  test('remove collection', async (assert) => {
     Factory.blueprint('User', (faker, i) => {
       return {
         id: i + 1,
@@ -356,13 +356,13 @@ test.group('Factory', (group) => {
       }
     })
 
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
-    await Factory.get('User').table('users').reset()
-    const user = await ioc.use('Database').table('users').first()
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await Factory.get('User').collection('users').reset()
+    const user = await ioc.use('Database').collection('users').first()
     assert.isUndefined(user)
   })
 
-  test('reset table via model factory', async (assert) => {
+  test('reset collection via model factory', async (assert) => {
     class User extends Model {}
 
     ioc.fake('App/Model/User', () => {
@@ -373,9 +373,9 @@ test.group('Factory', (group) => {
     Factory.blueprint('App/Model/User', (faker, index, data) => {
       return {}
     })
-    await ioc.use('Database').table('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await Factory.model('App/Model/User').reset()
-    const user = await ioc.use('Database').table('users').first()
+    const user = await ioc.use('Database').collection('users').first()
     assert.isUndefined(user)
   })
 })

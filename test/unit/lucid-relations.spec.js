@@ -37,11 +37,11 @@ test.group('Relations | HasOne', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('users').truncate()
-    await ioc.use('Adonis/Src/Database').table('profiles').truncate()
-    await ioc.use('Adonis/Src/Database').table('pictures').truncate()
-    await ioc.use('Adonis/Src/Database').table('identities').truncate()
-    await ioc.use('Adonis/Src/Database').table('cars').truncate()
+    await ioc.use('Adonis/Src/Database').table('users').remove()
+    await ioc.use('Adonis/Src/Database').table('profiles').remove()
+    await ioc.use('Adonis/Src/Database').table('pictures').remove()
+    await ioc.use('Adonis/Src/Database').table('identities').remove()
+    await ioc.use('Adonis/Src/Database').table('cars').remove()
   })
 
   group.after(async () => {

@@ -50,7 +50,7 @@ test.group('Migration Rollback', (group) => {
 
   group.afterEach(async () => {
     ace.commands = {}
-    await ioc.use('Database').table('adonis_schema').truncate()
+    await ioc.use('Database').table('adonis_schema').remove()
     await ioc.use('Database').schema.dropTableIfExists('schema_users')
   })
 

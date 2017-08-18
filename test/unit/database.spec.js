@@ -23,11 +23,11 @@ test.group('Database | QueryBuilder', (group) => {
   group.before(async () => {
     await fs.ensureDir(path.join(__dirname, './tmp'))
     this.database = new Database(helpers.getConfig())
-    await helpers.createTables(this.database)
+    await helpers.createCollections(this.database)
   })
 
   group.after(async () => {
-    await helpers.dropTables(this.database)
+    await helpers.dropCollections(this.database)
     this.database.close()
     try {
       await fs.remove(path.join(__dirname, './tmp'))
@@ -48,7 +48,7 @@ test.group('Database | QueryBuilder', (group) => {
     assert.equal(selectQuery.sql, helpers.formatQuery('select * from "users"'))
   })
 
-  test('prefix table when defined inside config', (assert) => {
+  test('prefix collection when defined inside config', (assert) => {
     const dbConfig = helpers.getConfig()
     dbConfig.prefix = 'my_'
 
@@ -77,18 +77,18 @@ test.group('Database | QueryBuilder', (group) => {
 
   test('commit transactions', async (assert) => {
     const trx = await this.database.beginTransaction()
-    await trx.table('users').insert({ username: 'virk' })
+    await trx.collection('users').insert({ username: 'virk' })
     trx.commit()
-    const firstUser = await this.database.table('users').first()
+    const firstUser = await this.database.collection('users').findOne()
     assert.equal(firstUser.username, 'virk')
-    await this.database.truncate('users')
+    await this.database.remove('users')
   })
 
   test('rollback transactions', async (assert) => {
     const trx = await this.database.beginTransaction()
-    await trx.table('users').insert({ username: 'virk' })
+    await trx.collection('users').insert({ username: 'virk' })
     trx.rollback()
-    const users = await this.database.table('users')
+    const users = await this.database.collection('users').find()
     assert.lengthOf(users, 0)
   })
 
@@ -97,34 +97,34 @@ test.group('Database | QueryBuilder', (group) => {
     setTimeout(() => {
       trx.rollback()
     }, 20)
-    await this.database.table('users').insert({ username: 'virk' })
-    const users = await this.database.table('users')
+    await this.database.collection('users').insert({ username: 'virk' })
+    const users = await this.database.collection('users').find()
     assert.lengthOf(users, 1)
-    await this.database.truncate('users')
+    await this.database.remove('users')
   })
 
   test('create global transactions', async (assert) => {
     await this.database.beginGlobalTransaction()
-    await this.database.table('users').insert({ username: 'virk' })
+    await this.database.collection('users').insert({ username: 'virk' })
     this.database.rollbackGlobalTransaction()
-    const users = await this.database.table('users')
+    const users = await this.database.collection('users').find()
     assert.lengthOf(users, 0)
   })
 
   test('commit global transactions', async (assert) => {
     await this.database.beginGlobalTransaction()
-    await this.database.table('users').insert({ username: 'virk' })
+    await this.database.collection('users').insert({ username: 'virk' })
     this.database.commitGlobalTransaction()
-    const users = await this.database.table('users')
+    const users = await this.database.collection('users').find()
     assert.lengthOf(users, 1)
-    await this.database.truncate('users')
+    await this.database.remove('users')
   })
 
   test('destroy database connection', async (assert) => {
     await this.database.close()
     assert.plan(1)
     try {
-      await this.database.table('users')
+      await this.database.collection('users').find()
     } catch ({ message }) {
       assert.equal(message, 'Unable to acquire a connection')
       this.database = new Database(helpers.getConfig())
@@ -132,16 +132,16 @@ test.group('Database | QueryBuilder', (group) => {
   })
 
   test('add orderBy and limit clause using forPage method', async (assert) => {
-    const query = this.database.table('users').forPage(1).toSQL()
+    const query = this.database.collection('users').forPage(1).toSQL()
     assert.equal(query.sql, helpers.formatQuery('select * from "users" limit ?'))
     assert.deepEqual(query.bindings, [20])
   })
 
   test('add orderBy and limit clause using forPage greater than 1', async (assert) => {
-    const query = this.database.table('users').forPage(3).toSQL()
+    const query = this.database.collection('users').forPage(3).toSQL()
     assert.equal(query.sql, helpers.formatQuery('select * from "users" limit ? offset ?'))
     assert.deepEqual(query.bindings, [20, 40])
-    await this.database.table('users').truncate()
+    await this.database.collection('users').remove()
   })
 
   test('paginate results', async (assert) => {
@@ -149,13 +149,13 @@ test.group('Database | QueryBuilder', (group) => {
       return { username: chance.word() }
     })
     await this.database.insert(users).into('users')
-    const result = await this.database.table('users').orderBy('username').paginate(1, 5)
+    const result = await this.database.collection('users').orderBy('username').paginate(1, 5)
     assert.equal(result.perPage, 5)
     assert.equal(result.total, 10)
     assert.equal(result.page, 1)
     assert.equal(result.lastPage, 2)
     assert.isAtMost(result.data.length, result.perPage)
-    await this.database.table('users').truncate()
+    await this.database.collection('users').remove()
   })
 
   test('paginate results when records are less than perPage', async (assert) => {
@@ -163,18 +163,18 @@ test.group('Database | QueryBuilder', (group) => {
       return { username: chance.word() }
     })
     await this.database.insert(users).into('users')
-    const result = await this.database.table('users').orderBy('username').paginate(1, 5)
+    const result = await this.database.collection('users').orderBy('username').paginate(1, 5)
     assert.equal(result.perPage, 5)
     assert.equal(result.total, 4)
     assert.equal(result.page, 1)
     assert.equal(result.lastPage, 1)
     assert.isAtMost(result.data.length, result.perPage)
-    await this.database.table('users').truncate()
+    await this.database.collection('users').remove()
   })
 
   test('paginate data inside transactions', async (assert) => {
     const trx = await this.database.beginTransaction()
-    assert.equal(typeof (trx.table('users').paginate), 'function')
+    assert.equal(typeof (trx.collection('users').paginate), 'function')
     trx.rollback()
   })
 
@@ -221,7 +221,7 @@ test.group('Database | Manager', () => {
       connection: 'testing',
       testing: helpers.getConfig()
     })
-    const query = new DatabaseManager(config).table('users').toSQL()
+    const query = new DatabaseManager(config).collection('users').toSQL()
     assert.equal(query.sql, helpers.formatQuery('select * from "users"'))
   })
 

@@ -1,21 +1,14 @@
 'use strict'
 
-const path = require('path')
 const _ = require('lodash')
 
 module.exports = {
   formatQuery (query, connection) {
-    if (process.env.DB === 'sqlite' || process.env.DB === 'pg') {
-      return query
-    }
-
-    if (process.env.DB === 'mysql') {
-      return query.replace(/"/g, '`')
-    }
+    return query
   },
 
   addReturningStatement (query, field) {
-    return process.env.DB === 'pg' ? `${query} returning "${field}"` : query
+    return query
   },
 
   formatBindings (bindings) {
@@ -23,163 +16,143 @@ module.exports = {
   },
 
   formatNumber (num) {
-    return process.env.DB === 'pg' ? String(num) : num
+    return num
   },
 
   formatBoolean (bool) {
-    return process.env.DB === 'pg' ? bool : Number(bool)
+    return bool
   },
 
   getConfig () {
-    if (process.env.DB === 'sqlite') {
+    if (process.env.DB === 'mongodb') {
       return _.cloneDeep({
-        client: 'sqlite',
+        client: 'mongodb',
         connection: {
-          filename: path.join(__dirname, '../tmp/dev.sqlite3')
-        }
-      })
-    }
-
-    if (process.env.DB === 'mysql') {
-      return _.cloneDeep({
-        client: 'mysql',
-        connection: {
-          host: '127.0.0.1',
-          user: 'root',
-          password: '',
-          database: 'testing_lucid'
-        }
-      })
-    }
-
-    if (process.env.DB === 'pg') {
-      return _.cloneDeep({
-        client: 'pg',
-        connection: {
-          host: '127.0.0.1',
-          user: 'harmindervirk',
-          password: '',
-          database: 'testing_lucid'
+          host: process.env.DB_HOST || '127.0.0.1',
+          port: process.env.DB_PORT || '27017',
+          user: process.env.DB_USER || 'admin',
+          password: process.env.DB_PASSWORD || '',
+          database: process.env.DB_NAME || 'test_lucid'
         }
       })
     }
   },
 
-  createTables (db) {
+  createCollections (db) {
     return Promise.all([
-      db.schema.createTable('users', function (table) {
-        table.increments()
-        table.integer('vid')
-        table.integer('country_id')
-        table.string('username')
-        table.timestamps()
-        table.timestamp('login_at')
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('users', function (collection) {
+        collection.increments()
+        collection.integer('vid')
+        collection.integer('country_id')
+        collection.string('username')
+        collection.timestamps()
+        collection.timestamp('login_at')
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('cars', function (table) {
-        table.increments()
-        table.integer('user_id')
-        table.string('name')
-        table.string('model')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('cars', function (collection) {
+        collection.increments()
+        collection.integer('user_id')
+        collection.string('name')
+        collection.string('model')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('parts', function (table) {
-        table.increments()
-        table.integer('car_id')
-        table.string('part_name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('parts', function (collection) {
+        collection.increments()
+        collection.integer('car_id')
+        collection.string('part_name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('profiles', function (table) {
-        table.increments()
-        table.integer('user_id')
-        table.integer('country_id')
-        table.string('profile_name')
-        table.integer('likes')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('profiles', function (collection) {
+        collection.increments()
+        collection.integer('user_id')
+        collection.integer('country_id')
+        collection.string('profile_name')
+        collection.integer('likes')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('pictures', function (table) {
-        table.increments()
-        table.integer('profile_id')
-        table.string('storage_path')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('pictures', function (collection) {
+        collection.increments()
+        collection.integer('profile_id')
+        collection.string('storage_path')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('identities', function (table) {
-        table.increments()
-        table.integer('user_id')
-        table.boolean('is_active').defaultTo(true)
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('identities', function (collection) {
+        collection.increments()
+        collection.integer('user_id')
+        collection.boolean('is_active').defaultTo(true)
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('my_users', function (table) {
-        table.integer('uuid')
-        table.string('username')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('my_users', function (collection) {
+        collection.integer('uuid')
+        collection.string('username')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('posts', function (table) {
-        table.increments('id')
-        table.integer('user_id')
-        table.string('title')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('posts', function (collection) {
+        collection.increments('id')
+        collection.integer('user_id')
+        collection.string('title')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('post_user', function (table) {
-        table.increments('id')
-        table.integer('post_id')
-        table.integer('user_id')
-        table.boolean('is_published')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('post_user', function (collection) {
+        collection.increments('id')
+        collection.integer('post_id')
+        collection.integer('user_id')
+        collection.boolean('is_published')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('countries', function (table) {
-        table.increments('id')
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('countries', function (collection) {
+        collection.increments('id')
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('categories', function (table) {
-        table.increments('id')
-        table.string('name')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('categories', function (collection) {
+        collection.increments('id')
+        collection.string('name')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('sections', function (table) {
-        table.increments('id')
-        table.integer('category_id')
-        table.string('name')
-        table.boolean('is_active')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('sections', function (collection) {
+        collection.increments('id')
+        collection.integer('category_id')
+        collection.string('name')
+        collection.boolean('is_active')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createTable('post_section', function (table) {
-        table.increments('id')
-        table.integer('post_id')
-        table.integer('section_id')
-        table.timestamps()
-        table.timestamp('deleted_at').nullable()
+      db.schema.createCollection('post_section', function (collection) {
+        collection.increments('id')
+        collection.integer('post_id')
+        collection.integer('section_id')
+        collection.timestamps()
+        collection.timestamp('deleted_at').nullable()
       })
     ])
   },
 
-  dropTables (db) {
+  dropCollections (db) {
     return Promise.all([
-      db.schema.dropTable('users'),
-      db.schema.dropTable('cars'),
-      db.schema.dropTable('parts'),
-      db.schema.dropTable('profiles'),
-      db.schema.dropTable('pictures'),
-      db.schema.dropTable('identities'),
-      db.schema.dropTable('my_users'),
-      db.schema.dropTable('posts'),
-      db.schema.dropTable('post_user'),
-      db.schema.dropTable('countries'),
-      db.schema.dropTable('categories'),
-      db.schema.dropTable('sections'),
-      db.schema.dropTable('post_section')
+      db.schema.dropCollection('users'),
+      db.schema.dropCollection('cars'),
+      db.schema.dropCollection('parts'),
+      db.schema.dropCollection('profiles'),
+      db.schema.dropCollection('pictures'),
+      db.schema.dropCollection('identities'),
+      db.schema.dropCollection('my_users'),
+      db.schema.dropCollection('posts'),
+      db.schema.dropCollection('post_user'),
+      db.schema.dropCollection('countries'),
+      db.schema.dropCollection('categories'),
+      db.schema.dropCollection('sections'),
+      db.schema.dropCollection('post_section')
     ])
   },
 

@@ -37,9 +37,9 @@ test.group('Relations | Belongs To', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').table('users').truncate()
-    await ioc.use('Adonis/Src/Database').table('profiles').truncate()
-    await ioc.use('Adonis/Src/Database').table('pictures').truncate()
+    await ioc.use('Adonis/Src/Database').table('users').remove()
+    await ioc.use('Adonis/Src/Database').table('profiles').remove()
+    await ioc.use('Adonis/Src/Database').table('pictures').remove()
   })
 
   group.after(async () => {
