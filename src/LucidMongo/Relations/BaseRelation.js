@@ -19,7 +19,7 @@ const methodsList = [
   'min',
   'max',
   'count',
-  'truncate',
+  'remove',
   'ids',
   'pair',
   'pluckFirst',
