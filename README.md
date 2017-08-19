@@ -4,9 +4,9 @@
 
 [![Version](https://img.shields.io/npm/v/lucid-mongo.svg)](https://www.npmjs.com/package/lucid-mongo)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-[![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=dawn)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
-[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/dawn.svg)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=dawn)
-[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/adonis-lucid-mongodb.svg)](https://greenkeeper.io/)
+[![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=dawn)](https://travis-ci.org/duyluonglc/lucid-mongo)
+[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/dawn.svg)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=dawn)
+[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/lucid-mongo.svg)](https://greenkeeper.io/)
 > :pray: This repository is base on @adonis/lucid and only work with mongodb.
 
 lucid-mongo is a mongo query builder and ORM. It also has support for database migrations, seeds and factories as @adonis/lucid.
@@ -33,13 +33,13 @@ This repo/branch is supposed to run fine on all major OS platforms and targets `
 
 ## <a name="getting-started"></a>Installation
 
-To setup this package
+To setup this package as standalone package
 
 ```bash
 $ npm i --save lucid-mongo
 ```
 
-## Usage standalone
+## Use standalone
 ```js
 const config = {
   connection: 'mongodb',
@@ -79,18 +79,24 @@ async function test () {
 test()
 
 ```
-## Usage with AdonisJS framework
-The usage of LucidMongo is similar to Lucid
+## Use with AdonisJS framework
 
-[Official Documentation of Lucid here](http://adonisjs.com/docs/2.0/installation)
+The provider must be installed from npm using `adonis` command.
+
+```js
+adonis install lucid-mongo
+```
+
 ### Breaking update
 | Adonis version  | Lucid Mongo version |
 | ------------- | ------------- |
 | 3.x.x  | 1.x.x  |
 | 4.x.x  | 2.x.x  |
 
+[See the doc of v1.x here](https://github.com/duyluonglc/lucid-mongo/blob/1.x/README.md)
+
 Register lucid providers inside the your `bootstrap/app.js` file.
-you should complete replace all setting of `adonis-lucid` with `lucid-mongo`
+you should complete replace all setting of `@adonis/lucid` with `lucid-mongo`
 
 ```javascript
 const providers = [
