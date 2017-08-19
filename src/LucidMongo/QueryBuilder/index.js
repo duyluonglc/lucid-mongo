@@ -88,6 +88,20 @@ class QueryBuilder {
      */
     this.replaceMethods()
 
+    /**
+     * Query level visible fields
+     *
+     * @type {Array}
+     */
+    this._visibleFields = this.Model.visible
+
+    /**
+     * Query level hidden fields
+     *
+     * @type {Array}
+     */
+    this._hiddenFields = this.Model.hidden
+
     return new Proxy(this, proxyHandler)
   }
 
@@ -160,6 +174,9 @@ class QueryBuilder {
         modelInstance.$sideLoaded[field] = value
         return true
       }
+
+      modelInstance.$visible = this._visibleFields
+      modelInstance.$hidden = this._hiddenFields
     }))
 
     return modelInstance
@@ -908,6 +925,40 @@ class QueryBuilder {
    */
   toString () {
     return this.query.toString()
+  }
+
+  /**
+   * Define fields to be visible for a single
+   * query.
+   *
+   * Computed when `toJSON` is called
+   *
+   * @method setVisible
+   *
+   * @param  {Array}   fields
+   *
+   * @chainable
+   */
+  setVisible (fields) {
+    this._visibleFields = fields
+    return this
+  }
+
+  /**
+   * Define fields to be hidden for a single
+   * query.
+   *
+   * Computed when `toJSON` is called
+   *
+   * @method setHidden
+   *
+   * @param  {Array}   fields
+   *
+   * @chainable
+   */
+  setHidden (fields) {
+    this._hiddenFields = fields
+    return this
   }
 }
 
