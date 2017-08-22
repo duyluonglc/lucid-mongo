@@ -66,7 +66,7 @@ test.group('Model', (group) => {
 
   test('define different collection for a model', (assert) => {
     class User extends Model {
-      static get collection() {
+      static get collection () {
         return 'my_users'
       }
     }
@@ -78,7 +78,7 @@ test.group('Model', (group) => {
 
   test('define collection prefix for a model', (assert) => {
     class User extends Model {
-      static get prefix() {
+      static get prefix () {
         return 'my_'
       }
     }
@@ -91,7 +91,7 @@ test.group('Model', (group) => {
   test('call the boot method only once', (assert) => {
     let callCounts = 0
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
         callCounts++
       }
@@ -125,7 +125,7 @@ test.group('Model', (group) => {
 
   test('call setters when defining attributes via fill', (assert) => {
     class User extends Model {
-      setUsername(username) {
+      setUsername (username) {
         return username.toUpperCase()
       }
     }
@@ -138,7 +138,7 @@ test.group('Model', (group) => {
 
   test('call setters when defining attributes manually', (assert) => {
     class User extends Model {
-      setUsername(username) {
+      setUsername (username) {
         return username.toUpperCase()
       }
     }
@@ -174,15 +174,15 @@ test.group('Model', (group) => {
 
   test('define different primary key for a given model', async (assert) => {
     class User extends Model {
-      static get primaryKey() {
+      static get primaryKey () {
         return 'uuid'
       }
 
-      static get collection() {
+      static get collection () {
         return 'my_users'
       }
 
-      static get incrementing() {
+      static get incrementing () {
         return false
       }
     }
@@ -339,7 +339,7 @@ test.group('Model', (group) => {
 
   test('do not set timestamps when columns are not defined', async (assert) => {
     class User extends Model {
-      static get createdAtColumn() {
+      static get createdAtColumn () {
         return null
       }
     }
@@ -375,7 +375,7 @@ test.group('Model', (group) => {
 
   test('collection toJSON should call model toJSON and getters', async (assert) => {
     class User extends Model {
-      getCreatedAt(date) {
+      getCreatedAt (date) {
         return date.fromNow()
       }
     }
@@ -411,7 +411,7 @@ test.group('Model', (group) => {
   test('call update hooks when updating model', async (assert) => {
     const stack = []
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
         this.addHook('beforeUpdate', function () {
           stack.push('before')
@@ -435,7 +435,7 @@ test.group('Model', (group) => {
   test('call save hooks when updating or creating model', async (assert) => {
     const stack = []
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
         this.addHook('beforeSave', function (model) {
           stack.push(`before:${model.$persisted}`)
@@ -458,7 +458,7 @@ test.group('Model', (group) => {
 
   test('update updated_at timestamp for mass updates', async (assert) => {
     class User extends Model {
-      static get dates() {
+      static get dates () {
         const dates = super.dates
         dates.push('login_at')
         return dates
@@ -474,11 +474,11 @@ test.group('Model', (group) => {
 
   test('attach computed properties to the final output', async (assert) => {
     class User extends Model {
-      static get computed() {
+      static get computed () {
         return ['full_name']
       }
 
-      getFullName({ username }) {
+      getFullName ({ username }) {
         return `Mr. ${username}`
       }
     }
@@ -491,7 +491,7 @@ test.group('Model', (group) => {
 
   test('only pick visible fields', async (assert) => {
     class User extends Model {
-      static get visible() {
+      static get visible () {
         return ['created_at']
       }
     }
@@ -504,7 +504,7 @@ test.group('Model', (group) => {
 
   test('omit hidden fields', async (assert) => {
     class User extends Model {
-      static get hidden() {
+      static get hidden () {
         return ['created_at']
       }
     }
@@ -595,7 +595,7 @@ test.group('Model', (group) => {
 
   test('define local scopes', async (assert) => {
     class User extends Model {
-      static scopeIsLogged(builder) {
+      static scopeIsLogged (builder) {
         builder.whereNotNull('login_at')
       }
     }
@@ -608,7 +608,7 @@ test.group('Model', (group) => {
 
   test('pass arguments to local scopes', async (assert) => {
     class User extends Model {
-      static scopeIsLogged(builder, time) {
+      static scopeIsLogged (builder, time) {
         builder.where('login_at', '>', time)
       }
     }
@@ -789,7 +789,7 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates(key, value) {
+      static formatDates (key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
       }
@@ -809,7 +809,7 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates(key, value) {
+      static formatDates (key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
       }
@@ -830,7 +830,7 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates(key, value) {
+      static formatDates (key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
       }
@@ -878,13 +878,13 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates(key, value) {
+      static formatDates (key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      setCreatedAt() {
+      setCreatedAt () {
         return null
       }
     }
@@ -905,13 +905,13 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates(key, value) {
+      static formatDates (key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      static get createdAtColumn() {
+      static get createdAtColumn () {
         return null
       }
     }
@@ -932,13 +932,13 @@ test.group('Model', (group) => {
     const formatting = []
 
     class User extends Model {
-      static formatDates(key, value) {
+      static formatDates (key, value) {
         const formattedValue = super.formatDates(key, value)
         formatting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      setUpdatedAt() {
+      setUpdatedAt () {
         return null
       }
     }
@@ -956,7 +956,7 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates(key, value) {
+      static castDates (key, value) {
         const formattedValue = super.castDates(key, value)
         casting.push({ key, value: formattedValue })
         return formattedValue
@@ -980,13 +980,13 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates(key, value) {
+      static castDates (key, value) {
         const formattedValue = value.format('YYYY-MM-DD')
         casting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      static get createdAtColumn() {
+      static get createdAtColumn () {
         return null
       }
     }
@@ -1008,13 +1008,13 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates(key, value) {
+      static castDates (key, value) {
         const formattedValue = super.castDates(key, value)
         casting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      getCreatedAt(value) {
+      getCreatedAt (value) {
         return value.fromNow(true)
       }
     }
@@ -1035,13 +1035,13 @@ test.group('Model', (group) => {
     const casting = []
 
     class User extends Model {
-      static castDates(key, value) {
+      static castDates (key, value) {
         const formattedValue = super.castDates(key, value)
         casting.push({ key, value: formattedValue })
         return formattedValue
       }
 
-      static get dates() {
+      static get dates () {
         const existingDates = super.dates
         existingDates.push('login_at')
         return existingDates
@@ -1248,11 +1248,11 @@ test.group('Model', (group) => {
 
   test('dates should be an empty array when createdAtColumn and updatedAtColumn is not defined', async (assert) => {
     class User extends Model {
-      static get createdAtColumn() {
+      static get createdAtColumn () {
         return null
       }
 
-      static get updatedAtColumn() {
+      static get updatedAtColumn () {
         return null
       }
     }
@@ -1262,11 +1262,11 @@ test.group('Model', (group) => {
 
   test('do not populate dates when columns are set to null', async (assert) => {
     class User extends Model {
-      static get createdAtColumn() {
+      static get createdAtColumn () {
         return null
       }
 
-      static get updatedAtColumn() {
+      static get updatedAtColumn () {
         return null
       }
     }
@@ -1284,7 +1284,7 @@ test.group('Model', (group) => {
     assert.plan(1)
 
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1297,7 +1297,7 @@ test.group('Model', (group) => {
     assert.plan(1)
 
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1308,7 +1308,7 @@ test.group('Model', (group) => {
 
   test('refresh model state', async (assert) => {
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1325,7 +1325,7 @@ test.group('Model', (group) => {
 
   test('do not reload when isNew', async (assert) => {
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1342,7 +1342,7 @@ test.group('Model', (group) => {
   test('throw exception when on reloas the row is missing', async (assert) => {
     assert.plan(2)
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1365,7 +1365,7 @@ test.group('Model', (group) => {
   test('do not reload when model is deleted', async (assert) => {
     assert.plan(2)
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1387,7 +1387,7 @@ test.group('Model', (group) => {
 
   test('rollback save operation via transaction', async (assert) => {
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1411,7 +1411,7 @@ test.group('Model', (group) => {
 
   test('rollback update operation via transaction', async (assert) => {
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1438,7 +1438,7 @@ test.group('Model', (group) => {
 
   test('create inside a transaction', async (assert) => {
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1460,7 +1460,7 @@ test.group('Model', (group) => {
 
   test('createMany inside a transaction', async (assert) => {
     class User extends Model {
-      static boot() {
+      static boot () {
         super.boot()
       }
     }
@@ -1478,5 +1478,35 @@ test.group('Model', (group) => {
 
     const count = await ioc.use('Database').collection('users').count('* as total')
     assert.deepEqual(count, [{ 'total': 0 }])
+  })
+
+  test('define after fetch hook', async (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+
+    const fn = async function () { }
+    User.addHook('afterFetch', fn)
+
+    assert.deepEqual(User.$hooks.after._handlers.fetch, [{ handler: fn, name: undefined }])
+  })
+
+  test('call after fetch hook when fetching data', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+
+    const fn = async function (instances) {
+      instances.forEach((instance) => {
+        assert.instanceOf(instance, User)
+      })
+    }
+
+    User.addHook('afterFetch', fn)
+    await ioc.use('Database').table('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await User.all('username', 'virk')
   })
 })
