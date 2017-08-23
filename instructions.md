@@ -1,6 +1,6 @@
 ## Registering provider
 
-Make sure to register the lucid provider to make use of `Database` and `Lucid` models. The providers are registered inside `start/app.js`
+Make sure to register the lucid mongo provider to make use of `Database` and `LucidMongo` models. The providers are registered inside `start/app.js`
 
 ```js
 const providers = [

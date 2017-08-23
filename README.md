@@ -48,9 +48,9 @@ const config = {
     connection: {
       host: 'localhost',
       port: 27017,
-      user: 'test_user',
-      password: 'test_password',
-      database: 'test_database'
+      user: 'my_user',
+      password: 'my_password',
+      database: 'my_database'
     }
   }
 }
@@ -95,15 +95,14 @@ adonis install lucid-mongo
 
 [See the doc of v1.x here](https://github.com/duyluonglc/lucid-mongo/blob/1.x/README.md)
 
-Register lucid providers inside the your `bootstrap/app.js` file.
-you should complete replace all setting of `@adonis/lucid` with `lucid-mongo`
+Make sure to register the lucid provider to make use of `Database` and `LucidMongo` models. The providers are registered inside `start/app.js`
 
-```javascript
+```js
 const providers = [
   // ...
-  // 'adonis-lucid/providers/DatabaseProvider',
-  // 'adonis-lucid/providers/LucidMongoProvider',
-  // 'adonis-lucid/providers/FactoryProvider'  
+  // '@adonis/lucid/providers/DatabaseProvider',
+  // '@adonis/lucid/providers/LucidMongoProvider',
+  // '@adonis/lucid/providers/FactoryProvider'  
   'lucid-mongo/providers/DatabaseProvider',
   'lucid-mongo/providers/LucidMongoProvider',
   'lucid-mongo/providers/FactoryProvider',
@@ -111,32 +110,30 @@ const providers = [
 
 const aceProviders = [
   // ...
-  // 'adonis-lucid/providers/CommandsProvider',
-  // 'adonis-lucid/providers/MigrationsProvider',
-  // 'adonis-lucid/providers/SchemaProvider',
-  // 'adonis-lucid/providers/SeederProvider',  
+  // '@adonis/lucid/providers/CommandsProvider',
+  // '@adonis/lucid/providers/MigrationsProvider',
+  // '@adonis/lucid/providers/SchemaProvider',
+  // '@adonis/lucid/providers/SeederProvider',  
   'lucid-mongo/providers/CommandsProvider',
   'lucid-mongo/providers/MigrationsProvider',
   'lucid-mongo/providers/SchemaProvider',
   'lucid-mongo/providers/SeederProvider',
 ]
-```
 
-setting up aliases inside `bootstrap/app.js` file.
+// setting up aliases.
 
-```javascript
 const aliases = {
   Database: 'Adonis/Src/Database',
-  Lucid: 'Adonis/Src/LucidMongo',
+  Model: 'Adonis/Src/LucidMongo',
   Schema: 'Adonis/Src/Schema'
   Migrations: 'Adonis/Src/Migrations',
   Factory: 'Adonis/Src/Factory'
 }
 ```
 
-add config to `config/database.js` file
+the config automatic create to `config/database.js` file
 
-```javascript
+```js
 module.exports = {
 
   /*
