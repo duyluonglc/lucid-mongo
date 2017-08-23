@@ -4,13 +4,20 @@
 
 [![Version](https://img.shields.io/npm/v/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-[![Build Status](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb.svg?branch=develop)](https://travis-ci.org/duyluonglc/adonis-lucid-mongodb)
-[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/adonis-lucid-mongodb/develop.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/adonis-lucid-mongodb?branch=develop)
-[![Downloads](https://img.shields.io/npm/dt/adonis-lucid-mongodb.svg?style=flat-square)](https://www.npmjs.com/package/adonis-lucid-mongodb)
-[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/adonis-lucid-mongodb.svg)](https://greenkeeper.io/)
+[![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=1.x)](https://travis-ci.org/duyluonglc/lucid-mongo)
+[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/1.x.svg?style=flat-square)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=1.x)
+[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/lucid-mongo.svg)](https://greenkeeper.io/)
+
 > :pray: This repository is base on adonis-lucid. This package only work with mongodb.
 
-Adonis-lucid-mongodb is a mongo query builder and ORM for Adonis framework. It also has support for database migrations, seeds and factories as Adonis-lucid.
+### Breaking update
+Version 2.x was published to npm
+| Adonis version  | Lucid Mongo version |
+| ------------- | ------------- |
+| 3.x.x  | 1.x.x  |
+| 4.x.x  | 2.x.x  |
+
+Adonis-lucid-mongodb is a mongo query builder and ODM for Adonis framework. It also has support for database migrations, seeds and factories as Adonis-lucid.
 
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
@@ -139,17 +146,26 @@ class Bill extends Model {
 ### Query relationships
 
 ```js
-  const user = User.with('emails').find(1)
+  const user = yield User.with('emails').find(1)
 
-  const user = User.with('emails', 'phone').find(1)
+  const user = yield User.with('emails', 'phone').fetch()
 
-  const user = User.with(['emails', 'phone']).find(1)
+  const user = yield User.with(['emails', 'phone']).fetch()
 
-  const user = User.with({relation: 'email', 'scope': {where: {verified: true}, sort: '-age'}}).find(1)
+  const user = yield User.with({
+    relation: 'familyMembers', 
+    scope: {
+        where: { verified: true }, 
+        sort: '-age'
+    }
+  }).fetch()
 
-  const user = User.with({relation: 'email', 'scope': query => {
-    query.where(active, true).limit(1)
-  }}).find(1)
+  const user = yield User.with({
+    relation: 'familyMembers', 
+    scope: query => {
+      query.where(active, true).where('age').lt(18)
+    }
+  }).fetch()
 
 ```
 
