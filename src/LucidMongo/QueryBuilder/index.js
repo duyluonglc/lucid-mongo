@@ -353,13 +353,16 @@ class QueryBuilder {
      */
     this._applyScopes()
     const collection = await this.db.collection(this.collection)
-    this.query.limit(limit).skip((page || 1) * limit)
-    const result = await this.query.collection(collection).find()
+    const countByQuery = await this.query.collection(collection).count()
+    this.query.limit(limit).skip((page - 1) * limit)
+    const rows = await this.query.collection(collection).find()
+
+    const result = util.makePaginateMeta(countByQuery, page, limit)
 
     /**
      * Convert to an array of model instances
      */
-    const modelInstances = this._mapRowsToInstances(result.data)
+    const modelInstances = this._mapRowsToInstances(rows)
     await this._eagerLoad(modelInstances)
 
     /**
