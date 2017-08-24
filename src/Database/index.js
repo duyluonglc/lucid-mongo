@@ -41,6 +41,52 @@ const proxyHandler = {
   }
 }
 
+class SchemaBuilder {
+  constructor (collection) {
+    this.collection = collection
+    this.createIndexes = []
+    this.dropIndexes = []
+
+    this.increments = () => this
+    this.timestamps = () => this
+    this.softDeletes = () => this
+    this.string = () => this
+    this.timestamp = () => this
+    this.boolean = () => this
+    this.integer = () => this
+    this.double = () => this
+    this.nullable = () => this
+    this.defaultTo = () => this
+  }
+
+  index (name, keys, options) {
+    if (!name) {
+      throw new CE.InvalidArgumentException(`param name is required to create index`)
+    }
+    if (!keys || !_.size(keys)) {
+      throw new CE.InvalidArgumentException(`param keys is required to create index`)
+    }
+    options = options || {}
+    options['name'] = name
+    this.createIndexes.push({ keys, options })
+  }
+
+  dropIndex (name) {
+    this.dropIndexes.push(name)
+  }
+
+  async build () {
+    for (var i in this.createIndexes) {
+      var createIndex = this.createIndexes[i]
+      await this.collection.createIndex(createIndex.keys, createIndex.options)
+    }
+    for (var j in this.dropIndexes) {
+      var dropIndex = this.dropIndexes[j]
+      await this.collection.dropIndex(dropIndex.keys, dropIndex.options)
+    }
+  }
+}
+
 /**
  * The database class is a reference to mquery for a single
  * connection. It has couple of extra methods over mquery.
@@ -63,10 +109,11 @@ class Database {
     this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
     this.connection = null
     this._globalTrx = null
+    this.mquery = mquery()
     return new Proxy(this, proxyHandler)
   }
 
-  async connect () {
+  async connect (collectionName) {
     if (!this.connection) {
       this.connection = await MongoClient.connect(this.connectionString)
     }
@@ -78,6 +125,11 @@ class Database {
       this.connection = await MongoClient.connect(this.connectionString)
     }
     return Promise.resolve(this.connection.collection(collectionName))
+  }
+
+  setCollection (collectionName) {
+    this.collectionName = collectionName
+    return this
   }
 
   /**
@@ -108,24 +160,44 @@ class Database {
    */
   get schema () {
     return {
-      createCollection: async () => {
-
+      createCollection: async (collectionName, callback) => {
+        const db = await this.connect()
+        const collection = await db.createCollection(collectionName)
+        const schemaBuilder = new SchemaBuilder(collection)
+        callback(schemaBuilder)
+        return schemaBuilder.build()
       },
-      dropCollection: async () => {
-
+      createCollectionIfNotExists: async (collectionName, callback) => {
+        const db = await this.connect()
+        const collections = await db.listCollections().toArray()
+        if (!collections.includes(collectionName)) {
+          const collection = await db.createCollection(collectionName)
+          const schemaBuilder = new SchemaBuilder(collection)
+          callback(schemaBuilder)
+          return schemaBuilder.build()
+        }
+      },
+      dropCollection: async (collectionName) => {
+        const db = await this.connect()
+        return db.dropCollection(collectionName)
+      },
+      dropCollectionIfExists: async (collectionName) => {
+        const db = await this.connect()
+        const collections = await db.listCollections().toArray()
+        if (collections.includes(collectionName)) {
+          return db.dropCollection(collectionName)
+        }
+      },
+      renameCollection: async (collectionName, target) => {
+        const db = await this.connect()
+        return db.collection(collectionName).rename(target)
+      },
+      hasCollection: async (collectionName) => {
+        const db = await this.connect()
+        const collections = await db.listCollections().toArray()
+        return _.find(collections, collection => collection.name === collectionName) !== null
       }
     }
-  }
-
-  /**
-   * Returns the fn from mquery instance
-   *
-   * @method fn
-   *
-   * @return {Object}
-   */
-  get fn () {
-    return this.mquery.fn
   }
 
   /**
@@ -222,7 +294,8 @@ class Database {
    * @return {Object}
    */
   query () {
-    return mquery()
+    this.mquery = mquery()
+    return this.mquery
   }
 
   /**

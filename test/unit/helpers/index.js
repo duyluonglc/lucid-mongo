@@ -30,8 +30,8 @@ module.exports = {
         connection: {
           host: process.env.DB_HOST || '127.0.0.1',
           port: process.env.DB_PORT || '27017',
-          user: process.env.DB_USER || 'admin',
-          password: process.env.DB_PASSWORD || '',
+          user: process.env.DB_USER || 'test',
+          password: process.env.DB_PASSWORD || 'test',
           database: process.env.DB_NAME || 'test_lucid'
         }
       })

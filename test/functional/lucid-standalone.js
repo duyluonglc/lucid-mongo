@@ -31,8 +31,8 @@ test.group('Database', (group) => {
   })
 
   group.afterEach(async () => {
-    await db.collection('users').remove()
-    await db.collection('profiles').remove()
+    await db.collection('users').delete()
+    await db.collection('profiles').delete()
   })
 
   group.after(async () => {

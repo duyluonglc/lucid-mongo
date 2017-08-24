@@ -270,16 +270,9 @@ class Schema {
       })
     }
 
-    const trx = await this.db.beginTransaction()
     for (let action of this._deferredActions) {
-      try {
-        await trx.schema[action.name](...action.args)
-      } catch (error) {
-        trx.rollback()
-        throw error
-      }
+      await this.schema[action.name](...action.args)
     }
-    trx.commit()
     this._deferredActions = []
     return [] // just to be consistent with the return output
   }

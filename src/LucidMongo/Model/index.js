@@ -335,7 +335,7 @@ class Model extends BaseModel {
      * If user has defined wrong hook cycle, do let them know
      */
     if (!this.$hooks[cycle]) {
-      throw CE.InvalidArgumentException.invalidParameter(`Invalid hook event {${forEvent}}`)
+      throw GE.InvalidArgumentException.invalidParameter(`Invalid hook event {${forEvent}}`)
     }
 
     /**
@@ -882,7 +882,7 @@ class Model extends BaseModel {
      */
     await this.constructor.$hooks.before.exec('delete', this)
 
-    const affected = await this.constructor
+    const response = await this.constructor
       .query()
       .where(this.constructor.primaryKey, this.primaryKeyValue)
       .ignoreScopes()
@@ -891,7 +891,7 @@ class Model extends BaseModel {
     /**
      * If model was delete then freeze it modifications
      */
-    if (affected > 0) {
+    if (response.result.n > 0) {
       this.freeze()
     }
 
@@ -899,7 +899,7 @@ class Model extends BaseModel {
      * Executing after hooks
      */
     await this.constructor.$hooks.after.exec('delete', this)
-    return !!affected
+    return !!response.result.ok
   }
 
   /**

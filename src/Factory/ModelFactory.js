@@ -153,7 +153,7 @@ class ModelFactory {
    * @return {Number}
    */
   async reset () {
-    return ioc.use(this.Model).query().remove()
+    return ioc.use(this.Model).query().delete()
   }
 }
 

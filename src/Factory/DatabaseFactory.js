@@ -203,7 +203,7 @@ class DatabaseFactory {
    * @return {Number}
    */
   async reset () {
-    return this._getQueryBuilder().remove()
+    return this._getQueryBuilder().delete()
   }
 }
 

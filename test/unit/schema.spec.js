@@ -104,13 +104,6 @@ test.group('Schema', (group) => {
     assert.deepEqual(userSchema._deferredActions, [{ name: 'renameCollection', args: ['users', 'my_users'] }])
   })
 
-  test('should have access to knex fn', async (assert) => {
-    class UserSchema extends Schema {
-    }
-    const userSchema = new UserSchema(ioc.use('Database'))
-    assert.isDefined(userSchema.fn.now)
-  })
-
   test('execute schema actions in sequence', async (assert) => {
     class UserSchema extends Schema {
       up () {
@@ -134,51 +127,24 @@ test.group('Schema', (group) => {
     await ioc.use('Database').schema.dropCollection('schema_profile')
   })
 
-  test('rollback schema actions on exception', async (assert) => {
-    class UserSchema extends Schema {
-      up () {
-        this.createCollection('schema_users', (collection) => {
-          collection.increments()
-        })
+  // test('get actions sql over executing them', async (assert) => {
+  //   class UserSchema extends Schema {
+  //     up () {
+  //       this.createCollection('schema_users', (collection) => {
+  //         collection.increments()
+  //       })
 
-        this.createCollection('users', (collection) => {
-          collection.increments()
-        })
-      }
-    }
+  //       this.createCollection('users', (collection) => {
+  //         collection.increments()
+  //       })
+  //     }
+  //   }
 
-    const userSchema = new UserSchema(ioc.use('Database'))
-    userSchema.up()
-    try {
-      await userSchema.executeActions()
-      assert.isFalse(true)
-    } catch ({ message }) {
-      assert.include(message, helpers.formatQuery('already exists'))
-      if (process.env.DB !== 'mysql') {
-        const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
-        assert.isFalse(hasSchemaUsers)
-      }
-    }
-  })
-
-  test('get actions sql over executing them', async (assert) => {
-    class UserSchema extends Schema {
-      up () {
-        this.createCollection('schema_users', (collection) => {
-          collection.increments()
-        })
-
-        this.createCollection('users', (collection) => {
-          collection.increments()
-        })
-      }
-    }
-
-    const userSchema = new UserSchema(ioc.use('Database'))
-    userSchema.up()
-    const queries = await userSchema.executeActions(true)
-    assert.lengthOf(queries, 2)
-    const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
-    assert.isFalse(hasSchemaUsers)
-  })
+  //   const userSchema = new UserSchema(ioc.use('Database'))
+  //   userSchema.up()
+  //   const queries = await userSchema.executeActions(true)
+  //   assert.lengthOf(queries, 2)
+  //   const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
+  //   assert.isFalse(hasSchemaUsers)
+  // })
 })

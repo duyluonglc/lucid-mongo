@@ -469,7 +469,7 @@ class QueryBuilder {
    * @return {Collection}
    */
   pickInverse (limit = 1) {
-    this.query.orderBy(this.Model.primaryKey, 'desc').limit(limit)
+    this.query.sort(`-${this.Model.primaryKey}`).limit(limit)
     return this.fetch()
   }
 
@@ -484,7 +484,7 @@ class QueryBuilder {
    * @return {Collection}
    */
   pick (limit = 1) {
-    this.query.orderBy(this.Model.primaryKey, 'asc').limit(limit)
+    this.query.sort(this.Model.primaryKey).limit(limit)
     return this.fetch()
   }
 
@@ -926,7 +926,7 @@ class QueryBuilder {
    * @return {Object}
    */
   toSQL () {
-    return JSON.stringify(this.mquery)
+    return JSON.stringify(this.query)
   }
 
   /**
