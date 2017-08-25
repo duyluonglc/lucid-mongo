@@ -12,6 +12,7 @@
 const { MongoClient } = require('mongodb')
 const mquery = require('mquery')
 const CE = require('../Exceptions')
+const util = require('../../lib/util')
 const _ = require('lodash')
 
 const proxyHandler = {
@@ -402,7 +403,11 @@ class Database {
   async paginate (page, limit) {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return this.mquery.collection(collection).limit(limit).skip((page || 1) * limit).find()
+    const countByQuery = await this.aggregate('count')
+    const rows = await this.mquery.collection(collection).limit(limit).skip((page || 1) * limit).find()
+    const result = util.makePaginateMeta(countByQuery, page, limit)
+    result.data = rows
+    return result
   }
 
   /**
