@@ -169,12 +169,7 @@ class DatabaseFactory {
    */
   async create (data = {}) {
     const attributes = await this.make(data)
-    const query = this._getQueryBuilder()
-
-    if (this._returningColumn) {
-      query.returning(this._returningColumn)
-    }
-
+    const query = await this._getQueryBuilder()
     return query.insert(attributes)
   }
 
@@ -203,7 +198,8 @@ class DatabaseFactory {
    * @return {Number}
    */
   async reset () {
-    return this._getQueryBuilder().delete()
+    const query = await this._getQueryBuilder()
+    return query.remove()
   }
 }
 
