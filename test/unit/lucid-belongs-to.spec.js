@@ -157,7 +157,6 @@ test.group('Relations | Belongs To', (group) => {
     ])
 
     const profiles = await Profile.query().with('user').paginate()
-    console.log(profiles.rows)
     assert.instanceOf(profiles, VanillaSerializer)
     assert.equal(profiles.size(), 2)
     assert.instanceOf(profiles.first().getRelated('user'), User)
