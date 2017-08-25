@@ -121,14 +121,14 @@ class Database {
     return Promise.resolve(this.connection)
   }
 
-  async collection (collectionName) {
+  async getCollection (collectionName) {
     if (!this.connection) {
       this.connection = await MongoClient.connect(this.connectionString)
     }
     return Promise.resolve(this.connection.collection(collectionName))
   }
 
-  setCollection (collectionName) {
+  collection (collectionName) {
     this.collectionName = collectionName
     return this
   }
@@ -297,6 +297,20 @@ class Database {
   query () {
     this.mquery = mquery()
     return this.mquery
+  }
+
+  /**
+   * fn
+   *
+   * @method fn
+   *
+   * @return {Object}
+   */
+  get fn () {
+    return {
+      remove: (path) => console.log('remove', path),
+      now: () => new Date()
+    }
   }
 
   /**

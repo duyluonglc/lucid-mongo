@@ -37,9 +37,9 @@ test.group('Relations | Belongs To Many', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').collection('users').remove()
-    await ioc.use('Adonis/Src/Database').collection('posts').remove()
-    await ioc.use('Adonis/Src/Database').collection('post_user').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').delete()
+    await ioc.use('Adonis/Src/Database').collection('posts').delete()
+    await ioc.use('Adonis/Src/Database').collection('post_user').delete()
   })
 
   group.after(async () => {
@@ -863,7 +863,7 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(post.getRelated('pivot').post_id, 1)
     assert.equal(post.getRelated('pivot').user_id, 2)
 
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(pivotValues[0].post_id, 1)
     assert.equal(pivotValues[0].user_id, 2)
@@ -895,7 +895,7 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(post.getRelated('pivot').post_id, 1)
     assert.equal(post.getRelated('pivot').user_id, 2)
 
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(pivotValues[0].post_id, 1)
     assert.equal(pivotValues[0].user_id, 2)
@@ -938,7 +938,7 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(post.getRelated('pivot').post_id, 1)
     assert.equal(post.getRelated('pivot').user_id, 2)
 
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(pivotValues[0].post_id, 1)
     assert.equal(pivotValues[0].user_id, 2)
@@ -971,7 +971,7 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(post.getRelated('pivot').user_id, 2)
     assert.equal(post.getRelated('pivot').is_published, true)
 
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(pivotValues[0].post_id, 1)
     assert.equal(pivotValues[0].user_id, 2)
@@ -1029,7 +1029,7 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.save()
 
     await user.posts().attach(1)
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(pivotValues[0].user_id, 1)
     assert.equal(pivotValues[0].post_id, 1)
@@ -1053,7 +1053,7 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.save()
 
     await user.posts().attach(1, (pivotModel) => (pivotModel.is_published = true))
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(pivotValues[0].user_id, 1)
     assert.equal(pivotValues[0].post_id, 1)
@@ -1078,7 +1078,7 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.save()
 
     await user.posts().attach([1, 2, 3])
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 3)
     assert.equal(pivotValues[0].user_id, 1)
     assert.equal(pivotValues[0].post_id, 1)
@@ -1106,7 +1106,7 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.save()
 
     await user.posts().attach([1, 2, 3], (pivotModel) => (pivotModel.is_published = true))
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 3)
     assert.equal(pivotValues[0].user_id, 1)
     assert.equal(pivotValues[0].post_id, 1)
@@ -1143,7 +1143,7 @@ test.group('Relations | Belongs To Many', (group) => {
         pivotModel.is_published = false
       }
     })
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 3)
     assert.equal(pivotValues[0].user_id, 1)
     assert.equal(pivotValues[0].post_id, 1)
@@ -1221,7 +1221,7 @@ test.group('Relations | Belongs To Many', (group) => {
         pivotModel.is_published = false
       }
     })
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 3)
     assert.equal(pivotValues[0].user_id, 1)
     assert.equal(pivotValues[0].post_id, 1)
@@ -1303,7 +1303,7 @@ test.group('Relations | Belongs To Many', (group) => {
     const post = await Post.create({ title: 'Adonis 101' })
     await user.posts().attach(post.id)
     await user.posts().attach(post.id)
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
   })
 
@@ -1328,7 +1328,7 @@ test.group('Relations | Belongs To Many', (group) => {
     const cachedPost = await userPosts.attach(post.id)
     assert.deepEqual(cachedPost[0], userPosts._existingPivotInstances[0])
     assert.lengthOf(userPosts._existingPivotInstances, 1)
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
   })
 
@@ -1347,10 +1347,10 @@ test.group('Relations | Belongs To Many', (group) => {
 
     const user = await User.create({ username: 'virk', id: 2 })
     const post = await Post.create({ title: 'Adonis 101' })
-    await ioc.use('Database').collection('post_user').insert({ post_id: 1, user_id: 2 })
+    await ioc.use('Database').collection('post_user').insert({ post_id: 1, user_id: 2 }).find()
     const userPost = user.posts()
     await userPost.attach(post.id)
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
   })
 
@@ -1379,11 +1379,11 @@ test.group('Relations | Belongs To Many', (group) => {
 
     const user = await User.create({ username: 'virk', id: 2 })
     const post = await Post.create({ title: 'Adonis 101' })
-    await ioc.use('Database').collection('post_user').insert({ post_id: 1, user_id: 2 })
+    await ioc.use('Database').collection('post_user').insert({ post_id: 1, user_id: 2 }).find()
     const userPost = user.posts()
     await userPost.attach(post.id)
     assert.instanceOf(userPost._existingPivotInstances[0], PostUser)
-    const pivotValues = await ioc.use('Database').collection('post_user')
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 1)
     assert.equal(postQuery.sql, helpers.formatQuery('select "post_id", "user_id" from "post_user" where "user_id" = ?'))
   })
@@ -1403,10 +1403,10 @@ test.group('Relations | Belongs To Many', (group) => {
 
     const user = await User.create({ username: 'virk', id: 2 })
     const post = await Post.create({ title: 'Adonis 101' })
-    await ioc.use('Database').collection('post_user').insert({ user_id: 2, post_id: 1 })
+    await ioc.use('Database').collection('post_user').insert({ user_id: 2, post_id: 1 }).find()
     await user.posts().save(post)
-    const postsCount = await ioc.use('Database').collection('posts')
-    const pivotCount = await ioc.use('Database').collection('post_user')
+    const postsCount = await ioc.use('Database').collection('posts').find()
+    const pivotCount = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(postsCount, 1)
     assert.lengthOf(pivotCount, 1)
   })
@@ -1439,8 +1439,8 @@ test.group('Relations | Belongs To Many', (group) => {
     const userPost = user.posts()
     await userPost.attach(post.id)
     await userPost.detach()
-    const postsCount = await ioc.use('Database').collection('posts')
-    const pivotCount = await ioc.use('Database').collection('post_user')
+    const postsCount = await ioc.use('Database').collection('posts').find()
+    const pivotCount = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(postsCount, 1)
     assert.lengthOf(pivotCount, 0)
     assert.lengthOf(userPost._existingPivotInstances, 0)
@@ -1476,8 +1476,8 @@ test.group('Relations | Belongs To Many', (group) => {
     const userPost = user.posts()
     await userPost.attach([1, 2])
     await userPost.detach(1)
-    const postsCount = await ioc.use('Database').collection('posts')
-    const pivotCount = await ioc.use('Database').collection('post_user')
+    const postsCount = await ioc.use('Database').collection('posts').find()
+    const pivotCount = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(postsCount, 2)
     assert.lengthOf(pivotCount, 1)
     assert.lengthOf(userPost._existingPivotInstances, 1)
@@ -1515,8 +1515,8 @@ test.group('Relations | Belongs To Many', (group) => {
     await Post.create({ title: 'Lucid 101' })
     await user.posts().attach([1, 2])
     await user.posts().where('posts.id', 1).delete()
-    const postsCount = await ioc.use('Database').collection('posts')
-    const postUserCount = await ioc.use('Database').collection('post_user')
+    const postsCount = await ioc.use('Database').collection('posts').find()
+    const postUserCount = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(postsCount, 1)
     assert.lengthOf(postUserCount, 1)
     assert.equal(postQuery.sql, helpers.formatQuery('delete from "posts" where "id" in (?)'))
@@ -1620,7 +1620,7 @@ test.group('Relations | Belongs To Many', (group) => {
 
     await ioc.use('Database').collection('users').insert({ id: 20, username: 'virk' })
     await ioc.use('Database').collection('posts').insert({ id: 18, title: 'Adonis 101' })
-    await ioc.use('Database').collection('post_user').insert({ post_id: 18, user_id: 20 })
+    await ioc.use('Database').collection('post_user').insert({ post_id: 18, user_id: 20 }).find()
 
     await User.query().with('posts', (builder) => {
       builder.select('title')
@@ -1647,7 +1647,7 @@ test.group('Relations | Belongs To Many', (group) => {
 
     await ioc.use('Database').collection('users').insert({ id: 20, username: 'virk' })
     await ioc.use('Database').collection('posts').insert({ id: 18, title: 'Adonis 101' })
-    await ioc.use('Database').collection('post_user').insert({ post_id: 18, user_id: 20 })
+    await ioc.use('Database').collection('post_user').insert({ post_id: 18, user_id: 20 }).find()
 
     const user = await User.find(20)
     await user.posts().select('title').fetch()

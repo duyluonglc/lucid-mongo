@@ -37,9 +37,9 @@ test.group('Relations | Belongs To', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').collection('users').remove()
-    await ioc.use('Adonis/Src/Database').collection('profiles').remove()
-    await ioc.use('Adonis/Src/Database').collection('pictures').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').delete()
+    await ioc.use('Adonis/Src/Database').collection('profiles').delete()
+    await ioc.use('Adonis/Src/Database').collection('pictures').delete()
   })
 
   group.after(async () => {
@@ -416,7 +416,7 @@ test.group('Relations | Belongs To', (group) => {
     assert.equal(profile.user_id, 1)
     assert.isFalse(profile.isNew)
 
-    const freshProfile = await ioc.use('Database').collection('profiles').first()
+    const freshProfile = await ioc.use('Database').collection('profiles').findOne()
     assert.equal(freshProfile.id, 1)
     assert.equal(freshProfile.user_id, 1)
     assert.equal(profileQuery.sql, helpers.formatQuery('update "profiles" set "updated_at" = ?, "user_id" = ? where "id" = ?'))
@@ -452,7 +452,7 @@ test.group('Relations | Belongs To', (group) => {
     assert.equal(profile.user_id, 1)
     assert.isFalse(profile.isNew)
 
-    const freshProfile = await ioc.use('Database').collection('profiles').first()
+    const freshProfile = await ioc.use('Database').collection('profiles').findOne()
     assert.equal(freshProfile.id, 1)
     assert.equal(freshProfile.user_id, 1)
     assert.equal(profileQuery.sql, helpers.formatQuery(helpers.addReturningStatement('insert into "profiles" ("created_at", "profile_name", "updated_at", "user_id") values (?, ?, ?, ?)', 'id')))
@@ -489,11 +489,11 @@ test.group('Relations | Belongs To', (group) => {
     assert.isFalse(profile.isNew)
     assert.isFalse(user.isNew)
 
-    const freshProfile = await ioc.use('Database').collection('profiles').first()
+    const freshProfile = await ioc.use('Database').collection('profiles').findOne()
     assert.equal(freshProfile.id, 1)
     assert.equal(freshProfile.user_id, 1)
 
-    const freshUser = await ioc.use('Database').collection('users').first()
+    const freshUser = await ioc.use('Database').collection('users').findOne()
     assert.equal(freshUser.id, 1)
     assert.equal(profileQuery.sql, helpers.formatQuery(helpers.addReturningStatement('insert into "profiles" ("created_at", "profile_name", "updated_at", "user_id") values (?, ?, ?, ?)', 'id')))
     assert.equal(userQuery.sql, helpers.formatQuery(helpers.addReturningStatement('insert into "users" ("created_at", "updated_at", "username") values (?, ?, ?)', 'id')))
@@ -525,7 +525,7 @@ test.group('Relations | Belongs To', (group) => {
     assert.equal(profile.user_id, null)
     assert.isFalse(profile.isNew)
 
-    const freshProfile = await ioc.use('Database').collection('profiles').first()
+    const freshProfile = await ioc.use('Database').collection('profiles').findOne()
     assert.equal(freshProfile.id, 1)
     assert.equal(freshProfile.user_id, null)
 

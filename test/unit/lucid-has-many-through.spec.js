@@ -37,9 +37,9 @@ test.group('Relations | Has Many Through - Has Many ', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').collection('countries').remove()
-    await ioc.use('Adonis/Src/Database').collection('users').remove()
-    await ioc.use('Adonis/Src/Database').collection('posts').remove()
+    await ioc.use('Adonis/Src/Database').collection('countries').delete()
+    await ioc.use('Adonis/Src/Database').collection('users').delete()
+    await ioc.use('Adonis/Src/Database').collection('posts').delete()
   })
 
   group.after(async () => {
@@ -356,9 +356,9 @@ test.group('Relations | Has Many Through - Belongs To', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').collection('countries').remove()
-    await ioc.use('Adonis/Src/Database').collection('users').remove()
-    await ioc.use('Adonis/Src/Database').collection('profiles').remove()
+    await ioc.use('Adonis/Src/Database').collection('countries').delete()
+    await ioc.use('Adonis/Src/Database').collection('users').delete()
+    await ioc.use('Adonis/Src/Database').collection('profiles').delete()
   })
 
   group.after(async () => {
@@ -501,10 +501,10 @@ test.group('Relations | Has Many Through - Belongs To Many', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').collection('categories').remove()
-    await ioc.use('Adonis/Src/Database').collection('sections').remove()
-    await ioc.use('Adonis/Src/Database').collection('posts').remove()
-    await ioc.use('Adonis/Src/Database').collection('post_section').remove()
+    await ioc.use('Adonis/Src/Database').collection('categories').delete()
+    await ioc.use('Adonis/Src/Database').collection('sections').delete()
+    await ioc.use('Adonis/Src/Database').collection('posts').delete()
+    await ioc.use('Adonis/Src/Database').collection('post_section').delete()
   })
 
   group.after(async () => {

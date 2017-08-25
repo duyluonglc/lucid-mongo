@@ -37,9 +37,9 @@ test.group('Relations | Has Many', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').collection('users').remove()
-    await ioc.use('Adonis/Src/Database').collection('cars').remove()
-    await ioc.use('Adonis/Src/Database').collection('parts').remove()
+    await ioc.use('Adonis/Src/Database').collection('users').delete()
+    await ioc.use('Adonis/Src/Database').collection('cars').delete()
+    await ioc.use('Adonis/Src/Database').collection('parts').delete()
   })
 
   group.after(async () => {

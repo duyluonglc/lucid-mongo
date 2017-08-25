@@ -29,7 +29,7 @@ test.group('Providers', (group) => {
 
   test('register lucid provider and access query builder', async (assert) => {
     await registrar
-      .providers([path.join(__dirname, '../../providers/LucidProvider')])
+      .providers([path.join(__dirname, '../../providers/LucidMongoProvider')])
       .registerAndBoot()
 
     assert.isDefined(ioc.use('Adonis/Src/Database'))

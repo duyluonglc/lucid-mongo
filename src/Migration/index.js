@@ -47,7 +47,7 @@ class Migration {
       // collection.increments()
       collection.string('name')
       collection.integer('batch')
-      collection.timestamp('migration_time').defaultsTo(this.db.fn.now())
+      // collection.timestamp('migration_time').defaultsTo(this.db.fn.now())
     })
   }
 
@@ -78,7 +78,7 @@ class Migration {
    * @private
    */
   _addLock () {
-    return this.db.insert({ is_locked: true }).into(this._lockCollection)
+    return this.db.collection(this._lockCollection).insert({ is_locked: true })
   }
 
   /**
@@ -131,8 +131,8 @@ class Migration {
    * @private
    */
   async _getLatestBatch () {
-    const batch = await this.db.collection(this._migrationsCollection).max('batch as batch')
-    return Number(_.get(batch, '0.batch', 0))
+    const batch = await this.db.collection(this._migrationsCollection).aggregate('max', 'batch')
+    return Number(batch | 0)
   }
 
   /**
@@ -167,7 +167,7 @@ class Migration {
    * @private
    */
   _remove (name) {
-    return this.db.collection(this._migrationsCollection).where('name', name).delete()
+    return this.db.collection(this._migrationsCollection).delete({ name })
   }
 
   /**
@@ -186,14 +186,16 @@ class Migration {
    *
    * @private
    */
-  _getAfterBatch (batch = 0) {
-    const query = this.db.collection(this._migrationsCollection)
-
+  async _getAfterBatch (batch = 0) {
+    // const query = this.db.collection(this._migrationsCollection)
+    const query = this.db.query()
     if (batch > 0) {
       query.where('batch', '>', batch)
     }
 
-    return query.orderBy('name').pluck('name')
+    const collection = await this.db.getCollection(this._migrationsCollection)
+    const rows = await query.sort('name').collection(collection).find()
+    return rows.map((row) => row.name)
   }
 
   /**

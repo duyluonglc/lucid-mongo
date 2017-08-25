@@ -38,7 +38,7 @@ test.group('Migration Run', (group) => {
 
     await registrar
       .providers([
-        path.join(__dirname, '../../providers/LucidProvider'),
+        path.join(__dirname, '../../providers/LucidMongoProvider'),
         path.join(__dirname, '../../providers/MigrationsProvider')
       ]).registerAndBoot()
 
@@ -49,7 +49,7 @@ test.group('Migration Run', (group) => {
 
   group.afterEach(async () => {
     ace.commands = {}
-    await ioc.use('Database').collection('adonis_schema').remove()
+    await ioc.use('Database').collection('adonis_schema').delete()
     await ioc.use('Database').schema.dropCollectionIfExists('schema_users')
   })
 
@@ -92,7 +92,7 @@ test.group('Migration Run', (group) => {
 
     const result = await ace.call('migration:run')
     assert.deepEqual(result, { migrated: ['User'], status: 'completed', queries: undefined })
-    const migrations = await ioc.use('Database').collection('adonis_schema')
+    const migrations = await ioc.use('Database').collection('adonis_schema').find()
     assert.lengthOf(migrations, 1)
     assert.equal(migrations[0].batch, 1)
     assert.equal(migrations[0].name, 'User')
@@ -115,7 +115,7 @@ test.group('Migration Run', (group) => {
     `)
 
     const result = await ace.call('migration:run', {}, { log: true })
-    const migrations = await ioc.use('Database').collection('adonis_schema')
+    const migrations = await ioc.use('Database').collection('adonis_schema').find()
     assert.lengthOf(migrations, 0)
     assert.isArray(result.queries)
   })

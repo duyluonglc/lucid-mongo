@@ -41,8 +41,8 @@ test.group('Model', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Database').setCollection('users').delete()
-    await ioc.use('Database').setCollection('my_users').delete()
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
   })
 
   group.after(async () => {
@@ -256,7 +256,7 @@ test.group('Model', (group) => {
       await user.save()
     } catch ({ message }) {
       assert.equal(message, 'Something bad happened')
-      const users = await ioc.use('Database').setCollection('users').find()
+      const users = await ioc.use('Database').collection('users').find()
       assert.lengthOf(users, 0)
     }
   })
@@ -271,7 +271,7 @@ test.group('Model', (group) => {
     await user.save()
     user.username = 'nikk'
     await user.save()
-    const users = await ioc.use('Database').setCollection('users').find()
+    const users = await ioc.use('Database').collection('users').find()
     assert.lengthOf(users, 1)
     assert.equal(users[0].username, user.username)
     assert.equal(String(users[0]._id), String(user.primaryKeyValue))
@@ -345,7 +345,7 @@ test.group('Model', (group) => {
     class User extends Model {
     }
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const users = await User.query().fetch()
     assert.instanceOf(users, VanillaSerializer)
   })
@@ -385,7 +385,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const users = await User.query().fetch()
     const user = users.first()
     user.username = 'nikk'
@@ -450,9 +450,9 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await User.query().where('username', 'virk').update({ login_at: new Date() })
-    const users = await ioc.use('Database').setCollection('users').find()
+    const users = await ioc.use('Database').collection('users').find()
     assert.equal(moment(users[0].updated_at).format('YYYY-MM-DD'), moment().format('YYYY-MM-DD'))
   })
 
@@ -468,7 +468,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().where('username', 'virk').fetch()
     assert.equal(users.first().toObject().full_name, 'Mr. virk')
   })
@@ -609,7 +609,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    const result = await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    const result = await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const user = await User.find(result.insertedIds[0])
     assert.instanceOf(user, User)
     assert.equal(user.username, 'virk')
@@ -622,7 +622,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const user = await User.findBy('username', 'virk')
     assert.instanceOf(user, User)
     assert.equal(user.username, 'virk')
@@ -642,7 +642,7 @@ test.group('Model', (group) => {
       stack.push('afterFind')
     })
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await User.findBy('username', 'virk')
     assert.deepEqual(stack, ['afterFind'])
   })
@@ -658,7 +658,7 @@ test.group('Model', (group) => {
       hookInstance = model
     })
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const user = await User.findBy('username', 'virk')
     assert.deepEqual(hookInstance, user)
   })
@@ -669,7 +669,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const users = await User.all()
     assert.instanceOf(users, VanillaSerializer)
   })
@@ -680,7 +680,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.pick(1)
     assert.instanceOf(users, VanillaSerializer)
     assert.equal(users.first().username, 'virk')
@@ -692,7 +692,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.pickInverse(1)
     assert.instanceOf(users, VanillaSerializer)
     assert.equal(users.first().username, 'nikk')
@@ -704,7 +704,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const userIds = await User.ids()
     assert.lengthOf(userIds, 2)
   })
@@ -714,7 +714,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.pair('_id', 'username')
     assert.deepEqual(Object.values(users), [ 'virk', 'nikk' ])
   })
@@ -724,7 +724,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().paginate(1, 1)
     assert.instanceOf(users, VanillaSerializer)
     assert.deepEqual(users.pages, { perPage: 1, total: helpers.formatNumber(2), page: 1, lastPage: 2 })
@@ -737,7 +737,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const user = await User.first()
     assert.instanceOf(user, User)
     assert.equal(user.username, 'virk')
@@ -774,7 +774,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const user = await User.first()
     user.username = 'nikk'
     await user.save()
@@ -795,7 +795,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await User.query().where('username', 'virk').update({ username: 'nikk' })
     const keys = formatting.map((item) => item.key)
     const values = formatting.map((item) => moment(item.value, 'YYYY-MM-DD HH:mm:ss', true).isValid())
@@ -808,7 +808,7 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const updates = { username: 'nikk' }
     await User.query().where('username', 'virk').update(updates)
     assert.deepEqual(updates, { username: 'nikk' })
@@ -885,7 +885,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await User.query().where('username', 'virk').update({ username: 'nikk' })
     const users = await User.query().pair('_id', 'updated_at')
     assert.deepEqual(formatting, [])
@@ -906,7 +906,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     await ioc.use('Database')
-      .setCollection('users')
+      .collection('users')
       .insert({ username: 'virk', created_at: new Date(), updated_at: new Date() })
 
     const user = await User.first()
@@ -934,7 +934,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     await ioc.use('Database')
-      .setCollection('users')
+      .collection('users')
       .insert({ username: 'virk', created_at: new Date(), updated_at: new Date() })
 
     const user = await User.first()
@@ -962,7 +962,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     await ioc.use('Database')
-      .setCollection('users')
+      .collection('users')
       .insert({ username: 'virk', created_at: new Date(), updated_at: new Date() })
 
     const user = await User.first()
@@ -991,7 +991,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     await ioc.use('Database')
-      .setCollection('users')
+      .collection('users')
       .insert({ username: 'virk', created_at: new Date(), updated_at: new Date(), login_at: new Date() })
 
     const user = await User.first()
@@ -1148,7 +1148,7 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const user = await User.findByOrFail('username', 'virk')
     assert.instanceOf(user, User)
   })
@@ -1244,7 +1244,7 @@ test.group('Model', (group) => {
     user.username = 'virk'
     await user.save()
     assert.isUndefined(user.type)
-    await ioc.use('Database').setCollection('users').update({ type: 'admin' })
+    await ioc.use('Database').collection('users').update({ type: 'admin' })
     await user.reload()
     assert.equal(user.type, 'admin')
   })
@@ -1280,7 +1280,7 @@ test.group('Model', (group) => {
     await user.save()
     assert.isUndefined(user.type)
 
-    await ioc.use('Database').setCollection('users').delete()
+    await ioc.use('Database').collection('users').delete()
     try {
       await user.reload()
     } catch ({ message }) {
@@ -1337,7 +1337,7 @@ test.group('Model', (group) => {
     }
 
     User.addHook('afterFetch', fn)
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await User.all('username', 'virk')
   })
 })

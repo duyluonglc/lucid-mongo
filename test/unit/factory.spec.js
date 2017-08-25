@@ -43,8 +43,8 @@ test.group('Factory', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Database').setCollection('users').delete()
-    await ioc.use('Database').setCollection('my_users').delete()
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
   })
 
   group.after(async () => {
@@ -300,7 +300,7 @@ test.group('Factory', (group) => {
     })
 
     await Factory.get('users').create()
-    const user = await ioc.use('Database').setCollection('users').findOne()
+    const user = await ioc.use('Database').collection('users').findOne()
     assert.equal(user.username, 'virk')
   })
 
@@ -313,7 +313,7 @@ test.group('Factory', (group) => {
     })
 
     await Factory.get('User').collection('users').create()
-    const user = await ioc.use('Database').setCollection('users').findOne()
+    const user = await ioc.use('Database').collection('users').findOne()
     assert.equal(user.id, 1)
     assert.equal(user.username, 'virk')
   })
@@ -327,7 +327,7 @@ test.group('Factory', (group) => {
     })
 
     const returned = await Factory.get('User').collection('users').create()
-    const user = await ioc.use('Database').setCollection('users').findOne()
+    const user = await ioc.use('Database').collection('users').findOne()
     assert.deepEqual(returned.result.n, 1)
     assert.equal(user.username, 'virk')
   })
@@ -341,7 +341,7 @@ test.group('Factory', (group) => {
     })
 
     await Factory.get('User').collection('users').connection('').create()
-    const user = await ioc.use('Database').setCollection('users').findOne()
+    const user = await ioc.use('Database').collection('users').findOne()
     assert.equal(user.username, 'virk')
   })
 
@@ -353,9 +353,9 @@ test.group('Factory', (group) => {
       }
     })
 
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await Factory.get('User').collection('users').reset()
-    const user = await ioc.use('Database').setCollection('users').findOne()
+    const user = await ioc.use('Database').collection('users').findOne()
     assert.isNull(user)
   })
 
@@ -370,9 +370,9 @@ test.group('Factory', (group) => {
     Factory.blueprint('App/Model/User', (faker, index, data) => {
       return {}
     })
-    await ioc.use('Database').setCollection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await Factory.model('App/Model/User').reset()
-    const user = await ioc.use('Database').setCollection('users').findOne()
+    const user = await ioc.use('Database').collection('users').findOne()
     assert.isNull(user)
   })
 })

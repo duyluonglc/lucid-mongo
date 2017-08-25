@@ -37,10 +37,10 @@ test.group('Relations | Serializer', (group) => {
   })
 
   group.afterEach(async () => {
-    await ioc.use('Adonis/Src/Database').setCollection('users').delete()
-    await ioc.use('Adonis/Src/Database').setCollection('my_users').delete()
-    await ioc.use('Adonis/Src/Database').setCollection('profiles').delete()
-    await ioc.use('Adonis/Src/Database').setCollection('pictures').delete()
+    await ioc.use('Adonis/Src/Database').collection('users').delete()
+    await ioc.use('Adonis/Src/Database').collection('my_users').delete()
+    await ioc.use('Adonis/Src/Database').collection('profiles').delete()
+    await ioc.use('Adonis/Src/Database').collection('pictures').delete()
   })
 
   group.after(async () => {
@@ -61,7 +61,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
     assert.instanceOf(users, VanillaSerializer)
@@ -73,7 +73,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
 
@@ -92,7 +92,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
 
@@ -113,7 +113,7 @@ test.group('Relations | Serializer', (group) => {
 
     User._bootIfNotBooted()
 
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.all()
 
@@ -134,8 +134,8 @@ test.group('Relations | Serializer', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    const result = await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').setCollection('profiles').insert([{ user_id: result.insertedIds[0], profile_name: 'virk' }, { user_id: result.insertedIds[1], profile_name: 'nikk' }])
+    const result = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([{ user_id: result.insertedIds[0], profile_name: 'virk' }, { user_id: result.insertedIds[1], profile_name: 'nikk' }])
 
     const users = await User.query().with('profile').fetch()
 
@@ -166,9 +166,9 @@ test.group('Relations | Serializer', (group) => {
     Profile._bootIfNotBooted()
     Picture._bootIfNotBooted()
 
-    const result = await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    const resultProfile = await ioc.use('Database').setCollection('profiles').insert([{ user_id: result.insertedIds[0], profile_name: 'virk' }, { user_id: result.insertedIds[1], profile_name: 'nikk' }])
-    await ioc.use('Database').setCollection('pictures').insert({ profile_id: resultProfile.insertedIds[0], storage_path: '/foo' })
+    const result = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const resultProfile = await ioc.use('Database').collection('profiles').insert([{ user_id: result.insertedIds[0], profile_name: 'virk' }, { user_id: result.insertedIds[1], profile_name: 'nikk' }])
+    await ioc.use('Database').collection('pictures').insert({ profile_id: resultProfile.insertedIds[0], storage_path: '/foo' })
 
     const users = await User.query().with('profile.picture').fetch()
 
@@ -183,7 +183,7 @@ test.group('Relations | Serializer', (group) => {
     }
 
     User._bootIfNotBooted()
-    await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
 
     const users = await User.query().paginate()
 
@@ -209,8 +209,8 @@ test.group('Relations | Serializer', (group) => {
   //   User._bootIfNotBooted()
   //   Profile._bootIfNotBooted()
 
-  //   const result = await ioc.use('Database').setCollection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-  //   await ioc.use('Database').setCollection('profiles').insert([{ user_id: result.insertedIds[0], profile_name: 'virk' }, { user_id: result.insertedIds[1], profile_name: 'nikk' }])
+  //   const result = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+  //   await ioc.use('Database').collection('profiles').insert([{ user_id: result.insertedIds[0], profile_name: 'virk' }, { user_id: result.insertedIds[1], profile_name: 'nikk' }])
 
   //   const users = await User.query().withCount('profile').paginate()
 

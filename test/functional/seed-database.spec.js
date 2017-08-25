@@ -38,7 +38,7 @@ test.group('Seed Database', (group) => {
 
     await registrar
       .providers([
-        path.join(__dirname, '../../providers/LucidProvider'),
+        path.join(__dirname, '../../providers/LucidMongoProvider'),
         path.join(__dirname, '../../providers/MigrationsProvider')
       ]).registerAndBoot()
 

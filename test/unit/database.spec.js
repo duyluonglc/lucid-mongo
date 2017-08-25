@@ -42,7 +42,7 @@ test.group('Database | QueryBuilder', (group) => {
     await this.database.close()
     assert.plan(1)
     try {
-      await this.database.setCollection('users').find()
+      await this.database.collection('users').find()
     } catch ({ message }) {
       assert.equal(message, 'Topology was destroyed')
       this.database = new Database(helpers.getConfig())
@@ -53,28 +53,28 @@ test.group('Database | QueryBuilder', (group) => {
     const users = _.map(_.range(10), () => {
       return { username: chance.word() }
     })
-    await this.database.setCollection('users').insert(users)
-    const result = await this.database.setCollection('users').paginate(1, 5)
+    await this.database.collection('users').insert(users)
+    const result = await this.database.collection('users').paginate(1, 5)
     assert.equal(result.perPage, 5)
     assert.equal(result.total, 10)
     assert.equal(result.page, 1)
     assert.equal(result.lastPage, 2)
     assert.isAtMost(result.data.length, result.perPage)
-    await this.database.setCollection('users').delete()
+    await this.database.collection('users').delete()
   })
 
   test('paginate results when records are less than perPage', async (assert) => {
     const users = _.map(_.range(4), () => {
       return { username: chance.word() }
     })
-    await this.database.setCollection('users').insert(users)
-    const result = await this.database.setCollection('users').paginate(1, 5)
+    await this.database.collection('users').insert(users)
+    const result = await this.database.collection('users').paginate(1, 5)
     assert.equal(result.perPage, 5)
     assert.equal(result.total, 4)
     assert.equal(result.page, 1)
     assert.equal(result.lastPage, 1)
     assert.isAtMost(result.data.length, result.perPage)
-    await this.database.setCollection('users').delete()
+    await this.database.collection('users').delete()
   })
 
   test('throw exception when proxy property is not a method', (assert) => {

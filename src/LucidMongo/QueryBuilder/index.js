@@ -240,7 +240,7 @@ class QueryBuilder {
     /**
      * Execute query
      */
-    const collection = await this.db.collection(this.collection)
+    const collection = await this.db.getCollection(this.collection)
     const rows = await this.query.collection(collection).find()
 
     /**
@@ -277,7 +277,7 @@ class QueryBuilder {
      */
     this._applyScopes()
 
-    const collection = await this.db.collection(this.collection)
+    const collection = await this.db.getCollection(this.collection)
     const row = await this.query.collection(collection).findOne()
 
     if (!row) {
@@ -352,7 +352,7 @@ class QueryBuilder {
      * data
      */
     this._applyScopes()
-    const collection = await this.db.collection(this.collection)
+    const collection = await this.db.getCollection(this.collection)
     const countByQuery = await this.query.collection(collection).count()
     this.query.limit(limit).skip((page - 1) * limit)
     const rows = await this.query.collection(collection).find()
@@ -392,7 +392,7 @@ class QueryBuilder {
      * Apply all the scopes before update
      */
     this._applyScopes()
-    const collection = await this.db.collection(this.collection)
+    const collection = await this.db.getCollection(this.collection)
     return this.query.collection(collection).setOptions({ multi: true }).update(valuesCopy)
   }
 
@@ -406,7 +406,7 @@ class QueryBuilder {
    */
   async delete () {
     this._applyScopes()
-    const collection = await this.db.collection(this.collection)
+    const collection = await this.db.getCollection(this.collection)
     return this.query.collection(collection).setOptions({ multi: true }).remove()
   }
 
@@ -420,7 +420,7 @@ class QueryBuilder {
    */
   async insert (attributes) {
     debug('insert', this.collection, attributes)
-    const collection = await this.db.collection(this.collection)
+    const collection = await this.db.getCollection(this.collection)
     return collection.insert(attributes)
   }
 

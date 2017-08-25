@@ -74,7 +74,7 @@ test.group('Migration', (group) => {
     await migration._makeMigrationsCollection()
     await migration._makeLockCollection()
     await migration._addLock()
-    const lock = await ioc.use('Database').collection('adonis_schema_lock')
+    const lock = await ioc.use('Database').collection('adonis_schema_lock').find()
     assert.deepEqual(lock, [{ id: 1, is_locked: helpers.formatBoolean(true) }])
   })
 
@@ -83,7 +83,7 @@ test.group('Migration', (group) => {
     await migration._makeMigrationsCollection()
     await migration._makeLockCollection()
     await migration._addLock()
-    const lock = await ioc.use('Database').collection('adonis_schema_lock')
+    const lock = await ioc.use('Database').collection('adonis_schema_lock').find()
     assert.deepEqual(lock, [{ id: 1, is_locked: helpers.formatBoolean(true) }])
     await migration._removeLock()
     const hasCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
@@ -118,7 +118,7 @@ test.group('Migration', (group) => {
     const migration = new Migration(new Config(), ioc.use('Database'))
     await migration._makeMigrationsCollection()
     await migration._addForBatch('foo', 1)
-    const migrations = await ioc.use('Database').collection('adonis_schema')
+    const migrations = await ioc.use('Database').collection('adonis_schema').find()
     assert.equal(migrations[0].name, 'foo')
     assert.equal(migrations[0].batch, 1)
   })
@@ -128,12 +128,12 @@ test.group('Migration', (group) => {
     await migration._makeMigrationsCollection()
 
     await migration._addForBatch('foo', 1)
-    let migrations = await ioc.use('Database').collection('adonis_schema')
+    let migrations = await ioc.use('Database').collection('adonis_schema').find()
     assert.equal(migrations[0].name, 'foo')
     assert.equal(migrations[0].batch, 1)
 
     await migration._remove('foo')
-    migrations = await ioc.use('Database').collection('adonis_schema')
+    migrations = await ioc.use('Database').collection('adonis_schema').find()
     assert.lengthOf(migrations, 0)
   })
 
@@ -293,7 +293,7 @@ test.group('Migration', (group) => {
     }
 
     const result = await migration.up({ '2017-07-20': UserSchema })
-    const schemas = await migration.db.collection('adonis_schema')
+    const schemas = await migration.db.collection('adonis_schema').find()
     assert.lengthOf(schemas, 1)
     assert.equal(schemas[0].name, '2017-07-20')
     assert.equal(schemas[0].batch, 1)
@@ -363,7 +363,7 @@ test.group('Migration', (group) => {
     await migration.up({ '2017-08-11': UserProfileSchema })
     const result = await migration.down({ '2017-08-10': UserSchema, '2017-08-11': UserProfileSchema })
     assert.deepEqual(result, { migrated: ['2017-08-11'], status: 'completed' })
-    const schemas = await ioc.use('Database').collection('adonis_schema')
+    const schemas = await ioc.use('Database').collection('adonis_schema').find()
     assert.lengthOf(schemas, 1)
     assert.equal(schemas[0].name, '2017-08-10')
   })
@@ -401,7 +401,7 @@ test.group('Migration', (group) => {
     await migration.up({ '2017-08-11': UserProfileSchema })
     const result = await migration.down({ '2017-08-10': UserSchema, '2017-08-11': UserProfileSchema }, 0)
     assert.deepEqual(result, { migrated: ['2017-08-11', '2017-08-10'], status: 'completed' })
-    const schemas = await ioc.use('Database').collection('adonis_schema')
+    const schemas = await ioc.use('Database').collection('adonis_schema').find()
     assert.lengthOf(schemas, 0)
   })
 
@@ -427,7 +427,7 @@ test.group('Migration', (group) => {
     } catch ({ message }) {
       assert.include(message, 'already exists')
       const hasLockCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
-      const migrated = await ioc.use('Database').collection('adonis_schema')
+      const migrated = await ioc.use('Database').collection('adonis_schema').find()
       assert.lengthOf(migrated, 0)
       assert.isFalse(hasLockCollection)
     }
@@ -459,7 +459,7 @@ test.group('Migration', (group) => {
     } catch ({ message }) {
       assert.include(message, 'already exists')
       const hasLockCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
-      const migrated = await ioc.use('Database').collection('adonis_schema')
+      const migrated = await ioc.use('Database').collection('adonis_schema').find()
       assert.lengthOf(migrated, 0)
       assert.isFalse(hasLockCollection)
 
