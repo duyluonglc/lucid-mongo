@@ -75,7 +75,8 @@ test.group('Migration', (group) => {
     await migration._makeLockCollection()
     await migration._addLock()
     const lock = await ioc.use('Database').collection('adonis_schema_lock').find()
-    assert.deepEqual(lock, [{ id: 1, is_locked: helpers.formatBoolean(true) }])
+    assert.lengthOf(lock, 1)
+    assert.equal(lock[0].is_locked, helpers.formatBoolean(true))
   })
 
   test('remove lock', async (assert) => {
@@ -84,7 +85,8 @@ test.group('Migration', (group) => {
     await migration._makeLockCollection()
     await migration._addLock()
     const lock = await ioc.use('Database').collection('adonis_schema_lock').find()
-    assert.deepEqual(lock, [{ id: 1, is_locked: helpers.formatBoolean(true) }])
+    assert.lengthOf(lock, 1)
+    assert.equal(lock[0].is_locked, helpers.formatBoolean(true))
     await migration._removeLock()
     const hasCollection = await ioc.use('Database').schema.hasCollection('adonis_schema_lock')
     assert.isFalse(hasCollection)
@@ -158,7 +160,6 @@ test.group('Migration', (group) => {
         name: 'baz'
       }
     ])
-
     const rows = await migration._getAfterBatch(2)
     assert.lengthOf(rows, 2)
     assert.deepEqual(rows, ['baz', 'joe'])
@@ -241,8 +242,6 @@ test.group('Migration', (group) => {
     }
 
     await migration.up({ '2017-07-20': UserSchema })
-    const info = await migration.db.collection('schema_users').columnInfo()
-    assert.deepEqual(Object.keys(info), ['id', 'username'])
   })
 
   test('execute schema actions in sequence', async (assert) => {
@@ -269,7 +268,7 @@ test.group('Migration', (group) => {
 
     if (process.env.DB !== 'sqlite') {
       await ioc.use('Database').schema.collection('schema_profiles', (collection) => {
-        collection.dropForeign('user_id')
+        // collection.dropForeign('user_id')
       })
     }
   })
@@ -298,12 +297,6 @@ test.group('Migration', (group) => {
     assert.equal(schemas[0].name, '2017-07-20')
     assert.equal(schemas[0].batch, 1)
     assert.deepEqual(result, { migrated: ['2017-07-20'], status: 'completed' })
-
-    if (process.env.DB !== 'sqlite') {
-      await ioc.use('Database').schema.collection('schema_profiles', (collection) => {
-        collection.dropForeign('user_id')
-      })
-    }
   })
 
   test('skip migrations when there is nothing to rollback', async (assert) => {
@@ -462,11 +455,6 @@ test.group('Migration', (group) => {
       const migrated = await ioc.use('Database').collection('adonis_schema').find()
       assert.lengthOf(migrated, 0)
       assert.isFalse(hasLockCollection)
-
-      if (process.env.DB !== 'mysql') {
-        const hasSchemaUsers = await ioc.use('Database').schema.hasCollection('schema_users')
-        assert.isFalse(hasSchemaUsers)
-      }
     }
   })
 

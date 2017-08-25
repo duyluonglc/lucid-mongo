@@ -58,6 +58,8 @@ class SchemaBuilder {
     this.double = () => this
     this.nullable = () => this
     this.defaultTo = () => this
+    this.unsigned = () => this
+    this.references = () => this
   }
 
   index (name, keys, options) {
@@ -110,7 +112,7 @@ class Database {
     this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
     this.connection = null
     this._globalTrx = null
-    this.mquery = mquery()
+    this.query()
     return new Proxy(this, proxyHandler)
   }
 
@@ -130,6 +132,7 @@ class Database {
 
   collection (collectionName) {
     this.collectionName = collectionName
+    this.query()
     return this
   }
 
@@ -161,6 +164,13 @@ class Database {
    */
   get schema () {
     return {
+      collection: async (collectionName, callback) => {
+        const db = await this.connect()
+        const collection = await db.collection(collectionName)
+        const schemaBuilder = new SchemaBuilder(collection)
+        callback(schemaBuilder)
+        return schemaBuilder.build()
+      },
       createCollection: async (collectionName, callback) => {
         const db = await this.connect()
         const collection = await db.createCollection(collectionName)
@@ -171,7 +181,7 @@ class Database {
       createCollectionIfNotExists: async (collectionName, callback) => {
         const db = await this.connect()
         const collections = await db.listCollections().toArray()
-        if (!collections.includes(collectionName)) {
+        if (!_.find(collections, collection => collection.name === collectionName)) {
           const collection = await db.createCollection(collectionName)
           const schemaBuilder = new SchemaBuilder(collection)
           callback(schemaBuilder)
@@ -185,7 +195,7 @@ class Database {
       dropCollectionIfExists: async (collectionName) => {
         const db = await this.connect()
         const collections = await db.listCollections().toArray()
-        if (collections.includes(collectionName)) {
+        if (_.find(collections, collection => collection.name === collectionName)) {
           return db.dropCollection(collectionName)
         }
       },
@@ -196,9 +206,57 @@ class Database {
       hasCollection: async (collectionName) => {
         const db = await this.connect()
         const collections = await db.listCollections().toArray()
-        return _.find(collections, collection => collection.name === collectionName) !== null
+        return !!_.find(collections, collection => collection.name === collectionName)
       }
     }
+  }
+
+  /**
+   * sort
+   *
+   * @param {any} arg
+   * @returns
+   * @memberof Database
+   */
+  sort (...arg) {
+    this.queryBuilder.sort(...arg)
+    return this
+  }
+
+  /**
+   * limit
+   *
+   * @param {any} arg
+   * @returns
+   * @memberof Database
+   */
+  limit (...arg) {
+    this.queryBuilder.limit(...arg)
+    return this
+  }
+
+  /**
+   * where
+   *
+   * @param {any} arg
+   * @returns
+   * @memberof Database
+   */
+  offset (...arg) {
+    this.queryBuilder.offset(...arg)
+    return this
+  }
+
+  /**
+   * select
+   *
+   * @param {any} arg
+   * @returns
+   * @memberof Database
+   */
+  select (...arg) {
+    this.queryBuilder.select(...arg)
+    return this
   }
 
   /**
@@ -211,7 +269,7 @@ class Database {
    * @return {String}
    */
   raw (...args) {
-    return this.mquery.raw(...args)
+    return this.queryBuilder.raw(...args)
   }
 
   /**
@@ -295,8 +353,9 @@ class Database {
    * @return {Object}
    */
   query () {
-    this.mquery = mquery()
-    return this.mquery
+    this.queryBuilder = mquery()
+    this.replaceMethods()
+    return this.queryBuilder
   }
 
   /**
@@ -320,7 +379,7 @@ class Database {
    * @memberof Database
    */
   get conditions () {
-    return this.mquery._conditions
+    return this.queryBuilder._conditions
   }
 
   /**
@@ -329,7 +388,7 @@ class Database {
    * @memberof Database
    */
   clone () {
-    return _.cloneDeep(this.mquery)
+    return _.cloneDeep(this.queryBuilder)
   }
 
   /**
@@ -354,7 +413,7 @@ class Database {
   async find () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return this.mquery.collection(collection).find()
+    return this.queryBuilder.collection(collection).find()
   }
 
   /**
@@ -367,7 +426,7 @@ class Database {
   async findOne () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return this.mquery.collection(collection).findOne()
+    return this.queryBuilder.collection(collection).findOne()
   }
 
   /**
@@ -382,6 +441,19 @@ class Database {
   }
 
   /**
+   * Return a document
+   *
+   * @method pluck
+   *
+   * @return {Object}
+   */
+  async pluck (field) {
+    this.queryBuilder.select(field)
+    const result = await this.find()
+    return _.map(result, field)
+  }
+
+  /**
    * Update collections
    *
    * @method update
@@ -391,7 +463,7 @@ class Database {
   async update () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return this.mquery.collection(collection).update(...arguments)
+    return this.queryBuilder.collection(collection).update(...arguments)
   }
 
   /**
@@ -404,7 +476,7 @@ class Database {
   async delete () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return this.mquery.collection(collection).remove(...arguments)
+    return this.queryBuilder.collection(collection).remove(...arguments)
   }
 
   /**
@@ -418,7 +490,7 @@ class Database {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     const countByQuery = await this.aggregate('count')
-    const rows = await this.mquery.collection(collection).limit(limit).skip((page || 1) * limit).find()
+    const rows = await this.queryBuilder.collection(collection).limit(limit).skip((page || 1) * limit).find()
     const result = util.makePaginateMeta(countByQuery, page, limit)
     result.data = rows
     return result
@@ -431,10 +503,10 @@ class Database {
    *
    * @return {Object}
    */
-  async insert () {
+  async insert (row) {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return collection.insert(...arguments)
+    return collection.insert(row)
   }
 
   /**
@@ -478,6 +550,141 @@ class Database {
         }
       })
     })
+  }
+
+  /**
+   * Condition Methods
+   *
+   * @readonly
+   * @static
+   * @memberof QueryBuilder
+   */
+  static get conditionMethods () {
+    return [
+      'eq',
+      'ne',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'nin',
+      'all',
+      'intersects'
+    ]
+  }
+
+  /**
+   * replace condition methods of mquery
+   *
+   * @memberof QueryBuilder
+   */
+  replaceMethods () {
+    for (let name of this.constructor.conditionMethods) {
+      let originMethod = this.queryBuilder[name]
+      this.queryBuilder[name] = (param) => {
+        const key = this.queryBuilder._path
+        originMethod.apply(this.queryBuilder, [param])
+        return this
+      }
+    }
+  }
+
+  /**
+   * Support Methods
+   *
+   * @readonly
+   * @static
+   * @memberof QueryBuilder
+   */
+  static get supportMethods () {
+    return [
+      'all',
+      'exists',
+      'elemMatch',
+      'eq',
+      'gt',
+      'gte',
+      'lt',
+      'lte',
+      'in',
+      'ne',
+      'nin',
+      'nor',
+      'regex',
+      'size',
+      'mod',
+      'slice',
+      'intersects',
+      'regex',
+      'maxDistance',
+      'minDistance'
+    ]
+  }
+
+  /**
+   * Replace where method
+   *
+   * @returns {this}
+   * @memberof QueryBuilder
+   */
+  where () {
+    if (_.isPlainObject(arguments[0])) {
+      _.forEach(arguments[0], (conditions, key) => {
+        if (key === 'and' || key === 'or' || key === 'nor') {
+          if (!_.isArray(conditions)) {
+            throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
+          }
+          let queries = []
+          _.forEach(conditions, (condition) => {
+            queries.push(_.clone(this.queryBuilder).where(condition)._conditions)
+          })
+          this.queryBuilder[key](queries)
+        } else if (_.isPlainObject(conditions)) {
+          _.forEach(conditions, (c, k) => {
+            if (this.constructor.supportMethods.includes(k)) {
+              if (k !== 'maxDistance' && k !== 'minDistance') {
+                this.queryBuilder.where(key)[k](c)
+              }
+            } else {
+              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
+            }
+          })
+        } else {
+          this.queryBuilder.where(key, conditions)
+        }
+      })
+    } else if (_.isFunction(arguments[0])) {
+      arguments[0].bind(this).call()
+    } else {
+      if (arguments.length === 2) {
+        const key = arguments[0]
+        this.queryBuilder.where(key, arguments[1])
+      } else if (arguments.length === 3) {
+        switch (arguments[1]) {
+          case '=':
+            this.queryBuilder.where(arguments[0]).eq(arguments[2])
+            break
+          case '>':
+            this.queryBuilder.where(arguments[0]).gt(arguments[2])
+            break
+          case '>=':
+            this.queryBuilder.where(arguments[0]).gte(arguments[2])
+            break
+          case '<':
+            this.queryBuilder.where(arguments[0]).lt(arguments[2])
+            break
+          case '<=':
+            this.queryBuilder.where(arguments[0]).lte(arguments[2])
+            break
+          default:
+            throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
+        }
+      } else {
+        this.queryBuilder.where(arguments[0])
+      }
+    }
+    return this
   }
 }
 

@@ -44,7 +44,7 @@ class Migration {
    */
   _makeMigrationsCollection () {
     return this.db.schema.createCollectionIfNotExists(this._migrationsCollection, (collection) => {
-      // collection.increments()
+      collection.increments()
       collection.string('name')
       collection.integer('batch')
       // collection.timestamp('migration_time').defaultsTo(this.db.fn.now())
@@ -63,7 +63,7 @@ class Migration {
    */
   _makeLockCollection () {
     return this.db.schema.createCollectionIfNotExists(this._lockCollection, (collection) => {
-      // collection.increments()
+      collection.increments()
       collection.boolean('is_locked')
     })
   }
@@ -108,10 +108,10 @@ class Migration {
    */
   async _checkForLock () {
     const hasLock = await this.db
-      .from(this._lockCollection)
+      .collection(this._lockCollection)
       .where('is_locked', 1)
-      .orderBy('id', 'desc')
-      .first()
+      .sort('-_id')
+      .findOne()
 
     if (hasLock) {
       throw CE.RuntimeException.migrationsAreLocked(this._lockCollection)
@@ -187,14 +187,11 @@ class Migration {
    * @private
    */
   async _getAfterBatch (batch = 0) {
-    // const query = this.db.collection(this._migrationsCollection)
-    const query = this.db.query()
+    const query = this.db.collection(this._migrationsCollection).sort('name')
     if (batch > 0) {
       query.where('batch', '>', batch)
     }
-
-    const collection = await this.db.getCollection(this._migrationsCollection)
-    const rows = await query.sort('name').collection(collection).find()
+    const rows = await query.find()
     return rows.map((row) => row.name)
   }
 
@@ -440,7 +437,8 @@ class Migration {
   async status (schemas) {
     const migrated = await this.db
       .collection(this._migrationsCollection)
-      .orderBy('name')
+      .sort('name')
+      .find()
 
     this.db.close()
     return _.map(schemas, (schema, name) => {
