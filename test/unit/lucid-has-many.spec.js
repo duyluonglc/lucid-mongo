@@ -67,21 +67,16 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
 
-    const user = await User.find(1)
+    const user = await User.find(rs.insertedIds[0])
     const cars = await user.cars().fetch()
     assert.instanceOf(cars, VanillaSerializer)
     assert.equal(cars.size(), 2)
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "user_id" = ?'))
-    assert.deepEqual(carQuery.bindings, helpers.formatBindings([1]))
   })
 
   test('get first instance of related model', async (assert) => {
@@ -97,21 +92,16 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
 
-    const user = await User.find(1)
+    const user = await User.find(rs.insertedIds[0])
     const car = await user.cars().first()
     assert.instanceOf(car, Car)
     assert.equal(car.name, 'merc')
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "user_id" = ? limit ?'))
-    assert.deepEqual(carQuery.bindings, helpers.formatBindings([1, 1]))
   })
 
   test('eagerload relation', async (assert) => {
@@ -127,21 +117,16 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
 
     const user = await User.query().with('cars').first()
     assert.instanceOf(user.getRelated('cars'), VanillaSerializer)
     assert.equal(user.getRelated('cars').size(), 2)
     assert.deepEqual(user.getRelated('cars').rows.map((car) => car.$parent), ['User', 'User'])
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "user_id" = ?'))
-    assert.deepEqual(carQuery.bindings, helpers.formatBindings([1]))
   })
 
   test('add constraints when eagerloading', async (assert) => {
@@ -157,13 +142,10 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
 
     const users = await User.query().with('cars', (builder) => {
@@ -172,8 +154,6 @@ test.group('Relations | Has Many', (group) => {
     const user = users.first()
     assert.equal(user.getRelated('cars').size(), 1)
     assert.equal(user.getRelated('cars').rows[0].name, 'audi')
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "model" > ? and "user_id" in (?)'))
-    assert.deepEqual(carQuery.bindings, helpers.formatBindings(['2000', 1]))
   })
 
   test('return serailizer instance when nothing exists', async (assert) => {
@@ -189,15 +169,10 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
-
     await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const users = await User.query().with('cars').fetch()
     const user = users.first()
     assert.equal(user.getRelated('cars').size(), 0)
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "user_id" in (?)'))
-    assert.deepEqual(carQuery.bindings, helpers.formatBindings([1]))
   })
 
   test('calling toJSON should build right json structure', async (assert) => {
@@ -213,10 +188,10 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 2, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[1], name: 'audi', model: '2001' }
     ])
 
     const users = await User.query().with('cars').fetch()
@@ -238,10 +213,10 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 2, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[1], name: 'audi', model: '2001' }
     ])
 
     const users = await User.query().with('cars').fetch()
@@ -263,10 +238,10 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'merc', model: '1990' },
-      { user_id: 2, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[1], name: 'audi', model: '2001' }
     ])
 
     const users = await User.query().with('cars').fetch()
@@ -295,29 +270,22 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    let partQuery = null
-    Car.onQuery((query) => (carQuery = query))
-    Part.onQuery((query) => (partQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rsCar = await ioc.use('Database').collection('cars').insert([
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
     await ioc.use('Database').collection('parts').insert([
-      { car_id: 1, part_name: 'wheels' },
-      { car_id: 1, part_name: 'engine' },
-      { car_id: 2, part_name: 'wheels' },
-      { car_id: 2, part_name: 'engine' }
+      { car_id: rsCar.insertedIds[0], part_name: 'wheels' },
+      { car_id: rsCar.insertedIds[0], part_name: 'engine' },
+      { car_id: rsCar.insertedIds[1], part_name: 'wheels' },
+      { car_id: rsCar.insertedIds[1], part_name: 'engine' }
     ])
 
     const user = await User.query().with('cars.parts').first()
     assert.equal(user.getRelated('cars').size(), 2)
     assert.equal(user.getRelated('cars').first().getRelated('parts').size(), 2)
     assert.equal(user.getRelated('cars').last().getRelated('parts').size(), 2)
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "user_id" = ?'))
-    assert.equal(partQuery.sql, helpers.formatQuery('select * from "parts" where "car_id" in (?, ?)'))
   })
 
   test('add query constraint to nested query', async (assert) => {
@@ -340,29 +308,22 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    let partQuery = null
-    Car.onQuery((query) => (carQuery = query))
-    Part.onQuery((query) => (partQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rsCar = await ioc.use('Database').collection('cars').insert([
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
     await ioc.use('Database').collection('parts').insert([
-      { car_id: 1, part_name: 'wheels' },
-      { car_id: 1, part_name: 'engine' },
-      { car_id: 2, part_name: 'wheels' },
-      { car_id: 2, part_name: 'engine' }
+      { car_id: rsCar.insertedIds[0], part_name: 'wheels' },
+      { car_id: rsCar.insertedIds[0], part_name: 'engine' },
+      { car_id: rsCar.insertedIds[1], part_name: 'wheels' },
+      { car_id: rsCar.insertedIds[1], part_name: 'engine' }
     ])
 
     const user = await User.query().with('cars.parts', (builder) => builder.where('part_name', 'engine')).first()
     assert.equal(user.getRelated('cars').size(), 2)
     assert.equal(user.getRelated('cars').first().getRelated('parts').size(), 1)
     assert.equal(user.getRelated('cars').last().getRelated('parts').size(), 1)
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "user_id" = ?'))
-    assert.equal(partQuery.sql, helpers.formatQuery('select * from "parts" where "part_name" = ? and "car_id" in (?, ?)'))
   })
 
   test('add query constraint to child and grand child query', async (assert) => {
@@ -385,21 +346,16 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    let carQuery = null
-    let partQuery = null
-    Car.onQuery((query) => (carQuery = query))
-    Part.onQuery((query) => (partQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rsCar = await ioc.use('Database').collection('cars').insert([
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' }
     ])
     await ioc.use('Database').collection('parts').insert([
-      { car_id: 1, part_name: 'wheels' },
-      { car_id: 1, part_name: 'engine' },
-      { car_id: 2, part_name: 'wheels' },
-      { car_id: 2, part_name: 'engine' }
+      { car_id: rsCar.insertedIds[0], part_name: 'wheels' },
+      { car_id: rsCar.insertedIds[0], part_name: 'engine' },
+      { car_id: rsCar.insertedIds[1], part_name: 'wheels' },
+      { car_id: rsCar.insertedIds[1], part_name: 'engine' }
     ])
 
     const user = await User.query().with('cars', (builder) => {
@@ -408,180 +364,6 @@ test.group('Relations | Has Many', (group) => {
 
     assert.equal(user.getRelated('cars').size(), 1)
     assert.equal(user.getRelated('cars').first().getRelated('parts').size(), 1)
-    assert.equal(carQuery.sql, helpers.formatQuery('select * from "cars" where "name" = ? and "user_id" = ?'))
-    assert.equal(partQuery.sql, helpers.formatQuery('select * from "parts" where "part_name" = ? and "car_id" in (?)'))
-  })
-
-  test('get relation count', async (assert) => {
-    class Car extends Model {
-    }
-
-    class User extends Model {
-      cars () {
-        return this.hasMany(Car)
-      }
-    }
-
-    Car._bootIfNotBooted()
-    User._bootIfNotBooted()
-
-    let userQuery = null
-    User.onQuery((query) => (userQuery = query))
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
-    ])
-
-    const user = await User.query().withCount('cars').first()
-    assert.deepEqual(user.$sideLoaded, { cars_count: helpers.formatNumber(2) })
-    assert.equal(userQuery.sql, helpers.formatQuery('select *, (select count(*) from "cars" where users.id = cars.user_id) as "cars_count" from "users" limit ?'))
-  })
-
-  test('filter parent based upon child', async (assert) => {
-    class Car extends Model {
-    }
-
-    class User extends Model {
-      cars () {
-        return this.hasMany(Car)
-      }
-    }
-
-    Car._bootIfNotBooted()
-    User._bootIfNotBooted()
-
-    let userQuery = null
-    User.onQuery((query) => (userQuery = query))
-
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' }
-    ])
-
-    const users = await User.query().has('cars').fetch()
-    assert.equal(users.size(), 1)
-    assert.equal(userQuery.sql, helpers.formatQuery('select * from "users" where exists (select * from "cars" where users.id = cars.user_id)'))
-  })
-
-  test('define minimum count via has', async (assert) => {
-    class Car extends Model {
-    }
-
-    class User extends Model {
-      cars () {
-        return this.hasMany(Car)
-      }
-    }
-
-    Car._bootIfNotBooted()
-    User._bootIfNotBooted()
-
-    let userQuery = null
-    User.onQuery((query) => (userQuery = query))
-
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' },
-      { user_id: 2, name: 'audi', model: '2001' }
-    ])
-
-    const users = await User.query().has('cars', '>=', 2).fetch()
-    assert.equal(users.size(), 1)
-    assert.equal(userQuery.sql, helpers.formatQuery('select * from "users" where (select count(*) from "cars" where users.id = cars.user_id) >= ?'))
-  })
-
-  test('add additional constraints via where has', async (assert) => {
-    class Car extends Model {
-    }
-
-    class User extends Model {
-      cars () {
-        return this.hasMany(Car)
-      }
-    }
-
-    Car._bootIfNotBooted()
-    User._bootIfNotBooted()
-
-    let userQuery = null
-    User.onQuery((query) => (userQuery = query))
-
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' },
-      { user_id: 2, name: 'audi', model: '2001' }
-    ])
-
-    const users = await User.query().whereHas('cars', (builder) => {
-      return builder.where('name', 'audi')
-    }).fetch()
-    assert.equal(users.size(), 2)
-    assert.equal(userQuery.sql, helpers.formatQuery('select * from "users" where exists (select * from "cars" where "name" = ? and users.id = cars.user_id)'))
-  })
-
-  test('add additional constraints and count constraints at same time', async (assert) => {
-    class Car extends Model {
-    }
-
-    class User extends Model {
-      cars () {
-        return this.hasMany(Car)
-      }
-    }
-
-    Car._bootIfNotBooted()
-    User._bootIfNotBooted()
-
-    let userQuery = null
-    User.onQuery((query) => (userQuery = query))
-
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' },
-      { user_id: 2, name: 'audi', model: '2001' }
-    ])
-
-    const users = await User.query().whereHas('cars', (builder) => {
-      return builder.where('name', 'audi')
-    }, '>', 1).fetch()
-    assert.equal(users.size(), 0)
-    assert.equal(userQuery.sql, helpers.formatQuery('select * from "users" where (select count(*) from "cars" where "name" = ? and users.id = cars.user_id) > ?'))
-  })
-
-  test('add orWhereHas clause', async (assert) => {
-    class Car extends Model {
-    }
-
-    class User extends Model {
-      cars () {
-        return this.hasMany(Car)
-      }
-    }
-
-    Car._bootIfNotBooted()
-    User._bootIfNotBooted()
-
-    let userQuery = null
-    User.onQuery((query) => (userQuery = query))
-
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
-    await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' },
-      { user_id: 2, name: 'audi', model: '2001' }
-    ])
-
-    const users = await User.query().whereHas('cars', (builder) => {
-      return builder.where('name', 'audi')
-    }, '>', 1).orWhereHas('cars', (builder) => builder.where('name', 'mercedes')).fetch()
-    assert.equal(users.size(), 1)
-    assert.equal(userQuery.sql, helpers.formatQuery('select * from "users" where (select count(*) from "cars" where "name" = ? and users.id = cars.user_id) > ? or exists (select * from "cars" where "name" = ? and users.id = cars.user_id)'))
   })
 
   test('paginate records', async (assert) => {
@@ -597,11 +379,11 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' },
-      { user_id: 2, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'mercedes', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' },
+      { user_id: rs.insertedIds[1], name: 'audi', model: '2001' }
     ])
 
     const users = await User.query().with('cars').paginate()
@@ -622,11 +404,11 @@ test.group('Relations | Has Many', (group) => {
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     await ioc.use('Database').collection('cars').insert([
-      { user_id: 1, name: 'mercedes', model: '1990' },
-      { user_id: 1, name: 'audi', model: '2001' },
-      { user_id: 2, name: 'audi', model: '2001' }
+      { user_id: rs.insertedIds[0], name: 'mercedes', model: '1990' },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001' },
+      { user_id: rs.insertedIds[1], name: 'audi', model: '2001' }
     ])
 
     const users = await User.query().with('cars').paginate()
@@ -662,7 +444,7 @@ test.group('Relations | Has Many', (group) => {
     mercedes.model = '1992'
 
     await user.cars().save(mercedes)
-    assert.equal(mercedes.user_id, user.id)
+    assert.equal(mercedes.user_id, user._id)
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(mercedes.isNew)
   })
@@ -685,8 +467,7 @@ test.group('Relations | Has Many', (group) => {
     await user.save()
 
     const mercedes = await user.cars().create({ name: 'mercedes', model: '1992' })
-    assert.equal(mercedes.user_id, 1)
-    assert.equal(mercedes.user_id, user.id)
+    assert.equal(String(mercedes.user_id), String(user._id))
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(mercedes.isNew)
   })
@@ -708,8 +489,7 @@ test.group('Relations | Has Many', (group) => {
     user.username = 'virk'
 
     const mercedes = await user.cars().create({ name: 'mercedes', model: '1992' })
-    assert.equal(mercedes.user_id, 1)
-    assert.equal(mercedes.user_id, user.id)
+    assert.equal(String(mercedes.user_id), String(user._id))
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(mercedes.isNew)
     assert.isTrue(user.$persisted)
@@ -737,8 +517,7 @@ test.group('Relations | Has Many', (group) => {
     mercedes.model = '1992'
 
     await user.cars().save(mercedes)
-    assert.equal(mercedes.user_id, 1)
-    assert.equal(mercedes.user_id, user.id)
+    assert.equal(String(mercedes.user_id), String(user._id))
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(mercedes.isNew)
     assert.isTrue(user.$persisted)
@@ -770,9 +549,8 @@ test.group('Relations | Has Many', (group) => {
     ferrari.model = '2002'
 
     await user.cars().saveMany([mercedes, ferrari])
-    assert.equal(mercedes.user_id, 1)
-    assert.equal(mercedes.user_id, user.id)
-    assert.equal(ferrari.user_id, user.id)
+    assert.equal(String(mercedes.user_id), String(user._id))
+    assert.equal(String(ferrari.user_id), String(user._id))
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(ferrari.isNew)
     assert.isTrue(ferrari.$persisted)
@@ -799,9 +577,8 @@ test.group('Relations | Has Many', (group) => {
 
     const [mercedes, ferrari] = await user.cars().createMany([{ name: 'mercedes', model: '1992' }, { name: 'ferrari', model: '2002' }])
 
-    assert.equal(mercedes.user_id, 1)
-    assert.equal(mercedes.user_id, user.id)
-    assert.equal(ferrari.user_id, user.id)
+    assert.equal(String(mercedes.user_id), String(user._id))
+    assert.equal(String(ferrari.user_id), String(user._id))
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(ferrari.isNew)
     assert.isTrue(ferrari.$persisted)
@@ -822,17 +599,14 @@ test.group('Relations | Has Many', (group) => {
 
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
 
     const user = new User()
     user.username = 'virk'
 
     await user.cars().createMany([{ name: 'mercedes', model: '1992' }, { name: 'ferrari', model: '2002' }])
     await user.cars().delete()
-    const cars = await ioc.use('Database').collection('cars')
+    const cars = await ioc.use('Database').collection('cars').find()
     assert.lengthOf(cars, 0)
-    assert.equal(carQuery.sql, helpers.formatQuery('delete from "cars" where "user_id" = ?'))
   })
 
   test('add constraints to delete query', async (assert) => {
@@ -847,18 +621,15 @@ test.group('Relations | Has Many', (group) => {
 
     Car._bootIfNotBooted()
     User._bootIfNotBooted()
-    let carQuery = null
-    Car.onQuery((query) => (carQuery = query))
 
     const user = new User()
     user.username = 'virk'
 
     await user.cars().createMany([{ name: 'mercedes', model: '1992' }, { name: 'ferrari', model: '2002' }])
     await user.cars().where('name', 'mercedes').delete()
-    const cars = await ioc.use('Database').collection('cars')
+    const cars = await ioc.use('Database').collection('cars').find()
     assert.lengthOf(cars, 1)
     assert.equal(cars[0].name, 'ferrari')
-    assert.equal(carQuery.sql, helpers.formatQuery('delete from "cars" where "name" = ? and "user_id" = ?'))
   })
 
   test('throw exception when createMany doesn\'t receives an array', async (assert) => {
