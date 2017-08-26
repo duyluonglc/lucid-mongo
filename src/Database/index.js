@@ -510,6 +510,61 @@ class Database {
   }
 
   /**
+   * @method count
+   *
+   * @param {any} args
+   * @returns {Number|Array}
+   * @memberof Database
+   */
+  count (...args) {
+    return this.aggregate('count', ...args)
+  }
+
+  /**
+   * @method count
+   *
+   * @param {any} args
+   * @returns {Number|Array}
+   * @memberof Database
+   */
+  sum (...args) {
+    return this.aggregate('sum', ...args)
+  }
+
+  /**
+   * @method count
+   *
+   * @param {any} args
+   * @returns {Number|Array}
+   * @memberof Database
+   */
+  agv (...args) {
+    return this.aggregate('avg', ...args)
+  }
+
+  /**
+   * @method count
+   *
+   * @param {any} args
+   * @returns {Number|Array}
+   * @memberof Database
+   */
+  max (...args) {
+    return this.aggregate('max', ...args)
+  }
+
+  /**
+   * @method count
+   *
+   * @param {any} args
+   * @returns {Number|Array}
+   * @memberof Database
+   */
+  min (...args) {
+    return this.aggregate('min', ...args)
+  }
+
+  /**
    * Aggregation
    *
    * @method paginate
@@ -583,7 +638,6 @@ class Database {
     for (let name of this.constructor.conditionMethods) {
       let originMethod = this.queryBuilder[name]
       this.queryBuilder[name] = (param) => {
-        const key = this.queryBuilder._path
         originMethod.apply(this.queryBuilder, [param])
         return this
       }

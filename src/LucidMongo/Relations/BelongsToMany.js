@@ -68,20 +68,20 @@ class BelongsToMany extends BaseRelation {
     this._existingPivotInstances = []
   }
 
-  /**
-   * The colums to be selected from the related
-   * query
-   *
-   * @method select
-   *
-   * @param  {Array} columns
-   *
-   * @chainable
-   */
-  select (columns) {
-    this._relatedFields = _.isArray(columns) ? columns : _.toArray(arguments)
-    return this
-  }
+  // /**
+  //  * The colums to be selected from the related
+  //  * query
+  //  *
+  //  * @method select
+  //  *
+  //  * @param  {Array} columns
+  //  *
+  //  * @chainable
+  //  */
+  // select (columns) {
+  //   this._relatedFields = _.isArray(columns) ? columns : _.toArray(arguments)
+  //   return this
+  // }
 
   /**
    * Returns the pivot collection name. The pivot model is
@@ -136,7 +136,7 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _whereForPivot (method, key, ...args) {
-    this.relatedQuery[method](key, ...args)
+    this.pivotQuery()[method](key, ...args)
   }
 
   /**
@@ -297,7 +297,7 @@ class BelongsToMany extends BaseRelation {
    * @private
    */
   _getPivotInstance (value) {
-    return _.find(this._existingPivotInstances, (instance) => instance[this.relatedForeignKey] === value)
+    return _.find(this._existingPivotInstances, (instance) => String(instance[this.relatedForeignKey]) === String(value))
   }
 
   /**
@@ -367,20 +367,6 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
-   * Returns an array of values to be used for running
-   * whereIn query when eagerloading relationships.
-   *
-   * @method mapValues
-   *
-   * @param  {Array}  modelInstances - An array of model instances
-   *
-   * @return {Array}
-   */
-  mapValues (modelInstances) {
-    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
-  }
-
-  /**
    * Make a where clause on the pivot collection
    *
    * @method whereInPivot
@@ -436,91 +422,43 @@ class BelongsToMany extends BaseRelation {
    * @return {Object}
    */
   async eagerLoad (rows) {
-    this._selectFields()
-    this._makeJoinQuery()
     this.whereInPivot(this.foreignKey, this.mapValues(rows))
-
-    const relatedInstances = await this.relatedQuery.fetch()
-    return this.group(relatedInstances.rows)
-  }
-
-  /**
-   * Method called when eagerloading for a single
-   * instance
-   *
-   * @method load
-   * @async
-   *
-   * @return {Promise}
-   */
-  load () {
-    return this.fetch()
-  }
-
-  /**
-   * Fetch over the related rows
-   *
-   * @return {Serializer}
-   */
-  async fetch () {
     const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
-    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
+    const relatedInstances = await this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).fetch()
+    let result = []
+    rows.map(modelInstance => {
+      const modelPivots = _.filter(pivotInstances.rows, pivot => {
+        return String(pivot[this.foreignKey]) === String(modelInstance.primaryKeyValue)
+      })
+      modelPivots.map(pivot => {
+        relatedInstances.rows.map(related => {
+          if (String(related.primaryKeyValue) === String(pivot[this.relatedForeignKey])) {
+            const newRelated = new this.RelatedModel()
+            newRelated.newUp(related.$attributes)
+            newRelated.$sideLoaded[`pivot_${this.foreignKey}`] = modelInstance.primaryKeyValue
+            newRelated.setRelated('pivot', pivot)
+            result.push(newRelated)
+          }
+        })
+      })
+    })
+    // console.log(result)
+    return this.group(result)
   }
 
   /**
-   * @method count
+   * Returns an array of values to be used for running
+   * whereIn query when eagerloading relationships.
    *
-   * @return {Object|Number}
-   */
-  async count (...args) {
-    const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
-    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).count(...args)
-  }
-
-  /**
-   * @method max
+   * @method mapValues
    *
-   * @return {Object|Number}
-   */
-  async max (...args) {
-    const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
-    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).max(...args)
-  }
-
-  /**
-   * @method min
+   * @param  {Array}  modelInstances - An array of model instances
    *
-   * @return {Object|Number}
+   * @return {Array}
    */
-  async min (...args) {
-    const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
-    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).min(...args)
-  }
-
-  /**
-   * @method sum
-   *
-   * @return {Object|Number}
-   */
-  async sum (...args) {
-    const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
-    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).sum(...args)
-  }
-
-  /**
-   * @method avg
-   *
-   * @return {Object|Number}
-   */
-  async avg (...args) {
-    const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
-    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).avg(...args)
+  mapValues (modelInstances) {
+    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
   }
 
   /**
@@ -559,6 +497,111 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
+   * Method called when eagerloading for a single
+   * instance
+   *
+   * @method load
+   * @async
+   *
+   * @return {Promise}
+   */
+  load () {
+    return this.fetch()
+  }
+
+  /**
+   * Fetch over the related rows
+   *
+   * @return {Serializer}
+   */
+  async fetch () {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
+    const result = await this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).fetch()
+    result.rows.forEach(related => {
+      const pivot = _.find(pivotInstances.rows, pivot => String(pivot[this.relatedForeignKey]) === String(related[this.relatedPrimaryKey]))
+      related.setRelated('pivot', pivot)
+    })
+    return result
+  }
+
+  /**
+   * First related rows
+   *
+   * @return {Object}
+   */
+  async first () {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
+    const related = await this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).first()
+    const pivot = _.find(pivotInstances.rows, pivot => String(pivot[this.relatedForeignKey]) === String(related[this.relatedPrimaryKey]))
+    related.setRelated('pivot', pivot)
+    return related
+  }
+
+  /**
+   * @method count
+   *
+   * @return {Object|Number}
+   */
+  async count (...args) {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).count(...args)
+  }
+
+  /**
+   * @method max
+   *
+   * @return {Object|Number}
+   */
+  async max (...args) {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).max(...args)
+  }
+
+  /**
+   * @method min
+   *
+   * @return {Object|Number}
+   */
+  async min (...args) {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).min(...args)
+  }
+
+  /**
+   * @method sum
+   *
+   * @return {Object|Number}
+   */
+  async sum (...args) {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).sum(...args)
+  }
+
+  /**
+   * @method avg
+   *
+   * @return {Object|Number}
+   */
+  async avg (...args) {
+    this._decorateQuery()
+    const pivotInstances = await this.pivotQuery().fetch()
+    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).avg(...args)
+  }
+
+  /**
    * Returns the query for pivot collection
    *
    * @method pivotQuery
@@ -568,15 +611,15 @@ class BelongsToMany extends BaseRelation {
    * @return {Object}
    */
   pivotQuery (selectFields = true) {
-    const query = this._PivotModel
-      ? this._PivotModel.query()
-      : new PivotModel().query(this.$pivotCollection, this.RelatedModel.$connection)
-    if (selectFields) {
-      query.select(this.$pivotColumns)
+    if (!this._pivotQuery) {
+      this._pivotQuery = this._PivotModel
+        ? this._PivotModel.query()
+        : new PivotModel().query(this.$pivotCollection, this.RelatedModel.$connection)
+      if (selectFields) {
+        this._pivotQuery.select(this.$pivotColumns)
+      }
     }
-
-    query.where(this.foreignKey, this.$primaryKeyValue)
-    return query
+    return this._pivotQuery
   }
 
   /**
@@ -642,12 +685,15 @@ class BelongsToMany extends BaseRelation {
    * @return {Number} Number of effected rows
    */
   async delete () {
+    this._decorateQuery()
     const pivotInstances = await this.pivotQuery().fetch()
     const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    const ids = await this.relatedQuery
+      .whereIn(this.relatedPrimaryKey, foreignKeyValues).ids()
     const effectedRows = await this.relatedQuery
       .whereIn(this.relatedPrimaryKey, foreignKeyValues)
       .delete()
-    await this.detach(foreignKeyValues)
+    await this.detach(ids)
     return effectedRows
   }
 
@@ -661,6 +707,7 @@ class BelongsToMany extends BaseRelation {
    * @return {Number}        Number of effected rows
    */
   async update (values) {
+    this._decorateQuery()
     const pivotInstances = await this.pivotQuery().fetch()
     const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
     return this.relatedQuery
