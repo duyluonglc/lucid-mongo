@@ -23,8 +23,10 @@ const CE = require('../../Exceptions')
 class HasManyThrough extends BaseRelation {
   constructor (parentInstance, RelatedModel, relatedMethod, primaryKey, foreignKey) {
     super(parentInstance, RelatedModel, primaryKey, foreignKey)
+    this.relatedMethod = relatedMethod
     this._relatedModelRelation = new RelatedModel()[relatedMethod]()
     this.relatedQuery = this._relatedModelRelation.relatedQuery
+    this.throughQuery = RelatedModel.query()
     this._relatedFields = []
     this._throughFields = []
     this._fields = []
@@ -59,22 +61,7 @@ class HasManyThrough extends BaseRelation {
    * @private
    */
   _selectFields () {
-    if (!_.size(this._relatedFields)) {
-      this.selectRelated()
-    }
-
-    const relatedFields = _.map(_.uniq(this._relatedFields), (field) => {
-      return `${field}`
-    })
-
-    const throughFields = _.map(_.uniq(this._throughFields), (field) => {
-      this.relatedQuery._sideLoaded.push(`through_${field}`)
-      return `${this.$foreignCollection}.${field} as through_${field}`
-    })
-
-    const fields = _.map(_.uniq(this._fields), (field) => `${this.$primaryCollection}.${field}`)
-
-    this.relatedQuery.select(fields.concat(relatedFields).concat(throughFields))
+    this.relatedQuery.select(this._relatedFields)
   }
 
   /**
@@ -89,8 +76,6 @@ class HasManyThrough extends BaseRelation {
    */
   _decorateQuery () {
     this._selectFields()
-    // this._makeJoinQuery()
-    // this.relatedQuery.where(`${this.$foreignCollection}.${this.foreignKey}`, this.$primaryKeyValue)
   }
 
   /**
@@ -124,6 +109,34 @@ class HasManyThrough extends BaseRelation {
   }
 
   /**
+   * Select fields from the through collection.
+   *
+   * @method whereThrough
+   *
+   * @param  {Array}      args
+   *
+   * @chainable
+   */
+  whereThrough (...args) {
+    this.throughQuery.where(...args)
+    return this
+  }
+
+  /**
+   * Select fields from the through collection.
+   *
+   * @method whereThrough
+   *
+   * @param  {Array}      args
+   *
+   * @chainable
+   */
+  whereInThrough (...args) {
+    this.throughQuery.whereIn(...args)
+    return this
+  }
+
+  /**
    * Select fields from the related collection
    *
    * @method selectRelated
@@ -149,7 +162,12 @@ class HasManyThrough extends BaseRelation {
    * @return {Array}
    */
   mapValues (modelInstances) {
-    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+    return _.transform(modelInstances, (result, modelInstance) => {
+      if (modelInstance[this.primaryKey]) {
+        result.push(modelInstance[this.primaryKey])
+      }
+      return result
+    }, [])
   }
 
   /**
@@ -165,22 +183,30 @@ class HasManyThrough extends BaseRelation {
   async eagerLoad (rows) {
     // this.selectThrough(this.foreignKey)
     this._selectFields()
-    // this._makeJoinQuery()
-    const thoughInstances = await this.RelatedModel.query()
+    const thoughInstances = await this.throughQuery
+      .with(this.relatedMethod, builder => {
+        builder.query._conditions = this.relatedQuery.query._conditions
+        builder.query.options = this.relatedQuery.query.options
+        builder.query._fields = this.relatedQuery.query._fields
+      })
       .whereIn(this.foreignKey, this.mapValues(rows))
       .fetch()
-    const foreignKeyValues = _.map(thoughInstances.rows, this.RelatedModel.primaryKey)
-
-    const relatedInstances = await this.relatedQuery
-      .whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues)
-      .fetch()
-
-    const relatedRows = _.map(relatedInstances.rows, related => {
-      const thoughInstance = _.find(thoughInstances.rows, through => {
-        return String(related[this._relatedModelRelation.foreignKey]) === String(through[this.RelatedModel.primaryKey])
-      })
-      related.$sideLoaded[`through_${this.foreignKey}`] = thoughInstance[this.foreignKey]
-      return related
+    const relatedRows = []
+    thoughInstances.rows.forEach(thoughInstance => {
+      let relates = thoughInstance.getRelated(this.relatedMethod)
+      if (relates instanceof this.relatedQuery.Model) {
+        const newRelated = new this.relatedQuery.Model()
+        newRelated.newUp(relates.$attributes)
+        newRelated.$sideLoaded[`through_${this.foreignKey}`] = thoughInstance[this.foreignKey]
+        relatedRows.push(newRelated)
+      } else if (relates && relates.rows) {
+        _.forEach(relates.rows, related => {
+          const newRelated = new this.relatedQuery.Model()
+          newRelated.newUp(related.$attributes)
+          newRelated.$sideLoaded[`through_${this.foreignKey}`] = thoughInstance[this.foreignKey]
+          relatedRows.push(newRelated)
+        })
+      }
     })
     return this.group(relatedRows)
   }
@@ -251,13 +277,35 @@ class HasManyThrough extends BaseRelation {
    * @return {Serializer}
    */
   async fetch () {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    const rows = await this.relatedQuery
-      .whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues)
+    const thoughInstances = await this.throughQuery
+      .with(this.relatedMethod, builder => {
+        builder.query._conditions = this.relatedQuery.query._conditions
+        builder.query.options = this.relatedQuery.query.options
+        builder.query._fields = this.relatedQuery.query._fields
+      })
+      .where(this.foreignKey, this.parentInstance.primaryKeyValue)
       .fetch()
-    return rows
+    let relatedRows = []
+    thoughInstances.rows.forEach(thoughInstance => {
+      const relates = thoughInstance.getRelated(this.relatedMethod)
+      if (relates instanceof this.relatedQuery.Model) {
+        relatedRows.push(relates)
+      } else if (relates && relates.rows) {
+        relatedRows = _.concat(relatedRows, relates.rows)
+      }
+    })
+    return new this.RelatedModel.Serializer(relatedRows)
+  }
+
+  /**
+   * Fetch over the related rows
+   *
+   * @return {Object}
+   */
+  async first () {
+    this.relatedQuery.limit(1)
+    const result = await this.fetch()
+    return result.first()
   }
 
   /**
@@ -266,58 +314,7 @@ class HasManyThrough extends BaseRelation {
    * @return {Object|Number}
    */
   async count (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).count(...args)
-  }
-
-  /**
-   * @method max
-   *
-   * @return {Object|Number}
-   */
-  async max (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).max(...args)
-  }
-
-  /**
-   * @method min
-   *
-   * @return {Object|Number}
-   */
-  async min (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).min(...args)
-  }
-
-  /**
-   * @method sum
-   *
-   * @return {Object|Number}
-   */
-  async sum (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).sum(...args)
-  }
-
-  /**
-   * @method avg
-   *
-   * @return {Object|Number}
-   */
-  async avg (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).avg(...args)
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'HasManyThrough')
   }
 
   /**
@@ -326,10 +323,7 @@ class HasManyThrough extends BaseRelation {
    * @return {Object|Number}
    */
   async update (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).update(...args)
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'HasManyThrough')
   }
 
   /**
@@ -338,10 +332,7 @@ class HasManyThrough extends BaseRelation {
    * @return {Object|Number}
    */
   async delete (...args) {
-    const foreignKeyValues = await this.RelatedModel.query()
-      .where(this.foreignKey, this.$primaryKeyValue)
-      .ids()
-    return this.relatedQuery.whereIn(this._relatedModelRelation.foreignKey, foreignKeyValues).delete(...args)
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'HasManyThrough')
   }
 
   /* istanbul ignore next */
