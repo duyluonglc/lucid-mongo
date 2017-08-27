@@ -50,7 +50,12 @@ class HasMany extends BaseRelation {
    * @return {Array}
    */
   mapValues (modelInstances) {
-    return _.map(modelInstances, (modelInstance) => modelInstance[this.primaryKey])
+    return _.transform(modelInstances, (result, modelInstance) => {
+      if (modelInstance[this.primaryKey]) {
+        result.push(modelInstance[this.primaryKey])
+      }
+      return result
+    }, [])
   }
 
   /**
