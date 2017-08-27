@@ -3,15 +3,16 @@ environment:
   - nodejs_version: 'Stable'
   - nodejs_version: '7'
 
+services:
+  - mongodb
+
 init:
   git config --global core.autocrlf true
 
 install:
+  - mongo test_lucid --eval 'db.addUser("test", "test");'
   - ps: Install-Product node $env:nodejs_version
   - npm install
-
-before_script:
-  - mongo test_lucid --eval 'db.addUser("test", "test");'
 
 test_script:
   - node --version
