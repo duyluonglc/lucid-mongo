@@ -4,8 +4,8 @@
 
 [![Version](https://img.shields.io/npm/v/lucid-mongo.svg)](https://www.npmjs.com/package/lucid-mongo)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-[![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=dawn)](https://travis-ci.org/duyluonglc/lucid-mongo)
-[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/dawn.svg)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=dawn)
+[![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=develop)](https://travis-ci.org/duyluonglc/lucid-mongo)
+[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/develop.svg)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=develop)
 [![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/lucid-mongo.svg)](https://greenkeeper.io/)
 > :pray: This repository is base on @adonis/lucid and only work with mongodb.
 
