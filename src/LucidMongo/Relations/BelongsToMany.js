@@ -443,7 +443,6 @@ class BelongsToMany extends BaseRelation {
         })
       })
     })
-    // console.log(result)
     return this.group(result)
   }
 

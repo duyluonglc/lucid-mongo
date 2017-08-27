@@ -563,7 +563,6 @@ test.group('Relations | Belongs To Many', (group) => {
 
     const user = await User.query().with('posts').first()
     const json = user.toJSON()
-    console.log(json)
     assert.isTrue(moment(json.posts[0].pivot.created_at, 'YYYY-MM-DD', true).isValid())
     assert.isTrue(moment(json.posts[0].pivot.updated_at, 'YYYY-MM-DD', true).isValid())
   })
@@ -998,7 +997,6 @@ test.group('Relations | Belongs To Many', (group) => {
     const userPost = user.posts()
     await userPost.attach(post._id)
     const pivotValues = await ioc.use('Database').collection('post_user').find()
-    console.log(pivotValues)
     assert.lengthOf(pivotValues, 1)
   })
 
@@ -1151,8 +1149,6 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.posts().where('_id', post1._id).delete()
     const postsCount = await ioc.use('Database').collection('posts').find()
     const postUserCount = await ioc.use('Database').collection('post_user').find()
-    console.log(postsCount)
-    console.log(postUserCount)
     assert.lengthOf(postsCount, 1)
     assert.lengthOf(postUserCount, 1)
   })
