@@ -10,6 +10,9 @@ install:
   - ps: Install-Product node $env:nodejs_version
   - npm install
 
+before_script:
+- mongo db_test --eval 'db.addUser("test", "test");'
+
 test_script:
   - node --version
   - npm --version

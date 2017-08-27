@@ -12,7 +12,7 @@ node_js:
 - 7.0.0
 services: mongodb
 before_script:
-- mongo db_test --eval 'db.addUser("user", "test");'
+- mongo db_test --eval 'db.addUser("test", "test");'
 sudo: false
 install:
 - npm install --no-optional
