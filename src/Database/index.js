@@ -14,6 +14,7 @@ const mquery = require('mquery')
 const CE = require('../Exceptions')
 const util = require('../../lib/util')
 const _ = require('lodash')
+// const debug = require('debug')('mquery')
 
 const proxyHandler = {
   get (target, name) {
@@ -165,6 +166,7 @@ class Database {
   get schema () {
     return {
       collection: async (collectionName, callback) => {
+        // debug('create collection', { collectionName })
         const db = await this.connect()
         const collection = await db.collection(collectionName)
         const schemaBuilder = new SchemaBuilder(collection)
@@ -172,13 +174,19 @@ class Database {
         return schemaBuilder.build()
       },
       createCollection: async (collectionName, callback) => {
+        // debug('create collection', {collectionName})
         const db = await this.connect()
+        const collections = await db.listCollections().toArray()
+        if (_.find(collections, collection => collection.name === collectionName)) {
+          throw new Error('already exists')
+        }
         const collection = await db.createCollection(collectionName)
         const schemaBuilder = new SchemaBuilder(collection)
         callback(schemaBuilder)
         return schemaBuilder.build()
       },
       createCollectionIfNotExists: async (collectionName, callback) => {
+        // debug('create collection if not exists', { collectionName })
         const db = await this.connect()
         const collections = await db.listCollections().toArray()
         if (!_.find(collections, collection => collection.name === collectionName)) {
@@ -189,10 +197,12 @@ class Database {
         }
       },
       dropCollection: async (collectionName) => {
+        // debug('drop collection', { collectionName })
         const db = await this.connect()
         return db.dropCollection(collectionName)
       },
       dropCollectionIfExists: async (collectionName) => {
+        // debug('drop collection if not exists', { collectionName })
         const db = await this.connect()
         const collections = await db.listCollections().toArray()
         if (_.find(collections, collection => collection.name === collectionName)) {
@@ -200,6 +210,7 @@ class Database {
         }
       },
       renameCollection: async (collectionName, target) => {
+        // debug('rename collection', { collectionName, target })
         const db = await this.connect()
         return db.collection(collectionName).rename(target)
       },

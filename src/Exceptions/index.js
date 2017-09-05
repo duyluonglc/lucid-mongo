@@ -103,7 +103,7 @@ class RuntimeException extends GE.RuntimeException {
    * @return {Object}
    */
   static migrationsAreLocked (lockCollection) {
-    return new this(`Migrations are locked. Make sure you are not multiple migration scripts or delete \`${lockCollection}\` table manually`)
+    return new this(`Migrations are locked. Make sure you are not multiple migration scripts or delete \`${lockCollection}\` collection manually`)
   }
 }
 

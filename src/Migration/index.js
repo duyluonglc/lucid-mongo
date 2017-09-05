@@ -109,7 +109,7 @@ class Migration {
   async _checkForLock () {
     const hasLock = await this.db
       .collection(this._lockCollection)
-      .where('is_locked', 1)
+      .where('is_locked', true)
       .sort('-_id')
       .findOne()
 

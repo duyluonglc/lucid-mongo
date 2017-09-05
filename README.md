@@ -39,7 +39,7 @@ To setup this package as standalone package
 $ npm i --save lucid-mongo
 ```
 
-## Use standalone
+## Use standalone (still in development)
 ```js
 const config = {
   connection: 'mongodb',

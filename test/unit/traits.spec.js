@@ -148,15 +148,14 @@ test.group('Traits', (group) => {
     User._bootIfNotBooted()
 
     const userQuery = User.query().search('username', 'virk').toSQL()
-    assert.equal(userQuery.sql, helpers.formatQuery('select * from "users" where "username" = ?'))
-    assert.deepEqual(userQuery.bindings, helpers.formatBindings(['virk']))
+    assert.deepEqual(userQuery._conditions, { 'username': 'virk' })
   })
 
   test('model should not have an isolated copy of query builder unless queryMacro is defined', (assert) => {
     class User extends Model {
       static boot () {
         super.boot()
-        this.addTrait(function () {})
+        this.addTrait(function () { })
       }
     }
 
@@ -169,12 +168,12 @@ test.group('Traits', (group) => {
       static boot () {
         super.boot()
         this.addTrait(function (ctx) {
-          ctx.queryMacro('foo', function () {})
+          ctx.queryMacro('foo', function () { })
         })
       }
     }
 
-    class Profile extends Model {}
+    class Profile extends Model { }
 
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
