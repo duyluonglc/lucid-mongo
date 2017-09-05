@@ -148,7 +148,7 @@ test.group('Traits', (group) => {
     User._bootIfNotBooted()
 
     const userQuery = User.query().search('username', 'virk').toSQL()
-    assert.deepEqual(userQuery._conditions, { 'username': 'virk' })
+    assert.deepEqual(JSON.parse(userQuery)._conditions, { 'username': 'virk' })
   })
 
   test('model should not have an isolated copy of query builder unless queryMacro is defined', (assert) => {

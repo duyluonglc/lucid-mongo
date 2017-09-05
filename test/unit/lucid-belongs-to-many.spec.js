@@ -19,6 +19,7 @@ const ObjectID = require('mongodb').ObjectID
 const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
+const _ = require('lodash')
 
 test.group('Relations | Belongs To Many', (group) => {
   group.before(async () => {
@@ -784,7 +785,7 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.lengthOf(pivotValues, 1)
     assert.equal(String(pivotValues[0].post_id), String(postId))
     assert.equal(String(pivotValues[0].user_id), String(user._id))
-    assert.equal(pivotValues[0].is_published, 1)
+    assert.equal(pivotValues[0].is_published, true)
   })
 
   test('attach multiple existing models', async (assert) => {
@@ -809,11 +810,12 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.posts().attach([postId1, postId2, postId3])
     const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 3)
-    assert.equal(String(pivotValues[0].post_id), String(postId1))
+    const postIds = _.map(pivotValues, 'post_id').map(String)
+    assert.isTrue(postIds.includes(String(postId1)))
     assert.equal(String(pivotValues[0].user_id), String(user._id))
-    assert.equal(String(pivotValues[1].post_id), String(postId2))
+    assert.isTrue(postIds.includes(String(postId2)))
     assert.equal(String(pivotValues[1].user_id), String(user._id))
-    assert.equal(String(pivotValues[2].post_id), String(postId3))
+    assert.isTrue(postIds.includes(String(postId3)))
     assert.equal(String(pivotValues[2].user_id), String(user._id))
   })
 
@@ -839,15 +841,16 @@ test.group('Relations | Belongs To Many', (group) => {
     await user.posts().attach([postId1, postId2, postId3], (pivotModel) => (pivotModel.is_published = true))
     const pivotValues = await ioc.use('Database').collection('post_user').find()
     assert.lengthOf(pivotValues, 3)
-    assert.equal(String(pivotValues[0].post_id), String(postId1))
+    const postIds = _.map(pivotValues, 'post_id').map(String)
+    assert.isTrue(postIds.includes(String(postId1)))
     assert.equal(String(pivotValues[0].user_id), String(user._id))
-    assert.equal(pivotValues[0].is_published, 1)
-    assert.equal(String(pivotValues[1].post_id), String(postId2))
+    assert.equal(pivotValues[0].is_published, true)
+    assert.isTrue(postIds.includes(String(postId2)))
     assert.equal(String(pivotValues[1].user_id), String(user._id))
-    assert.equal(pivotValues[1].is_published, 1)
-    assert.equal(String(pivotValues[2].post_id), String(postId3))
+    assert.equal(pivotValues[1].is_published, true)
+    assert.isTrue(postIds.includes(String(postId3)))
     assert.equal(String(pivotValues[2].user_id), String(user._id))
-    assert.equal(pivotValues[2].is_published, 1)
+    assert.equal(pivotValues[2].is_published, true)
   })
 
   test('save many related rows with different pivot values', async (assert) => {
