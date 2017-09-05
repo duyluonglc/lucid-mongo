@@ -4,10 +4,10 @@ node_js:
   - 7.0.0
 services: mongodb
 before_script:
-  - mongo test_lucid --eval 'db.createUser({user:"adonis",pwd:"adonis",roles:["dbOwner"]});'
+  - mongo test_lucid --eval 'db.createUser({user:"test",pwd:"test",roles:["dbOwner"]});'
 sudo: false
 install:
   - npm install --no-optional
 script:
-  - DB=mongodb database=test_lucid user=adonis password=adonis npm test
+  - DB=mongodb DB_NAME=test_lucid DB_USER=test DB_PASSWORD=test npm test
 notifications:
