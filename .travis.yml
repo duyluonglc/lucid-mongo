@@ -9,5 +9,5 @@ sudo: false
 install:
   - npm install --no-optional
 script:
-  - DB=mongodb user=adonis password=adonis npm test
+  - DB=mongodb database=test_lucid user=adonis password=adonis npm test
 notifications:
