@@ -1,13 +1,13 @@
 language: node_js
 node_js:
-- node
-- 7.0.0
+  - node
+  - 7.0.0
 services: mongodb
 before_script:
-- mongo test_lucid --eval 'db.addUser("test", "test");'
+  - mongo test_lucid --eval 'db.createUser({user:"adonis",pwd:"adonis",roles:["dbOwner"]});'
 sudo: false
 install:
-- npm install --no-optional
+  - npm install --no-optional
 script:
-- DB=mongodb npm test
+  - DB=mongodb user=adonis password=adonis npm test
 notifications:
