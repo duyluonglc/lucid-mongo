@@ -11,7 +11,7 @@
 
 const test = require('japa')
 const { ioc } = require('@adonisjs/fold')
-const helpers = require('./helpers')
+// const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
 const QueryBuilder = require('../../src/LucidMongo/QueryBuilder')
 
