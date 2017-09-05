@@ -10,7 +10,6 @@ init:
   git config --global core.autocrlf true
 
 install:
-  - mongo test_lucid --eval 'db.addUser("test", "test");'
   - ps: Install-Product node $env:nodejs_version
   - npm install
 
