@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
 const fs = require('fs-extra')
 const path = require('path')
@@ -388,5 +389,121 @@ test.group('Relations | Belongs To', (group) => {
     await profile.user().delete()
     const user = await ioc.use('Database').collection('users').findOne()
     assert.isNull(user)
+  })
+
+  test('belongsTo relation work fine with IoC container binding', async (assert) => {
+    class User extends Model {
+    }
+
+    ioc.fake('App/Models/User', () => {
+      return User
+    })
+
+    class Profile extends Model {
+      user () {
+        return this.belongsTo('App/Models/User')
+      }
+    }
+
+    User._bootIfNotBooted()
+    Profile._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk' })
+
+    const profile = await Profile.find(1)
+    const users = await profile.user().fetch()
+    assert.lengthOf(users.rows, 1)
+  })
+
+  test('load relation without null value in foreign key', async (assert) => {
+    class User extends Model {
+    }
+
+    class Car extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Car._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert({ name: 'E180', model: 'Mercedes', user_id: null })
+    await ioc.use('Database').collection('cars').insert({ name: 'GL350', model: 'Mercedes', user_id: 1 })
+
+    const cars = await Car.query().with('user').fetch()
+    assert.lengthOf(cars.toJSON(), 2)
+    assert.isNotNull(cars.getRelated('user'))
+  })
+
+  test('do not load relation with null value in foreign key', async (assert) => {
+    class User extends Model {
+    }
+
+    class Car extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Car._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert({ name: 'E180', model: 'Mercedes', user_id: null })
+
+    const car = await Car.query().select(['_id', 'name', 'user_id']).first()
+    await car.load('user')
+    const json = car.toJSON()
+
+    assert.isNull(json.user)
+  })
+
+  test('do not eager load relation with null value in foreign key', async (assert) => {
+    class User extends Model {
+    }
+
+    class Car extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Car._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert({ name: 'E180', model: 'Mercedes', user_id: null })
+
+    const car = await Car
+      .query()
+      .select(['_id', 'name', 'user_id'])
+      .with('user')
+      .first()
+
+    const json = car.toJSON()
+
+    assert.isNull(json.user)
+  })
+
+  test('throw exception when not eagerloading', async (assert) => {
+    class User extends Model {
+    }
+
+    class Car extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Car._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const result = await ioc.use('Database').collection('cars').insert({ name: 'E180', model: 'Mercedes', user_id: null })
+
+    await Car.query().where('_id', result.insertedIds[0]).first()
   })
 })

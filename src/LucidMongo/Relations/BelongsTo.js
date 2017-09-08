@@ -63,6 +63,26 @@ class BelongsTo extends BaseRelation {
   }
 
   /**
+   * Returns the first row for the related model
+   *
+   * @method first
+   *
+   * @return {Object|Null}
+   */
+  first () {
+    if (!this.parentInstance.$persisted) {
+      throw CE.RuntimeException.unSavedModel(this.parentInstance.constructor.name)
+    }
+
+    if (!this.$primaryKeyValue) {
+      return null
+    }
+
+    this._decorateQuery()
+    return this.relatedQuery.first()
+  }
+
+  /**
    * Overriding fetch to call first, since belongsTo
    * can never have many rows
    *
