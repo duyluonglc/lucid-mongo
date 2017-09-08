@@ -375,4 +375,40 @@ test.group('Factory', (group) => {
     const user = await ioc.use('Database').collection('users').findOne()
     assert.isNull(user)
   })
+
+  test('generate username', async (assert) => {
+    class User extends Model { }
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    Factory.blueprint('App/Model/User', (faker, index, data) => {
+      return {
+        username: faker.username()
+      }
+    })
+
+    const user = await Factory.model('App/Model/User').make()
+    assert.isDefined(user.username)
+  })
+
+  test('generate password', async (assert) => {
+    class User extends Model { }
+
+    ioc.fake('App/Model/User', () => {
+      User._bootIfNotBooted()
+      return User
+    })
+
+    Factory.blueprint('App/Model/User', (faker, index, data) => {
+      return {
+        password: faker.password()
+      }
+    })
+
+    const user = await Factory.model('App/Model/User').make()
+    assert.isDefined(user.password)
+  })
 })
