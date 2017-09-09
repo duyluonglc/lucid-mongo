@@ -86,7 +86,7 @@ class SchemaBuilder {
     }
     for (var j in this.dropIndexes) {
       var dropIndex = this.dropIndexes[j]
-      await this.collection.dropIndex(dropIndex.keys, dropIndex.options)
+      await this.collection.dropIndex(dropIndex)
     }
   }
 }
