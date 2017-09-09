@@ -253,8 +253,8 @@ class Database {
    * @returns
    * @memberof Database
    */
-  offset (...arg) {
-    this.queryBuilder.offset(...arg)
+  skip (...arg) {
+    this.queryBuilder.skip(...arg)
     return this
   }
 
@@ -502,7 +502,7 @@ class Database {
     const collection = connection.collection(this.collectionName)
     const countByQuery = await this.aggregate('count')
     const rows = await this.queryBuilder.collection(collection).limit(limit).skip((page || 1) * limit).find()
-    const result = util.makePaginateMeta(countByQuery, page, limit)
+    const result = util.makePaginateMeta(countByQuery || 0, page, limit)
     result.data = rows
     return result
   }
@@ -742,11 +742,14 @@ class Database {
           case '<=':
             this.queryBuilder.where(arguments[0]).lte(arguments[2])
             break
+          case '<>':
+            this.queryBuilder.where(arguments[0]).ne(arguments[2])
+            break
           default:
             throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
         }
       } else {
-        this.queryBuilder.where(arguments[0])
+        return this.queryBuilder.where(arguments[0])
       }
     }
     return this

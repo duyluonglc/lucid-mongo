@@ -47,6 +47,26 @@ class LucidMongoProvider extends ServiceProvider {
   }
 
   /**
+   * Adds the unique rule to the validator
+   *
+   * @method _addUniqueRule
+   *
+   * @private
+   */
+  _addUniqueRule () {
+    try {
+      const { extend } = this.app.use('Adonis/Addons/Validator')
+      const Database = this.app.use('Adonis/Src/Database')
+      const validatorRules = new (require('../src/Validator'))(Database)
+
+      /**
+       * Extend by adding the rule
+       */
+      extend('unique', validatorRules.unique.bind(validatorRules), '{{field}} has already been taken by someone else')
+    } catch (error) { }
+  }
+
+  /**
    * Register all the required providers
    *
    * @method register
@@ -66,6 +86,8 @@ class LucidMongoProvider extends ServiceProvider {
    * @return {void}
    */
   boot () {
+    this._addUniqueRule()
+
     /**
      * Setup ioc resolver for internally accessing fold
      * methods.

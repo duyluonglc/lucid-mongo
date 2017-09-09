@@ -1347,8 +1347,8 @@ test.group('Model', (group) => {
 
     User._bootIfNotBooted()
 
-    const count = await ioc.use('Database').collection('users').count('* as total')
-    assert.equal(count[0].total, 0)
+    const existing = await User.first()
+    assert.isNull(existing)
 
     const user = await User.findOrCreate({ username: 'foo' })
     assert.isTrue(user.$persisted)

@@ -357,7 +357,7 @@ class QueryBuilder {
     this.query.limit(limit).skip((page - 1) * limit)
     const rows = await this.query.collection(collection).find()
 
-    const result = util.makePaginateMeta(countByQuery, page, limit)
+    const result = util.makePaginateMeta(countByQuery || 0, page, limit)
 
     /**
      * Convert to an array of model instances
@@ -733,11 +733,14 @@ class QueryBuilder {
           case '<=':
             this.query.where(arguments[0]).lte(arguments[2])
             break
+          case '<>':
+            this.query.where(arguments[0]).ne(arguments[2])
+            break
           default:
             throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
         }
       } else {
-        this.query.where(arguments[0])
+        return this.query.where(arguments[0])
       }
     }
     return this

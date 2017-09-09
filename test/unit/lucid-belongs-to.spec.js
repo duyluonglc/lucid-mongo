@@ -408,12 +408,12 @@ test.group('Relations | Belongs To', (group) => {
     User._bootIfNotBooted()
     Profile._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
-    await ioc.use('Database').collection('profiles').insert({ user_id: 1, profile_name: 'virk' })
+    const result = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: result.insertedIds[0], profile_name: 'virk' })
 
-    const profile = await Profile.find(1)
+    const profile = await Profile.first()
     const users = await profile.user().fetch()
-    assert.lengthOf(users.rows, 1)
+    assert.isNotNull(users)
   })
 
   test('load relation without null value in foreign key', async (assert) => {
@@ -429,13 +429,14 @@ test.group('Relations | Belongs To', (group) => {
     User._bootIfNotBooted()
     Car._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const result = await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await ioc.use('Database').collection('cars').insert({ name: 'E180', model: 'Mercedes', user_id: null })
-    await ioc.use('Database').collection('cars').insert({ name: 'GL350', model: 'Mercedes', user_id: 1 })
+    await ioc.use('Database').collection('cars').insert({ name: 'GL350', model: 'Mercedes', user_id: result.insertedIds[0] })
 
     const cars = await Car.query().with('user').fetch()
     assert.lengthOf(cars.toJSON(), 2)
-    assert.isNotNull(cars.getRelated('user'))
+    assert.isNull(cars.toJSON()[0].user)
+    assert.isNotNull(cars.toJSON()[1].user)
   })
 
   test('do not load relation with null value in foreign key', async (assert) => {

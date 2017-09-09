@@ -2,7 +2,7 @@
   "name": "lucid-mongo",
   "description": "A Mongodb ODM",
   "main": "index.js",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "scripts": {
     "lint": "standard",
     "pretest": "npm run lint",
@@ -12,6 +12,14 @@
     "test:win": "set DB=mongodb&& node bin/index.js --win",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
   },
+  "keywords": [
+    "adonis",
+    "lucid",
+    "mongo",
+    "mongodb",
+    "orm",
+    "odm"
+  ],
   "standard": {
     "global": [
       "use",
