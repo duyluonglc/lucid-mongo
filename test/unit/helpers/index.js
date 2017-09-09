@@ -140,19 +140,19 @@ module.exports = {
 
   dropCollections (db) {
     return Promise.all([
-      db.schema.dropCollection('users'),
-      db.schema.dropCollection('cars'),
-      db.schema.dropCollection('parts'),
-      db.schema.dropCollection('profiles'),
-      db.schema.dropCollection('pictures'),
-      db.schema.dropCollection('identities'),
-      db.schema.dropCollection('my_users'),
-      db.schema.dropCollection('posts'),
-      db.schema.dropCollection('post_user'),
-      db.schema.dropCollection('countries'),
-      db.schema.dropCollection('categories'),
-      db.schema.dropCollection('sections'),
-      db.schema.dropCollection('post_section')
+      db.schema.dropCollectionIfExists('users'),
+      db.schema.dropCollectionIfExists('cars'),
+      db.schema.dropCollectionIfExists('parts'),
+      db.schema.dropCollectionIfExists('profiles'),
+      db.schema.dropCollectionIfExists('pictures'),
+      db.schema.dropCollectionIfExists('identities'),
+      db.schema.dropCollectionIfExists('my_users'),
+      db.schema.dropCollectionIfExists('posts'),
+      db.schema.dropCollectionIfExists('post_user'),
+      db.schema.dropCollectionIfExists('countries'),
+      db.schema.dropCollectionIfExists('categories'),
+      db.schema.dropCollectionIfExists('sections'),
+      db.schema.dropCollectionIfExists('post_section')
     ])
   },
 

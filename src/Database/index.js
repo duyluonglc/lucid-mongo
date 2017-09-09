@@ -271,92 +271,6 @@ class Database {
   }
 
   /**
-   * Method to construct raw database queries.
-   *
-   * @method raw
-   *
-   * @param  {...Spread} args
-   *
-   * @return {String}
-   */
-  raw (...args) {
-    return this.queryBuilder.raw(...args)
-  }
-
-  /**
-   * Returns a trx object to be used for running queries
-   * under transaction.
-   *
-   * @method beginTransaction
-   * @async
-   *
-   * @return {Object}
-   *
-   * @example
-   * ```js
-   * const trx = await Database.beginTransaction()
-   * await trx
-   *   .table('users')
-   *   .insert({ username: 'virk' })
-   *
-   * // or
-   * Database
-   *   .table('users')
-   *   .transacting(trx)
-   *   .insert({ username: 'virk' })
-   * ```
-   */
-  beginTransaction () {
-    return new Promise((resolve, reject) => {
-      this
-        .mquery
-        .transaction(function (trx) {
-          resolve(trx)
-        }).catch(() => { })
-    })
-  }
-
-  /**
-   * Starts a global transaction, where all query builder
-   * methods will be part of transaction automatically.
-   *
-   * Note: You must not use it in real world apart from when
-   * writing tests.
-   *
-   * @method beginGlobalTransaction
-   * @async
-   *
-   * @return {void}
-   */
-  async beginGlobalTransaction () {
-    this._globalTrx = await this.beginTransaction()
-  }
-
-  /**
-   * Rollbacks global transaction.
-   *
-   * @method rollbackGlobalTransaction
-   *
-   * @return {void}
-   */
-  rollbackGlobalTransaction () {
-    this._globalTrx.rollback()
-    this._globalTrx = null
-  }
-
-  /**
-   * Commits global transaction.
-   *
-   * @method commitGlobalTransaction
-   *
-   * @return {void}
-   */
-  commitGlobalTransaction () {
-    this._globalTrx.commit()
-    this._globalTrx = null
-  }
-
-  /**
    * Return a new instance of query builder
    *
    * @method query
@@ -528,7 +442,7 @@ class Database {
    * @memberof Database
    */
   count (...args) {
-    return this.aggregate('count', ...args)
+    return this.aggregate('count', null, ...args)
   }
 
   /**
@@ -549,7 +463,7 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  agv (...args) {
+  avg (...args) {
     return this.aggregate('avg', ...args)
   }
 
@@ -578,7 +492,7 @@ class Database {
   /**
    * Aggregation
    *
-   * @method paginate
+   * @method aggregate
    *
    * @return {Object}
    */
