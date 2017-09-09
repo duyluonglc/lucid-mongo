@@ -74,7 +74,8 @@ class SchemaBuilder {
     options['name'] = name
     this.createIndexes.push({ keys, options })
   }
-
+  
+  // push only the name 
   dropIndex (name) {
     this.dropIndexes.push(name)
   }
@@ -86,7 +87,8 @@ class SchemaBuilder {
     }
     for (var j in this.dropIndexes) {
       var dropIndex = this.dropIndexes[j]
-      await this.collection.dropIndex(dropIndex.keys, dropIndex.options)
+      // use only index name to drop, no options
+      await this.collection.dropIndex(dropIndex)
     }
   }
 }
