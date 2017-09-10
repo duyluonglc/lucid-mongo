@@ -16,7 +16,7 @@
 
 const _ = require('lodash')
 const GE = require('@adonisjs/generic-exceptions')
-
+const pluralize = require('pluralize')
 const BaseRelation = require('./BaseRelation')
 
 /**
@@ -27,6 +27,12 @@ const BaseRelation = require('./BaseRelation')
  * @constructor
  */
 class ReferMany extends BaseRelation {
+  constructor (parentInstance, RelatedModel, primaryKey, foreignKey) {
+    super(parentInstance, RelatedModel, primaryKey, foreignKey)
+    this.relatedQuery = RelatedModel.query()
+    this.foreignKey = pluralize.plural(foreignKey)
+  }
+
   /**
    * Decorates the query for read/update/delete
    * operations
@@ -246,7 +252,7 @@ class ReferMany extends BaseRelation {
 
     /**
      * Only save related instance when not persisted already. This is
-     * only required in belongsToMany since relatedInstance is not
+     * only required in referMany since relatedInstance is not
      * made dirty by this method.
      */
     if (relatedInstance.isNew || relatedInstance.isDirty) {
@@ -274,7 +280,7 @@ class ReferMany extends BaseRelation {
     if (arrayOfRelatedInstances instanceof Array === false) {
       throw GE
         .InvalidArgumentException
-        .invalidParameter('belongsToMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)
+        .invalidParameter('referMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)
     }
 
     await this._persistParentIfRequired()
@@ -317,7 +323,7 @@ class ReferMany extends BaseRelation {
     if (rows instanceof Array === false) {
       throw GE
         .InvalidArgumentException
-        .invalidParameter('belongsToMany.createMany expects an array of related model instances', rows)
+        .invalidParameter('referMany.createMany expects an array of related model instances', rows)
     }
 
     await this._persistParentIfRequired()
