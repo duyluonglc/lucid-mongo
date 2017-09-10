@@ -106,6 +106,23 @@ class HasOne extends BaseRelation {
   }
 
   /**
+   * Fetch related rows for a relationship
+   *
+   * @method first
+   *
+   * @return {Model}
+   */
+  first () {
+    if (!this.parentInstance.$persisted) {
+      throw CE.RuntimeException.unSavedModel(this.parentInstance.constructor.name)
+    }
+
+    this._decorateQuery()
+
+    return this.relatedQuery.first()
+  }
+
+  /**
    * Adds a where clause to limit the select search
    * to related rows only.
    *

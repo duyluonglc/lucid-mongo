@@ -503,23 +503,21 @@ class QueryBuilder {
     if (args[1] && _.isFunction(args[1])) {
       this._eagerLoads[args[0]] = args[1]
     } else if (args[1] && _.isObject(args[1])) {
-      this._eagerLoads[args[0]] = function (query) {
-        query.merge(args[1])
+      this._eagerLoads[args[0]] = (builder) => {
+        _.forEach(args[1], (value, key) => {
+          builder[key](value)
+        })
       }
     } else if (_.isArray(args[0])) {
       _.forEach(args[0], related => {
-        if (_.isObject(related)) {
-          this.with(related)
-        } else {
-          this._eagerLoads[related] = function (query) {}
-        }
+        this.with(related)
       })
     } else if (_.isObject(args[0])) {
       _.forEach(args[0], (scope, key) => {
         this.with(key, scope)
       })
     } else {
-      this._eagerLoads[args[0]] = function (query) { }
+      this._eagerLoads[args[0]] = (builder) => { }
     }
     return this
   }

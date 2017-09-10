@@ -455,7 +455,7 @@ test.group('Relations | HasOne', (group) => {
     assert.equal(result.rows[0].getRelated('profile').profile_name, 'virk')
   })
 
-  test('modify query builder when fetching relationships by object', async (assert) => {
+  test('eager load with options', async (assert) => {
     class Profile extends Model {
     }
 
@@ -474,7 +474,8 @@ test.group('Relations | HasOne', (group) => {
       { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with('profile', { where: { like: { gt: 2 } } }).fetch()
+    const result = await User.query().with('profile', { where: { likes: { gt: 2 } } }).fetch()
+    console.log(result.toJSON())
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
@@ -506,19 +507,17 @@ test.group('Relations | HasOne', (group) => {
       { user_id: rs.insertedIds[0], profile_name: 'virk', likes: 3 },
       { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
     ])
-    await ioc.use('Database').collection('avatar').insert([
-      { user_id: rs.insertedIds[0], avatar: '/images/avatar.png' },
-      { user_id: rs.insertedIds[1], avatar: '/images/avatar.png' }
+    await ioc.use('Database').collection('avatars').insert([
+      { user_id: rs.insertedIds[0], file: '/images/avatar.png' },
+      { user_id: rs.insertedIds[1], file: '/images/avatar.png' }
     ])
 
-    const result = await User.query().with(['profile', 'avatar']).fetch()
+    const result = await User.query().with(['avatar', 'profile']).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
-    assert.isNull(result.rows[1].getRelated('profile'))
     assert.equal(result.rows[0].getRelated('profile').profile_name, 'virk')
     assert.instanceOf(result.rows[0].getRelated('avatar'), Avatar)
-    assert.isNull(result.rows[1].getRelated('avatar'))
-    assert.equal(result.rows[0].getRelated('avatar').avatar, '/images/avatar.png')
+    assert.equal(result.rows[0].getRelated('avatar').file, '/images/avatar.png')
   })
 
   test('eager load with object', async (assert) => {
@@ -547,7 +546,7 @@ test.group('Relations | HasOne', (group) => {
       { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with({ 'profile': { where: { like: { gt: 2 } } } }).fetch()
+    const result = await User.query().with({ 'profile': { where: { likes: { gt: 2 } } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
