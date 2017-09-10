@@ -16,7 +16,7 @@ class EmbedsOne extends BaseRelation {
   constructor (parentInstance, RelatedModel, primaryKey, foreignKey) {
     super(parentInstance, RelatedModel)
     this.primaryKey = primaryKey || this.parentInstance.constructor.primaryKey
-    this.foreignKey = foreignKey || util.makeEmbedsName(this.RelatedModel.name)
+    this.foreignKey = foreignKey || util.makeEmbedName(this.RelatedModel.name)
   }
 
   /**
@@ -54,17 +54,19 @@ class EmbedsOne extends BaseRelation {
       const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
       /**
-       * If there is an existing relation, add row to
-       * the relationship
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
        */
       if (existingRelation) {
-        existingRelation.value.addRow(relatedInstance)
+        existingRelation.value = relatedInstance
         return result
       }
 
       result.push({
         identity: foreignKeyValue,
-        value: new Serializer([relatedInstance])
+        value: relatedInstance
       })
       return result
     }, [])
@@ -85,9 +87,11 @@ class EmbedsOne extends BaseRelation {
   async eagerLoad (rows) {
     const relatedInstances = []
     rows.map(row => {
-      const relatedInstance = this._mapRowToInstance(this.parentInstance[this.foreignKey])
-      relatedInstance.$sideLoaded[`embed_${this.foreignKey}`] = row.primaryKeyValue
-      relatedInstances.push(relatedInstance)
+      if (row.$attributes[this.foreignKey]) {
+        const relatedInstance = this._mapRowToInstance(row.$attributes[this.foreignKey])
+        relatedInstance.$sideLoaded[`embed_${this.foreignKey}`] = row.primaryKeyValue
+        relatedInstances.push(relatedInstance)
+      }
     })
 
     return this.group(relatedInstances)
@@ -97,7 +101,7 @@ class EmbedsOne extends BaseRelation {
    * Save related instance
    *
    * @param {relatedInstance} relatedInstance
-   * @returns
+   * @returns relatedInstance
    *
    * @memberOf EmbedsOne
    */
@@ -108,11 +112,12 @@ class EmbedsOne extends BaseRelation {
 
     await this._persistParentIfRequired()
 
-    if (!relatedInstance[this.primaryKey]) {
-      relatedInstance[this.primaryKey] = new ObjectID()
+    if (!relatedInstance.primaryKeyValue) {
+      relatedInstance.primaryKeyValue = new ObjectID()
     }
-    this.parentInstance[this.foreignKey] = relatedInstance
-    return this.parentInstance.save()
+    this.parentInstance.$attributes[this.foreignKey] = relatedInstance.$attributes
+    await this.parentInstance.save()
+    return relatedInstance
   }
 
   /**
@@ -120,7 +125,7 @@ class EmbedsOne extends BaseRelation {
    *
    * @param {Object} values
    * @returns relatedInstance
-   * @memberof EmbedsOne
+   * @memberOf EmbedsOne
    */
   create (values) {
     const relatedInstance = new this.RelatedModel(values)
@@ -134,18 +139,7 @@ class EmbedsOne extends BaseRelation {
    *
    * @memberOf EmbedsOne
    */
-  delete () {
-    return this.deleteAll()
-  }
-
-  /**
-   * delete all references
-   *
-   * @return {Number}
-   *
-   * @public
-   */
-  async deleteAll () {
+  async delete () {
     await this._persistParentIfRequired()
 
     this.parentInstance.unset(this.foreignKey)
@@ -191,18 +185,6 @@ class EmbedsOne extends BaseRelation {
   }
 
   /**
-   * find
-   *
-   * @public
-   *
-   * @return {Object}
-   */
-  find (id) {
-    const embed = this.parentInstance[this.foreignKey]
-    return String(embed[this.primaryKey]) === String(id) ? this._mapRowToInstance(embed) : null
-  }
-
-  /**
    * fetch
    *
    * @public
@@ -210,7 +192,8 @@ class EmbedsOne extends BaseRelation {
    * @return {Object}
    */
   first () {
-    return this.parentInstance[this.foreignKey]
+    const result = this.parentInstance.$attributes[this.foreignKey]
+    return result ? this._mapRowToInstance(result) : null
   }
 
   /**

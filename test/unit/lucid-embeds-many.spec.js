@@ -275,29 +275,6 @@ test.group('Relations | Embeds many', (group) => {
     assert.lengthOf(user.$attributes.emails, 0)
   })
 
-  test('delete relations', async (assert) => {
-    class User extends Model {
-      emails () {
-        return this.embedsMany(Email)
-      }
-    }
-
-    class Email extends Model {
-
-    }
-
-    User._bootIfNotBooted()
-    Email._bootIfNotBooted()
-
-    await ioc.use('Database').collection('users').insert({ username: 'virk' })
-    const user = await User.first()
-    const email1 = await user.emails().create({ address: 'example@gmail1.com' })
-    const email2 = await user.emails().create({ address: 'example@gmail2.com' })
-    await user.emails().create({ address: 'example@gmail3.com' })
-    await user.emails().delete([email1._id, email2._id])
-    assert.lengthOf(user.$attributes.emails, 1)
-  })
-
   test('delete All relations', async (assert) => {
     class User extends Model {
       emails () {
