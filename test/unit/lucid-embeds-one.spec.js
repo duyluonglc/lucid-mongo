@@ -19,7 +19,6 @@ const { Config } = require('@adonisjs/sink')
 const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
-const VanillaSerializer = require('../../src/LucidMongo/Serializers/Vanilla')
 
 test.group('Relations | Embeds one', (group) => {
   group.before(async () => {
