@@ -318,6 +318,7 @@ test.group('Relations | Embeds many', (group) => {
     await user.emails().create({ address: 'example@gmail2.com' })
     await user.emails().create({ address: 'example@gmail3.com' })
     await user.emails().deleteAll()
-    assert.lengthOf(user.$attributes.emails, 0)
+    await user.reload()
+    assert.isUndefined(user.$attributes.emails)
   })
 })

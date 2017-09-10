@@ -453,6 +453,7 @@ class BaseModel {
    * @param {string} key
    */
   unset (key) {
+    delete this.$attributes[key]
     this.$unsetAttributes[key] = true
   }
 
