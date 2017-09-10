@@ -1434,13 +1434,13 @@ class Model extends BaseModel {
     }
 
     if (!this.isNew) {
-      const attributes = await this.constructor.find(this.primaryKeyValue)
-      if (!attributes) {
+      const newInstance = await this.constructor.find(this.primaryKeyValue)
+      if (!newInstance) {
         throw GE
           .RuntimeException
           .invoke(`Cannot reload model since row with ${this.constructor.primaryKey} ${this.primaryKeyValue} has been removed`)
       }
-      this.newUp(attributes)
+      this.newUp(newInstance.$attributes)
     }
   }
 }

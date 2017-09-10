@@ -85,13 +85,12 @@ class EmbedsMany extends BaseRelation {
   async eagerLoad (rows) {
     const relatedInstances = []
     rows.map(row => {
-      _.map(this.parentInstance[this.foreignKey], embed => {
+      _.map(row.$attributes[this.foreignKey], embed => {
         const relatedInstance = this._mapRowToInstance(embed)
         relatedInstance.$sideLoaded[`embed_${this.foreignKey}`] = row.primaryKeyValue
         relatedInstances.push(relatedInstance)
       })
     })
-
     return this.group(relatedInstances)
   }
 
@@ -110,20 +109,21 @@ class EmbedsMany extends BaseRelation {
 
     await this._persistParentIfRequired()
 
-    let embeds = this.parentInstance[this.foreignKey] ? _.cloneDeep(this.parentInstance[this.foreignKey]) : []
+    let embeds = this.parentInstance.$attributes[this.foreignKey] ? _.cloneDeep(this.parentInstance.$attributes[this.foreignKey]) : []
     if (!_.isArray(embeds)) {
       embeds = [embeds]
     }
-    if (!relatedInstance[this.primaryKey]) {
-      relatedInstance[this.primaryKey] = new ObjectID()
+    if (!relatedInstance.primaryKeyValue) {
+      relatedInstance.primaryKeyValue = new ObjectID()
       embeds.push(relatedInstance.$attributes)
     } else {
       embeds = embeds.map(embed => {
-        return embed[this.primaryKey] === relatedInstance[this.primaryKey] ? relatedInstance.$attributes : embed
+        return String(embed.primaryKeyValue) === String(relatedInstance.primaryKeyValue) ? relatedInstance.$attributes : embed
       })
     }
     this.parentInstance[this.foreignKey] = embeds
-    return this.parentInstance.save()
+    await this.parentInstance.save()
+    return relatedInstance
   }
 
   /**
@@ -152,14 +152,13 @@ class EmbedsMany extends BaseRelation {
       throw CE.InvalidArgumentException.invalidParameter('delete expects a primary key or array of primary key')
     }
 
-    let embeds = _.clone(this.parentInstance[this.foreignKey]) || []
+    let embeds = _.clone(this.parentInstance.$attributes[this.foreignKey]) || []
     if (!_.isArray(embeds)) {
       embeds = [embeds]
     }
-
     references = _.isArray(references) ? references : [references]
     references.forEach(reference => {
-      _.remove(embeds, embed => embed[this.primaryKey] === reference)
+      _.remove(embeds, embed => String(embed[this.primaryKey]) === String(reference))
     })
     this.parentInstance.set(this.foreignKey, embeds)
     return this.parentInstance.save()
@@ -187,7 +186,7 @@ class EmbedsMany extends BaseRelation {
    * @return {Array}
    */
   fetch () {
-    const embeds = this.parentInstance[this.foreignKey]
+    const embeds = this.parentInstance.$attributes[this.foreignKey]
     return new this.RelatedModel.Serializer(_.map(embeds, embed => {
       return this._mapRowToInstance(embed)
     }))
@@ -228,7 +227,8 @@ class EmbedsMany extends BaseRelation {
    * @return {Object}
    */
   find (id) {
-    const embeds = this.parentInstance[this.foreignKey]
+    const embeds = this.parentInstance.$attributes[this.foreignKey]
+    console.log(embeds)
     const result = _.find(embeds, embed => String(embed[this.primaryKey]) === String(id))
     return result ? this._mapRowToInstance(result) : null
   }
@@ -241,7 +241,7 @@ class EmbedsMany extends BaseRelation {
    * @return {Object}
    */
   first () {
-    const embeds = this.parentInstance[this.foreignKey]
+    const embeds = this.parentInstance.$attributes[this.foreignKey]
     const result = _.first(embeds)
     return result ? this._mapRowToInstance(result) : null
   }
