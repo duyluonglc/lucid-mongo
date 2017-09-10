@@ -30,7 +30,7 @@ class MorphMany extends BaseRelation {
     super(parentInstance, RelatedModel)
     this.primaryKey = primaryKey || RelatedModel.primaryKey
     this.localKey = localKey || 'parent_id'
-    this.determiner = determiner || 'parent_type'
+    this.determiner = determiner || 'determiner'
   }
 
   /**

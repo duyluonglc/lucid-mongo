@@ -29,7 +29,7 @@ class MorphMany extends BaseRelation {
   constructor (parentInstance, RelatedModel, determiner, localKey, primaryKey) {
     super(parentInstance, RelatedModel)
     this.primaryKey = primaryKey || RelatedModel.primaryKey
-    this.localKey = localKey || 'parentId'
+    this.localKey = localKey || 'parent_id'
     this.determiner = determiner || 'determiner'
   }
 
@@ -114,8 +114,8 @@ class MorphMany extends BaseRelation {
    */
   async eagerLoad (rows) {
     const relatedInstances = await this.relatedQuery
-      .where(this.determiner, this.parentInstance.constructor.name)
-      .whereIn(this.localKey, this.mapValues(rows)).fetch()
+    .where(this.determiner, this.parentInstance.constructor.name)
+    .whereIn(this.localKey, this.mapValues(rows)).fetch()
     return this.group(relatedInstances.rows)
   }
 

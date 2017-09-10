@@ -475,7 +475,6 @@ test.group('Relations | HasOne', (group) => {
     ])
 
     const result = await User.query().with('profile', { where: { likes: { gt: 2 } } }).fetch()
-    console.log(result.toJSON())
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
