@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
 */
 
-require('./MonkeyPatch')
+// require('./MonkeyPatch')
 
 const _ = require('lodash')
 const Database = require('.')

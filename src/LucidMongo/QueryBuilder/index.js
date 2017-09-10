@@ -14,7 +14,7 @@ const query = require('mquery')
 const debug = require('debug')('mquery')
 
 const EagerLoad = require('../EagerLoad')
-const RelationsParser = require('../Relations/Parser')
+// const RelationsParser = require('../Relations/Parser')
 const CE = require('../../Exceptions')
 
 const proxyGet = require('../../../lib/proxyGet')
@@ -540,58 +540,58 @@ class QueryBuilder {
    * query().withCount('profile as userProfile')
    * ```
    */
-  withCount (relation, callback) {
-    let { name, nested } = RelationsParser.parseRelation(relation)
-    if (nested) {
-      throw CE.RuntimeException.cannotNestRelation(_.first(_.keys(nested)), name, 'withCount')
-    }
+  // withCount (relation, callback) {
+  //   let { name, nested } = RelationsParser.parseRelation(relation)
+  //   if (nested) {
+  //     throw CE.RuntimeException.cannotNestRelation(_.first(_.keys(nested)), name, 'withCount')
+  //   }
 
-    /**
-     * Since user can set the `count as` statement, we need
-     * to parse them properly.
-     */
-    const tokens = name.match(/as\s(\w+)/)
-    let asStatement = `${name}_count`
-    if (_.size(tokens)) {
-      asStatement = tokens[1]
-      name = name.replace(tokens[0], '').trim()
-    }
+  //   /**
+  //    * Since user can set the `count as` statement, we need
+  //    * to parse them properly.
+  //    */
+  //   const tokens = name.match(/as\s(\w+)/)
+  //   let asStatement = `${name}_count`
+  //   if (_.size(tokens)) {
+  //     asStatement = tokens[1]
+  //     name = name.replace(tokens[0], '').trim()
+  //   }
 
-    RelationsParser.validateRelationExistence(this.Model.prototype, name)
-    const relationInstance = RelationsParser.getRelatedInstance(this.Model.prototype, name)
+  //   RelationsParser.validateRelationExistence(this.Model.prototype, name)
+  //   const relationInstance = RelationsParser.getRelatedInstance(this.Model.prototype, name)
 
-    /**
-     * Call the callback with relationship instance
-     * when callback is defined
-     */
-    if (typeof (callback) === 'function') {
-      callback(relationInstance)
-    }
+  //   /**
+  //    * Call the callback with relationship instance
+  //    * when callback is defined
+  //    */
+  //   if (typeof (callback) === 'function') {
+  //     callback(relationInstance)
+  //   }
 
-    const columns = []
+  //   const columns = []
 
-    /**
-     * Add `*` to columns only when there are no existing columns selected
-     */
-    if (!_.find(this.query._statements, (statement) => statement.grouping === 'columns')) {
-      columns.push('*')
-    }
-    columns.push(relationInstance.relatedWhere(true).as(asStatement))
+  //   /**
+  //    * Add `*` to columns only when there are no existing columns selected
+  //    */
+  //   if (!_.find(this.query._statements, (statement) => statement.grouping === 'columns')) {
+  //     columns.push('*')
+  //   }
+  //   columns.push(relationInstance.relatedWhere(true).as(asStatement))
 
-    /**
-     * Saving reference of count inside _sideloaded
-     * so that we can set them later to the
-     * model.$sideLoaded
-     */
-    this._sideLoaded.push(asStatement)
+  //   /**
+  //    * Saving reference of count inside _sideloaded
+  //    * so that we can set them later to the
+  //    * model.$sideLoaded
+  //    */
+  //   this._sideLoaded.push(asStatement)
 
-    /**
-     * Clear previously selected columns and set new
-     */
-    this.query.select(columns)
+  //   /**
+  //    * Clear previously selected columns and set new
+  //    */
+  //   this.query.select(columns)
 
-    return this
-  }
+  //   return this
+  // }
 
   /**
    * Condition Methods
@@ -679,7 +679,7 @@ class QueryBuilder {
           }
           let queries = []
           _.forEach(conditions, (condition) => {
-            queries.push(this.query.clone().where(condition)._conditions)
+            queries.push(query().where(condition)._conditions)
           })
           this.query[key](queries)
         } else if (_.isPlainObject(conditions)) {
@@ -701,7 +701,7 @@ class QueryBuilder {
                 this.query.where(key)[k](c)
               }
             } else {
-              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
+              throw new CE.RuntimeException(`Method "$${k}" is not support by query builder`)
             }
           })
         } else {
@@ -737,7 +737,7 @@ class QueryBuilder {
             this.query.where(arguments[0]).ne(arguments[2])
             break
           default:
-            throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
+            throw new CE.RuntimeException(`Method "$${arguments[1]}" is not support by query builder`)
         }
       } else {
         return this.query.where(arguments[0])

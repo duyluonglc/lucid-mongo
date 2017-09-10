@@ -510,7 +510,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk')._applyScopes().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, {'username': 'virk', 'deleted_at': null})
+    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'deleted_at': null })
   })
 
   test('instruct query builder to ignore all query scopes', async (assert) => {
@@ -538,44 +538,8 @@ test.group('Model', (group) => {
     }, 'loggedOnce')
 
     const query = User.query().where('username', 'virk').ignoreScopes(['softDeletes'])._applyScopes().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': {'$gte': '2017'} })
+    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': { '$gte': '2017' } })
   })
-
-  // test('call query scopes when fetching data', async (assert) => {
-  //   let userQuery = null
-  //   class User extends Model {
-  //   }
-
-  //   User._bootIfNotBooted()
-  //   User.addGlobalScope(function (builder) {
-  //     builder.where('deleted_at', null)
-  //   })
-
-  //   User.onQuery(function (query) {
-  //     userQuery = query
-  //   })
-
-  //   await User.query().where('username', 'virk').fetch()
-  //   assert.deepEqual(JSON.parse(userQuery)._conditions, { 'username': 'virk', 'delete_at': null })
-  // })
-
-  // test('call query scopes when bulk updating data', async (assert) => {
-  //   let userQuery = null
-  //   class User extends Model {
-  //   }
-
-  //   User._bootIfNotBooted()
-  //   User.addGlobalScope(function (builder) {
-  //     builder.where('deleted_at', null)
-  //   })
-
-  //   User.onQuery(function (query) {
-  //     userQuery = query
-  //   })
-
-  //   await User.query().where('username', 'virk').update({ login_at: new Date() })
-  //   assert.deepEqual(JSON.parse(userQuery)._conditions, { 'username': 'virk', 'delete_at': null })
-  // })
 
   test('define local scopes', async (assert) => {
     class User extends Model {
@@ -587,7 +551,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     const query = User.query().where('username', 'virk').isLogged().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': {'$exists': true} })
+    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': { '$exists': true } })
   })
 
   test('pass arguments to local scopes', async (assert) => {
@@ -716,7 +680,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
     await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.pair('_id', 'username')
-    assert.deepEqual(Object.values(users), [ 'virk', 'nikk' ])
+    assert.deepEqual(Object.values(users), ['virk', 'nikk'])
   })
 
   test('paginate model', async (assert) => {
@@ -731,7 +695,7 @@ test.group('Model', (group) => {
     assert.equal(users.first().username, 'virk')
   })
 
-  test('return first row from database on calling static first method', async (assert) => {
+  test('return first row from database on calling static method', async (assert) => {
     class User extends Model {
     }
 
@@ -739,6 +703,18 @@ test.group('Model', (group) => {
 
     await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
     const user = await User.first()
+    assert.instanceOf(user, User)
+    assert.equal(user.username, 'virk')
+  })
+
+  test('return find static method', async (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+
+    const result = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    const user = await User.find(result.insertedIds[0])
     assert.instanceOf(user, User)
     assert.equal(user.username, 'virk')
   })
@@ -1389,5 +1365,235 @@ test.group('Model', (group) => {
     assert.isFalse(user.$persisted)
     assert.equal(user.username, 'foo')
     assert.equal(user.vid, 2)
+  })
+})
+
+test.group('Lucid | Query builder', (group) => {
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
+    })
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createCollections(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
+  })
+
+  group.after(async () => {
+    await helpers.dropCollections(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
+  test('query where and', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.where({ and: [{ name: 'vik' }, { age: { gte: 30 } }] }).toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, { $and: [{ name: 'vik' }, { age: { gte: 30 } }] })
+  })
+
+  test('query where or', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.where({ or: [{ name: 'vik' }, { age: { gte: 30 } }] }).toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, { $or: [{ name: 'vik' }, { age: { gte: 30 } }] })
+  })
+
+  test('query where near', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.where({ location: { near: { lat: 1, lng: 2 }, maxDistance: 1000 } }).toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, {
+      location: {
+        $near: [2, 1],
+        $maxDistance: 1000
+      }
+    })
+  })
+
+  test('query where near sphere', (assert) => {
+    class User extends Model {
+      static get geometries () { return ['location'] }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({ location: { nearSphere: { lat: 1, lng: 2 }, maxDistance: 1000 } }).toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, {
+      'location': {
+        '$near': {
+          '$geometry': {
+            'type': 'Point',
+            'coordinates': [2, 1],
+            'spherical': true
+          },
+          '$maxDistance': 1000
+        }
+      }
+    })
+  })
+
+  test('through exception if method does not support', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const fn = () => User.where({ name: { foo: 1 } })
+    assert.throw(fn, 'Method "$foo" is not support by query builder')
+  })
+
+  test('query where with callback', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.where(function () {
+      this.where('name', 'vik').limit(10)
+    }).toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, { name: 'vik' })
+    assert.deepEqual(JSON.parse(query).options, { limit: 10 })
+  })
+
+  test('where method similar sql', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User
+      .where('name', '=', 'vik')
+      .where('field1', '>', 20)
+      .where('field2', '<', 20)
+      .where('field3', '>=', 20)
+      .where('field4', '<=', 20)
+      .where('field5', '<>', 'disabled')
+      .toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, {
+      name: 'vik',
+      field1: { $gt: 20 },
+      field2: { $lt: 20 },
+      field3: { $gte: 20 },
+      field4: { $lte: 20 },
+      field5: { $ne: 'disabled' }
+    })
+  })
+
+  test('call chain mquery', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.where('name').eq('vik').where('age').gte(20).toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, { name: 'vik', age: { $gte: 20 } })
+  })
+
+  test('whereNull method', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.query().whereNull('name').toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, { name: { $exists: false } })
+  })
+
+  test('whereNotNull method', (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const query = User.query().whereNotNull('name').toSQL()
+    assert.deepEqual(JSON.parse(query)._conditions, { name: { $exists: true } })
+  })
+})
+
+test.group('Lucid | Aggregate', (group) => {
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
+    })
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createCollections(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
+  })
+
+  group.after(async () => {
+    await helpers.dropCollections(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
+  test('count method', async (assert) => {
+    class User extends Model { }
+    const users = [{ name: 'vik' }, { name: 'vik' }, { name: 'nik' }, { name: 'nik' }]
+    await ioc.use('Database').collection('users').insert(users)
+    const count = await User.count()
+    assert.equal(count, 4)
+    const count2 = await User.count('name')
+    assert.deepEqual(count2, [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
+    await ioc.use('Database').collection('users').delete()
+  })
+
+  test('sum method', async (assert) => {
+    class User extends Model { }
+    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 10 }, { name: 'nik', score: 10 }, { name: 'nik', score: 10 }]
+    await ioc.use('Database').collection('users').insert(users)
+    const sum = await User.sum('score')
+    assert.equal(sum, 40)
+    const sum2 = await User.sum('score', 'name')
+    assert.deepEqual(sum2, [{ _id: 'nik', sum: 20 }, { _id: 'vik', sum: 20 }])
+    await ioc.use('Database').collection('users').delete()
+  })
+
+  test('avg method', async (assert) => {
+    class User extends Model { }
+    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 10 }, { name: 'nik', score: 10 }, { name: 'nik', score: 10 }]
+    await ioc.use('Database').collection('users').insert(users)
+    const avg = await User.avg('score')
+    assert.equal(avg, 10)
+    const avg2 = await User.avg('score', 'name')
+    assert.deepEqual(avg2, [{ _id: 'nik', avg: 10 }, { _id: 'vik', avg: 10 }])
+    await ioc.use('Database').collection('users').delete()
+  })
+
+  test('max method', async (assert) => {
+    class User extends Model { }
+    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
+    await ioc.use('Database').collection('users').insert(users)
+    const max = await User.max('score')
+    assert.equal(max, 40)
+    const max2 = await User.max('score', 'name')
+    assert.deepEqual(max2, [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
+    await ioc.use('Database').collection('users').delete()
+  })
+
+  test('min method', async (assert) => {
+    class User extends Model { }
+    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
+    await ioc.use('Database').collection('users').insert(users)
+    const min = await User.min('score')
+    assert.equal(min, 10)
+    const min2 = await User.min('score', 'name')
+    assert.deepEqual(min2, [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
+    await ioc.use('Database').collection('users').delete()
   })
 })

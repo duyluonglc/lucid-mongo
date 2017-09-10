@@ -455,6 +455,105 @@ test.group('Relations | HasOne', (group) => {
     assert.equal(result.rows[0].getRelated('profile').profile_name, 'virk')
   })
 
+  test('modify query builder when fetching relationships by object', async (assert) => {
+    class Profile extends Model {
+    }
+
+    class User extends Model {
+      profile () {
+        return this.hasOne(Profile)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Profile._bootIfNotBooted()
+
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
+      { user_id: rs.insertedIds[0], profile_name: 'virk', likes: 3 },
+      { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
+    ])
+
+    const result = await User.query().with('profile', { where: { like: { gt: 2 } } }).fetch()
+    assert.equal(result.size(), 2)
+    assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
+    assert.isNull(result.rows[1].getRelated('profile'))
+    assert.equal(result.rows[0].getRelated('profile').profile_name, 'virk')
+  })
+
+  test('eager load with array', async (assert) => {
+    class Profile extends Model {
+    }
+
+    class Avatar extends Model {
+    }
+
+    class User extends Model {
+      profile () {
+        return this.hasOne(Profile)
+      }
+
+      avatar () {
+        return this.hasOne(Avatar)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Profile._bootIfNotBooted()
+
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
+      { user_id: rs.insertedIds[0], profile_name: 'virk', likes: 3 },
+      { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
+    ])
+    await ioc.use('Database').collection('avatar').insert([
+      { user_id: rs.insertedIds[0], avatar: '/images/avatar.png' },
+      { user_id: rs.insertedIds[1], avatar: '/images/avatar.png' }
+    ])
+
+    const result = await User.query().with(['profile', 'avatar']).fetch()
+    assert.equal(result.size(), 2)
+    assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
+    assert.isNull(result.rows[1].getRelated('profile'))
+    assert.equal(result.rows[0].getRelated('profile').profile_name, 'virk')
+    assert.instanceOf(result.rows[0].getRelated('avatar'), Avatar)
+    assert.isNull(result.rows[1].getRelated('avatar'))
+    assert.equal(result.rows[0].getRelated('avatar').avatar, '/images/avatar.png')
+  })
+
+  test('eager load with object', async (assert) => {
+    class Profile extends Model {
+    }
+
+    class Avatar extends Model {
+    }
+
+    class User extends Model {
+      profile () {
+        return this.hasOne(Profile)
+      }
+
+      avatar () {
+        return this.hasOne(Avatar)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Profile._bootIfNotBooted()
+
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('profiles').insert([
+      { user_id: rs.insertedIds[0], profile_name: 'virk', likes: 3 },
+      { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
+    ])
+
+    const result = await User.query().with({ 'profile': { where: { like: { gt: 2 } } } }).fetch()
+    assert.equal(result.size(), 2)
+    assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
+    assert.isNull(result.rows[1].getRelated('profile'))
+    assert.equal(result.rows[0].getRelated('profile').profile_name, 'virk')
+  })
+
   test('fetch nested relationships', async (assert) => {
     class Picture extends Model {
     }

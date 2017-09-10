@@ -497,8 +497,6 @@ class Database {
    * @return {Object}
    */
   async aggregate (aggregator, key, groupBy) {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
     const $match = this.conditions
     const $group = { _id: '$' + groupBy }
     switch (aggregator) {
@@ -521,6 +519,8 @@ class Database {
         break
     }
     // debug('count', this.collectionName, $match, $group)
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
     return new Promise((resolve, reject) => {
       collection.aggregate([{ $match }, { $group }], (err, result) => {
         if (err) {
