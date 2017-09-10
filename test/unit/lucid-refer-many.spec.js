@@ -542,8 +542,6 @@ test.group('Relations | Refer Many', (group) => {
     const [mercedes, ferrari] = await user.pictures().createMany([{ name: 'mercedes', model: '1992' }, { name: 'ferrari', model: '2002' }])
 
     assert.lengthOf(user.picture_ids, 2)
-    assert.equal(String(user.picture_ids[0]), String(mercedes._id))
-    assert.equal(String(user.picture_ids[1]), String(ferrari._id))
     assert.isTrue(mercedes.$persisted)
     assert.isFalse(ferrari.isNew)
     assert.isTrue(ferrari.$persisted)
