@@ -12,6 +12,7 @@
 const _ = require('lodash')
 const BaseRelation = require('./BaseRelation')
 const GE = require('@adonisjs/generic-exceptions')
+const CE = require('../../Exceptions')
 // const util = require('../../../lib/util')
 
 class MorphMany extends BaseRelation {
@@ -76,7 +77,7 @@ class MorphMany extends BaseRelation {
    */
   group (relatedInstances) {
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
-      const foreignKeyValue = relatedInstance[this.foreignKey]
+      const foreignKeyValue = relatedInstance[this.localKey]
       const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
       /**
@@ -161,12 +162,12 @@ class MorphMany extends BaseRelation {
 
   /* istanbul ignore next */
   createMany () {
-    throw GE.ModelRelationException.unSupportedMethod('createMany', 'morphOne')
+    throw CE.ModelRelationException.unSupportedMethod('createMany', 'morphOne')
   }
 
   /* istanbul ignore next */
   saveMany () {
-    throw GE.ModelRelationException.unSupportedMethod('saveMany', 'morphOne')
+    throw CE.ModelRelationException.unSupportedMethod('saveMany', 'morphOne')
   }
 }
 
