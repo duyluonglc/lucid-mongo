@@ -1345,17 +1345,15 @@ class Model extends BaseModel {
    * @param  {Class|String}    relatedModel
    * @param  {String}    modelPath
    * @param  {String}    determiner
-   * @param  {String}    localKey
    * @param  {String}    primaryKey
+   * @param  {String}    foreignKey
    *
    * @return {MorphMany}
    */
-  morphTo (relatedModel, modelPath, determiner, localKey, primaryKey) {
-    relatedModel = typeof (relatedModel) === 'string' ? ioc.use(relatedModel) : relatedModel
-
+  morphTo (modelPath, determiner, primaryKey, foreignKey) {
     primaryKey = primaryKey || this.constructor.primaryKey
 
-    return new MorphTo(this, relatedModel, modelPath, determiner, localKey, primaryKey)
+    return new MorphTo(this, modelPath, determiner, primaryKey, foreignKey)
   }
 
   /**

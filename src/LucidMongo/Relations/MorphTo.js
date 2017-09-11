@@ -10,27 +10,29 @@
 */
 
 const _ = require('lodash')
-const BaseRelation = require('./BaseRelation')
+// const BaseRelation = require('./BaseRelation')
 const CE = require('../../Exceptions')
+const { ioc } = require('../../../lib/iocResolver')
 
-class MorphMany extends BaseRelation {
+class MorphTo {
   /**
-   * Creates an instance of MorphMany.
+   * Creates an instance of MorphTo.
    *
    * @param {String} parentInstance
    * @param {String} related
    * @param {String} determiner
-   * @param {String} localKey
    * @param {String} primaryKey
+   * @param {String} foreignKey
    *
-   * @memberOf MorphMany
+   * @memberOf MorphTo
    */
-  constructor (parentInstance, modelPath, determiner, localKey, primaryKey) {
-    super(parentInstance, null)
-    this.fromKey = primaryKey || this.parentInstance.constructor.primaryKey
-    this.localKey = localKey || 'parent_id'
-    this.modelPath = modelPath || 'App/Model'
-    this.determiner = determiner || 'parent_type'
+  constructor (parentInstance, modelPath, determiner, primaryKey, foreignKey) {
+    // super(parentInstance, null)
+    this.parentInstance = parentInstance
+    this.primaryKey = primaryKey || this.parentInstance.constructor.primaryKey
+    this.foreignKey = foreignKey || 'parent_id'
+    this.modelPath = modelPath || 'App/Models'
+    this.determiner = determiner || 'determiner'
   }
 
   /**
@@ -38,29 +40,68 @@ class MorphMany extends BaseRelation {
    * model and returns an object with values grouped by foreign
    * key.
    *
-   * @param {Array} values
+   * @param {Array} rows
    * @return {Object}
    *
    * @public
    *
    */
-  async eagerLoad (values, scopeMethod, results) {
-    const groups = _.groupBy(results, this.determiner)
-    let relates = {}
+  async eagerLoad (rows) {
+    const groups = _.groupBy(rows, row => row.$attributes[this.determiner])
+    let result = []
     for (let determiner in groups) {
-      const groupResults = groups[determiner]
-      const relatedModel = this._resolveModel(this.modelPath + '/' + determiner)
-      // this.relatedQuery = relatedModel.query()
-      const parenIds = _(groupResults).map(this.localKey).uniq().value()
-      let groupParent = await relatedModel.whereIn(this.fromKey, parenIds).fetch()
-      for (let parentInstance of groupParent.value()) {
-        const subResults = _.filter(groupResults, result => String(result[this.localKey]) === String(parentInstance[this.fromKey]))
-        for (let result of subResults) {
-          relates[result[this.fromKey]] = parentInstance
+      const groupRows = groups[determiner]
+      const RelatedModel = ioc.use(`${this.modelPath}/${determiner}`)
+      const relatedIds = _(groupRows).map(row => row.$attributes[this.foreignKey]).uniq().value()
+      let relates = await RelatedModel.whereIn(this.primaryKey, relatedIds).fetch()
+      for (let row of groupRows) {
+        const related = _.find(relates.rows, related => {
+          return row.$attributes[this.foreignKey] && String(related.primaryKeyValue) === String(row.$attributes[this.foreignKey])
+        })
+        if (related) {
+          const newRelated = new RelatedModel()
+          newRelated.newUp(related.$attributes)
+          newRelated.$sideLoaded[`morph_${this.foreignKey}`] = row.primaryKeyValue
+          result.push(newRelated)
         }
       }
     }
-    return relates
+    return this.group(result)
+  }
+
+  /**
+ * Takes an array of related instances and returns an array
+ * for each parent record.
+ *
+ * @method group
+ *
+ * @param  {Array} relatedInstances
+ *
+ * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
+ */
+  group (relatedInstances) {
+    const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
+      const foreignKeyValue = relatedInstance.$sideLoaded[`morph_${this.foreignKey}`]
+      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
+      /**
+       * If there is already an existing instance for same parent
+       * record. We should override the value and do WARN the
+       * user since hasOne should never have multiple
+       * related instance.
+       */
+      if (existingRelation) {
+        existingRelation.value = relatedInstance
+        return result
+      }
+
+      result.push({
+        identity: foreignKeyValue,
+        value: relatedInstance
+      })
+      return result
+    }, [])
+    return { key: this.primaryKey, values: transformedValues, defaultValue: null }
   }
 
   /**
@@ -69,10 +110,10 @@ class MorphMany extends BaseRelation {
    * @param {any} relatedInstance
    * @returns
    *
-   * @memberOf MorphMany
+   * @memberOf MorphTo
    */
   async save (relatedInstance) {
-    throw CE.ModelRelationException.unSupportedMethod('paginate', this.constructor.name)
+    throw CE.ModelRelationException.unSupportedMethod('save', this.constructor.name)
   }
 
   /**
@@ -94,8 +135,8 @@ class MorphMany extends BaseRelation {
    */
   first () {
     const determiner = this.parentInstance[this.determiner]
-    const relatedModel = this._resolveModel(this.modelPath + '/' + determiner)
-    return relatedModel.where(this.fromKey, this.parentInstance[this.localKey]).first()
+    const relatedModel = ioc.use(`${this.modelPath}/${determiner}`)
+    return relatedModel.where(this.primaryKey, this.parentInstance[this.foreignKey]).first()
   }
 
   /**
@@ -108,4 +149,4 @@ class MorphMany extends BaseRelation {
   }
 }
 
-module.exports = MorphMany
+module.exports = MorphTo
