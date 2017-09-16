@@ -100,37 +100,14 @@ Make sure to register the lucid provider to make use of `Database` and `LucidMon
 ```js
 const providers = [
   // ...
-  // '@adonis/lucid/providers/DatabaseProvider',
-  // '@adonis/lucid/providers/LucidMongoProvider',
-  // '@adonis/lucid/providers/FactoryProvider'  
-  'lucid-mongo/providers/DatabaseProvider',
-  'lucid-mongo/providers/LucidMongoProvider',
-  'lucid-mongo/providers/FactoryProvider',
+  'lucid-mongo/providers/LucidMongoProvider'
 ]
 
 const aceProviders = [
   // ...
-  // '@adonis/lucid/providers/CommandsProvider',
-  // '@adonis/lucid/providers/MigrationsProvider',
-  // '@adonis/lucid/providers/SchemaProvider',
-  // '@adonis/lucid/providers/SeederProvider',  
-  'lucid-mongo/providers/CommandsProvider',
-  'lucid-mongo/providers/MigrationsProvider',
-  'lucid-mongo/providers/SchemaProvider',
-  'lucid-mongo/providers/SeederProvider',
+  'lucid-mongo/providers/MigrationsProvider'
 ]
-
-// setting up aliases.
-
-const aliases = {
-  Database: 'Adonis/Src/Database',
-  Model: 'Adonis/Src/LucidMongo',
-  Schema: 'Adonis/Src/Schema'
-  Migrations: 'Adonis/Src/Migrations',
-  Factory: 'Adonis/Src/Factory'
-}
 ```
-
 the config automatic create to `config/database.js` file
 
 ```js
