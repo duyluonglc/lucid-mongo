@@ -145,7 +145,12 @@ Database.connection = function (connection) {
       const security = (process.env.DB_USER && process.env.DB_PASSWORD)
         ? `${process.env.DB_USER}:${process.env.DB_PASSWORD}@`
         : (process.env.DB_USER ? `${process.env.DB_USER}@` : '')
-      const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}`
+      
+      const authString = (config.connection.auth && config.connection.auth.source && config.connection.auth.mechanism)
+        ? `?authSource=${config.connection.auth.source}&authMechanism=${config.connection.auth.mechanism}`
+        : ''
+    
+      const connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}${authString}`
       MongoClient.connect(connectionString).then(dbConnection => {
         connectionPools[connection] = dbConnection
         resolve(connectionPools[connection])
