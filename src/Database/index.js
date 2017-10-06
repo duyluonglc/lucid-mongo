@@ -110,11 +110,11 @@ class Database {
     const security = (config.connection.user && config.connection.password)
       ? `${config.connection.user}:${config.connection.password}@`
       : (config.connection.user ? `${config.connection.user}@` : '')
-    
+
     const authString = (config.connection.auth && config.connection.auth.source && config.connection.auth.mechanism)
       ? `?authSource=${config.connection.auth.source}&authMechanism=${config.connection.auth.mechanism}`
       : ''
-          
+
     this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}${authString}`
     this.connection = null
     this._globalTrx = null
