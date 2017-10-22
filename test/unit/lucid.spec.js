@@ -1396,6 +1396,8 @@ test.group('Model', (group) => {
       static get dates () { return [...super.dates, 'birthDate', 'joinDate'] }
     }
 
+    User._bootIfNotBooted()
+
     const user = await User.create({
       name: 'vik',
       age: 10,
