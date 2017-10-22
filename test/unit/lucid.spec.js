@@ -112,15 +112,39 @@ test.group('Model', (group) => {
     assert.deepEqual(user.$attributes, { username: 'virk', age: 22 })
   })
 
-  test('not remove existing attributes when calling fill', (assert) => {
+  test('do not remove attribute values when calling merge', (assert) => {
     class User extends Model {
     }
 
     User._bootIfNotBooted()
     const user = new User()
     user.fill({ username: 'virk', age: 22 })
-    user.fill({ username: 'vik' })
-    assert.deepEqual(user.$attributes, { username: 'vik', age: 22 })
+    user.merge({ age: 23 })
+    assert.deepEqual(user.$attributes, { username: 'virk', age: 23 })
+  })
+
+  test('call setters when defining attributes via merge', (assert) => {
+    class User extends Model {
+      setUsername (username) {
+        return username.toUpperCase()
+      }
+    }
+
+    User._bootIfNotBooted()
+    const user = new User()
+    user.merge({ username: 'virk', age: 22 })
+    assert.deepEqual(user.$attributes, { username: 'VIRK', age: 22 })
+  })
+
+  test('remove existing attributes when calling fill', (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+    const user = new User()
+    user.fill({ username: 'virk', age: 22 })
+    user.fill({ username: 'virk' })
+    assert.deepEqual(user.$attributes, { username: 'virk' })
   })
 
   test('call setters when defining attributes via fill', (assert) => {

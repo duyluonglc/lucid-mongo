@@ -460,7 +460,7 @@ class BaseModel {
   /**
    * Set attributes on model instance in bulk.
    *
-   * NOTE: Calling this method will remove the existing attributes. <= removed
+   * NOTE: Calling this method will remove the existing attributes.
    *
    * @method fill
    *
@@ -469,7 +469,21 @@ class BaseModel {
    * @return {void}
    */
   fill (attributes) {
-    // this.$attributes = {} // <= removed
+    this.$attributes = {}
+    this.merge(attributes)
+  }
+
+  /**
+   * Merge attributes into on a model instance without
+   * overriding existing attributes and their values
+   *
+   * @method merge
+   *
+   * @param  {Object} attributes
+   *
+   * @return {void}
+   */
+  merge (attributes) {
     _.each(attributes, (value, key) => this.set(key, value))
   }
 
