@@ -1390,6 +1390,35 @@ test.group('Model', (group) => {
     assert.equal(user.username, 'foo')
     assert.equal(user.vid, 2)
   })
+
+  test('should update sub attribute', async (assert) => {
+    class User extends Model {
+      static get dates () { return [...super.dates, 'birthDate', 'joinDate'] }
+    }
+
+    const user = await User.create({
+      name: 'vik',
+      age: 10,
+      birthDate: '2000-12-12',
+      joinDate: '2000-12-12',
+      address: {
+        line: 'foo',
+        city: 'bar'
+      }
+    })
+
+    user.address.city = 'hnn'
+    user.age = 20
+    user.birthDate = '2001-12-12'
+    assert.deepEqual(user.dirty, {
+      address: {
+        line: 'foo',
+        city: 'hnn'
+      },
+      age: 20,
+      birthDate: moment('2001-12-12')
+    })
+  })
 })
 
 test.group('Lucid | Query builder', (group) => {
@@ -1618,36 +1647,6 @@ test.group('Lucid | Aggregate', (group) => {
     assert.equal(min, 10)
     const min2 = await User.min('score', 'name')
     assert.deepEqual(min2, [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
-    await ioc.use('Database').collection('users').delete()
-  })
-
-  test('should update the attribute which has type object and changed sub attribute', async (assert) => {
-    class User extends Model {
-      static get dates () { return [...super.dates, 'birthDate', 'joinDate'] }
-    }
-
-    const user = await User.create({
-      name: 'vik',
-      age: 10,
-      birthDate: '2000-12-12',
-      joinDate: '2000-12-12',
-      address: {
-        line: 'foo',
-        city: 'bar'
-      }
-    })
-
-    user.address.city = 'hnn'
-    user.age = 20
-    user.birthDate = '2001-12-12'
-    assert.deepEqual(user.dirty, {
-      address: {
-        line: 'foo',
-        city: 'hnn'
-      },
-      age: 20,
-      birthDate: moment('2001-12-12')
-    })
     await ioc.use('Database').collection('users').delete()
   })
 })

@@ -228,7 +228,6 @@ class EmbedsMany extends BaseRelation {
    */
   find (id) {
     const embeds = this.parentInstance.$attributes[this.foreignKey]
-    console.log(embeds)
     const result = _.find(embeds, embed => String(embed[this.primaryKey]) === String(id))
     return result ? this._mapRowToInstance(result) : null
   }
