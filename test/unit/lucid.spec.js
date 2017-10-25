@@ -1563,6 +1563,116 @@ test.group('Lucid | Query builder', (group) => {
   })
 })
 
+test.group('Lucid | Query update', (group) => {
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
+    })
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createCollections(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
+  })
+
+  group.after(async () => {
+    await helpers.dropCollections(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
+  test('Should update all', async (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const users = [{ name: 'vik', isActive: true }, { name: 'nik', isActive: true }]
+    await ioc.use('Database').collection('users').insert(users)
+    await User.query().update({ isActive: false })
+    const newUsers = await User.where({ isActive: false }).fetch()
+    assert.lengthOf(newUsers.rows, 2)
+  })
+
+  test('should update with condition', async (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const users = [{ name: 'vik' }, { name: 'vik' }, { name: 'nik' }, { name: 'nik' }]
+    await ioc.use('Database').collection('users').insert(users)
+    await User.query().where({ name: 'vik' }).update({ isActive: true })
+    const newUsers = await User.where({ isActive: true }).fetch()
+    assert.lengthOf(newUsers.rows, 2)
+  })
+})
+
+test.group('Lucid | Query delete', (group) => {
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
+    })
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createCollections(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
+  })
+
+  group.after(async () => {
+    await helpers.dropCollections(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
+  test('Should delete all', async (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const users = [{ name: 'vik', isActive: true }, { name: 'nik', isActive: true }]
+    await ioc.use('Database').collection('users').insert(users)
+    await User.query().delete()
+    const newUsers = await User.all()
+    assert.lengthOf(newUsers.rows, 0)
+  })
+
+  test('should delete items match with condition', async (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const users = [{ name: 'vik' }, { name: 'vik' }, { name: 'nik' }, { name: 'nik' }]
+    await ioc.use('Database').collection('users').insert(users)
+    await User.query().where({ name: 'vik' }).delete()
+    const newUsers = await User.all()
+    assert.lengthOf(newUsers.rows, 2)
+  })
+})
+
 test.group('Lucid | Aggregate', (group) => {
   group.before(async () => {
     ioc.singleton('Adonis/Src/Database', function () {
@@ -1599,6 +1709,7 @@ test.group('Lucid | Aggregate', (group) => {
 
   test('count method', async (assert) => {
     class User extends Model { }
+    User._bootIfNotBooted()
     const users = [{ name: 'vik' }, { name: 'vik' }, { name: 'nik' }, { name: 'nik' }]
     await ioc.use('Database').collection('users').insert(users)
     const count = await User.count()
@@ -1610,6 +1721,7 @@ test.group('Lucid | Aggregate', (group) => {
 
   test('sum method', async (assert) => {
     class User extends Model { }
+    User._bootIfNotBooted()
     const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 10 }, { name: 'nik', score: 10 }, { name: 'nik', score: 10 }]
     await ioc.use('Database').collection('users').insert(users)
     const sum = await User.sum('score')
@@ -1621,6 +1733,7 @@ test.group('Lucid | Aggregate', (group) => {
 
   test('avg method', async (assert) => {
     class User extends Model { }
+    User._bootIfNotBooted()
     const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 10 }, { name: 'nik', score: 10 }, { name: 'nik', score: 10 }]
     await ioc.use('Database').collection('users').insert(users)
     const avg = await User.avg('score')
@@ -1632,6 +1745,7 @@ test.group('Lucid | Aggregate', (group) => {
 
   test('max method', async (assert) => {
     class User extends Model { }
+    User._bootIfNotBooted()
     const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
     await ioc.use('Database').collection('users').insert(users)
     const max = await User.max('score')
@@ -1643,6 +1757,7 @@ test.group('Lucid | Aggregate', (group) => {
 
   test('min method', async (assert) => {
     class User extends Model { }
+    User._bootIfNotBooted()
     const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
     await ioc.use('Database').collection('users').insert(users)
     const min = await User.min('score')
