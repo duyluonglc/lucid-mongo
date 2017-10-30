@@ -1,6 +1,10 @@
 # Lucid Mongo
 
-> **NB - WORK IN PROGRESS**
+lucid-mongo is a mongo query builder and ORM. It also has support for database migrations, seeds and factories as @adonis/lucid.
+
+<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/eirsozktUrMNsBqxuDUzA528/duyluonglc/lucid-mongo'>
+  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/eirsozktUrMNsBqxuDUzA528/duyluonglc/lucid-mongo.svg' />
+</a>
 
 [![Version](https://img.shields.io/npm/v/lucid-mongo.svg)](https://www.npmjs.com/package/lucid-mongo)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
@@ -8,9 +12,6 @@
 [![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/develop.svg)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=develop)
 [![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/lucid-mongo.svg)](https://greenkeeper.io/)
 > :pray: This repository is base on @adonis/lucid and only work with mongodb.
-
-lucid-mongo is a mongo query builder and ORM. It also has support for database migrations, seeds and factories as @adonis/lucid.
-
 ## Features?
 
 Apart from being just a query builder, lucid-mongo has following features.
@@ -22,10 +23,10 @@ Apart from being just a query builder, lucid-mongo has following features.
 5. Migrations
 6. Factories and Seeds
 
-Lucid-mongo version 2.0 can be used with AdonisJS framework or used standalone
+Lucid-mongo version 2.0 now can be used as standalone or used with AdonisJS 
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
-You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate) (out of date)
+You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
 
 ## Node/OS Target
 
@@ -33,55 +34,9 @@ This repo/branch is supposed to run fine on all major OS platforms and targets `
 
 ## <a name="getting-started"></a>Installation
 
-To setup this package as standalone package
-
-```bash
-$ npm i --save lucid-mongo
-```
-
-## Use standalone (still in development)
-```js
-const config = {
-  connection: 'mongodb',
-  mongodb: {
-    client: 'mongodb',
-    connection: {
-      host: 'localhost',
-      port: 27017,
-      user: 'my_user',
-      password: 'my_password',
-      database: 'my_database'
-    }
-  }
-}
-```
-```js
-// Models/User.js
-const { Models, Model } = require('./')(config)
-
-class User extends Model {
-
-}
-
-Models.add('App/Model/User', User)
-
-module.exports = User
-```
-```js
-// index.js
-async function test () {
-
-  const users = await User.where({ isActive: false }).fetch()
-
-  console.log(users.toJSON())
-}
-
-test()
-
-```
 ## Use with AdonisJS framework
 
-The provider must be installed from npm using `adonis` command.
+Install npm using `adonis` command.
 
 ```js
 adonis install lucid-mongo
@@ -141,6 +96,53 @@ module.exports = {
   }
 
 }
+```
+
+## Use standalone (still in development)
+To setup this package as standalone package
+
+```bash
+$ npm i --save lucid-mongo
+```
+
+```js
+const config = {
+  connection: 'mongodb',
+  mongodb: {
+    client: 'mongodb',
+    connection: {
+      host: 'localhost',
+      port: 27017,
+      user: 'my_user',
+      password: 'my_password',
+      database: 'my_database'
+    }
+  }
+}
+```
+```js
+// Models/User.js
+const { Models, Model } = require('./')(config)
+
+class User extends Model {
+
+}
+
+Models.add('App/Model/User', User)
+
+module.exports = User
+```
+```js
+// index.js
+async function test () {
+
+  const users = await User.where({ isActive: false }).fetch()
+
+  console.log(users.toJSON())
+}
+
+test()
+
 ```
 
 ### Query
@@ -283,17 +285,17 @@ class Bill extends Model {
 ### Query relationships
 
 ```js
-  const user = User.with('emails').find(1)
+  const user = await User.with('emails').find(1)
 
-  const user = User.with('emails', query => query.where({ status: 'verified' })).find(1)
+  const user = await User.with('emails', query => query.where({ status: 'verified' })).find(1)
 
-  const user = User.with(['emails', 'phones']).find(1)
+  const user = await User.with(['emails', 'phones']).find(1)
 
-  const user = User.with({ 
+  const user = await User.with({ 
     email: {where: {verified: true}, sort: '-age'}
   }).find(1)
 
-  const user = User.with({email: query => {
+  const user = await User.with({email: query => {
     query.where(active, true)
   }}).find(1)
 
@@ -394,16 +396,19 @@ After get from db it will be retransformed to
 {lat: 1, lng: 1}
 ```
 
-### Get the mongodb drive
-You can get the instance of mongodb drive to execute raw query
+### Use query builder
 ```js
   const Database = use('Database')
-  const mongo = await Database.connection('mongodb')
-  const users = await mongo.collection('users').find().toArray()
-  const phone = await mongo.collection('phones').findOne({userId: user._id})
-```
-[More document about mongo drive here](http://mongodb.github.io/node-mongodb-native/2.2/api/index.html)
+  const db = await Database.connection('mongodb')
 
+  const users = await db.collection('users').find()
+
+  const phone = await db.collection('phones')
+    .where({userId: '58ccb403f895502b84582c63'}).findOne()
+    
+  const count = await db.collection('user')
+    .where({active: true}).count()
+```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
 
