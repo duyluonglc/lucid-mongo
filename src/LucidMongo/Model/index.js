@@ -435,8 +435,9 @@ class Model extends BaseModel {
    * @return {Model} Model instance is returned
    */
   static async create (payload) {
-    const modelInstance = new this()
-    modelInstance.fill(payload)
+    const modelInstance = new this(payload)
+    modelInstance.$visible = this.visible
+    modelInstance.$hidden = this.hidden
     await modelInstance.save()
     return modelInstance
   }

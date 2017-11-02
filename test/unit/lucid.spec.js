@@ -505,9 +505,23 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
+
+    let user = await User.create({ username: 'virk' })
+    assert.deepEqual(Object.keys(user.toObject()), ['created_at'])
+
     await User.createMany([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().where('username', 'virk').fetch()
-    assert.deepEqual(Object.keys(users.first().toObject()), ['created_at'])
+    user = users.first()
+    assert.deepEqual(Object.keys(user.toObject()), ['created_at'])
+
+    user.reload()
+    assert.deepEqual(Object.keys(user.toObject()), ['created_at'])
+
+    user = await User.find(users.first()._id)
+    assert.deepEqual(Object.keys(user.toObject()), ['created_at'])
+
+    await user.reload()
+    assert.deepEqual(Object.keys(user.toObject()), ['created_at'])
   })
 
   test('omit hidden fields', async (assert) => {
@@ -518,11 +532,33 @@ test.group('Model', (group) => {
     }
 
     User._bootIfNotBooted()
+    let user = await User.create({ username: 'virk' })
+    assert.deepEqual(Object.keys(user.toObject()).sort(), [
+      '_id', 'username', 'updated_at'
+    ].sort())
+
     await User.createMany([{ username: 'virk' }, { username: 'nikk' }])
     const users = await User.query().where('username', 'virk').fetch()
-    assert.deepEqual(Object.keys(users.first().toObject()), [
+
+    user = users.first()
+    assert.deepEqual(Object.keys(user.toObject()).sort(), [
       '_id', 'username', 'updated_at'
-    ])
+    ].sort())
+
+    await user.reload()
+    assert.deepEqual(Object.keys(users.first().toObject()).sort(), [
+      '_id', 'username', 'updated_at'
+    ].sort())
+
+    user = await User.find(user._id)
+    assert.deepEqual(Object.keys(users.first().toObject()).sort(), [
+      '_id', 'username', 'updated_at'
+    ].sort())
+
+    await user.reload()
+    assert.deepEqual(Object.keys(users.first().toObject()).sort(), [
+      '_id', 'username', 'updated_at'
+    ].sort())
   })
 
   test('apply all global scopes to the query builder', async (assert) => {
