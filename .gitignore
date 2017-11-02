@@ -6,3 +6,4 @@ npm-debug.log
 out
 .nyc_output
 test/tmp
+test/functional/database

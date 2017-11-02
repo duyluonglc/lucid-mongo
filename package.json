@@ -5,9 +5,10 @@
   "version": "2.0.10",
   "scripts": {
     "lint": "standard",
-    "pretest": "npm run lint",
-    "posttest": "npm run coverage",
-    "test:local": "FORCE_COLOR=true DB=mongodb node bin/index.js --local",
+    "pretest": "npm run test:cleanup && npm run lint",
+    "test:cleanup": "rm -rf test/functional/database && rm -rf test/unit/tmp",
+    "posttest": "npm run test:cleanup && npm run coverage",
+    "test:local": "npm run test:cleanup && FORCE_COLOR=true DB=mongodb node bin/index.js --local",
     "test": "nyc npm run test:local",
     "test:win": "set DB=mongodb&& node bin/index.js --win",
     "coverage": "nyc report --reporter=text-lcov | coveralls"
