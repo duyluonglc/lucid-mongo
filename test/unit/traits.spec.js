@@ -9,13 +9,51 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
+const fs = require('fs-extra')
+const path = require('path')
 const { ioc } = require('@adonisjs/fold')
-// const helpers = require('./helpers')
+const { Config, setupResolver } = require('@adonisjs/sink')
+const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
+const DatabaseManager = require('../../src/Database/Manager')
 const QueryBuilder = require('../../src/LucidMongo/QueryBuilder')
 
 test.group('Traits', (group) => {
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
+    })
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createCollections(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').collection('users').delete()
+    await ioc.use('Database').collection('my_users').delete()
+  })
+
+  group.after(async () => {
+    await helpers.dropCollections(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
   group.beforeEach(() => {
     ioc.restore()
   })
