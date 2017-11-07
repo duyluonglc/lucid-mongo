@@ -526,15 +526,8 @@ class Database {
     // debug('count', this.collectionName, $match, $group)
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    return new Promise((resolve, reject) => {
-      collection.aggregate([{ $match }, { $group }], (err, result) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null)
-        }
-      })
-    })
+    const result = await collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null
   }
 
   /**
