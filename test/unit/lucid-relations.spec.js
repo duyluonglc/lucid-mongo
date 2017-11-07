@@ -42,6 +42,7 @@ test.group('Relations | HasOne', (group) => {
     await ioc.use('Adonis/Src/Database').collection('pictures').delete()
     await ioc.use('Adonis/Src/Database').collection('identities').delete()
     await ioc.use('Adonis/Src/Database').collection('cars').delete()
+    await ioc.use('Adonis/Src/Database').collection('posts').delete()
   })
 
   group.after(async () => {
@@ -912,5 +913,32 @@ test.group('Relations | HasOne', (group) => {
     await user.profile().delete()
     const profiles = await ioc.use('Database').collection('profiles').find()
     assert.lengthOf(profiles, 0)
+  })
+
+  test('return relation with paginate method', async (assert) => {
+    class Post extends Model {
+      users () {
+        return this.belongsToMany(User)
+      }
+    }
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const rsPost = await ioc.use('Database').collection('posts').insert([{ title: 'Post #1' }, { title: 'Post #2' }])
+    const rsUser = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('post_user').insert([{ user_id: rsUser.insertedIds[0], post_id: rsPost.insertedIds[1] }, { user_id: rsUser.insertedIds[1], post_id: rsPost.insertedIds[1] }])
+
+    const post = await Post.find(rsPost.insertedIds[1])
+    const users = await post.users().paginate(1, 1)
+    assert.equal(users.pages.total, 2)
+    assert.equal(users.pages.page, 1)
+    assert.equal(users.pages.perPage, 1)
+    assert.equal(users.pages.lastPage, 2)
   })
 })

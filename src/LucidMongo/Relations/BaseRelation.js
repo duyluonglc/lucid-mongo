@@ -30,6 +30,7 @@ const methodsList = [
   'update',
   'first',
   'fetch',
+  'paginate',
   'toSQL',
   'toString'
 ]
