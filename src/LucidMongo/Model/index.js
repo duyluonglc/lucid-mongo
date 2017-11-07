@@ -1424,7 +1424,8 @@ const shortHands = [
   'max',
   'min',
   'sum',
-  'avg'
+  'avg',
+  'distinct'
 ]
 
 shortHands.map(method => {

@@ -531,6 +531,19 @@ class Database {
   }
 
   /**
+   * Query distinct
+   *
+   * @method distinct
+   *
+   * @return {Object}
+   */
+  async distinct () {
+    const connection = await this.connect()
+    const collection = connection.collection(this.collectionName)
+    return this.queryBuilder.collection(collection).distinct(...arguments)
+  }
+
+  /**
    * Condition Methods
    *
    * @readonly

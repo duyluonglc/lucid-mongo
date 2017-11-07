@@ -1752,7 +1752,6 @@ test.group('Lucid | Aggregate', (group) => {
     assert.equal(count, 4)
     const count2 = await User.count('name')
     assert.deepEqual(count2, [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
-    await ioc.use('Database').collection('users').delete()
   })
 
   test('sum method', async (assert) => {
@@ -1764,7 +1763,6 @@ test.group('Lucid | Aggregate', (group) => {
     assert.equal(sum, 40)
     const sum2 = await User.sum('score', 'name')
     assert.deepEqual(sum2, [{ _id: 'nik', sum: 20 }, { _id: 'vik', sum: 20 }])
-    await ioc.use('Database').collection('users').delete()
   })
 
   test('avg method', async (assert) => {
@@ -1776,7 +1774,6 @@ test.group('Lucid | Aggregate', (group) => {
     assert.equal(avg, 10)
     const avg2 = await User.avg('score', 'name')
     assert.deepEqual(avg2, [{ _id: 'nik', avg: 10 }, { _id: 'vik', avg: 10 }])
-    await ioc.use('Database').collection('users').delete()
   })
 
   test('max method', async (assert) => {
@@ -1788,7 +1785,6 @@ test.group('Lucid | Aggregate', (group) => {
     assert.equal(max, 40)
     const max2 = await User.max('score', 'name')
     assert.deepEqual(max2, [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
-    await ioc.use('Database').collection('users').delete()
   })
 
   test('min method', async (assert) => {
@@ -1800,6 +1796,16 @@ test.group('Lucid | Aggregate', (group) => {
     assert.equal(min, 10)
     const min2 = await User.min('score', 'name')
     assert.deepEqual(min2, [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
-    await ioc.use('Database').collection('users').delete()
+  })
+
+  test('distinct method', async (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
+    await ioc.use('Database').collection('users').insert(users)
+    const names = await User.distinct('name')
+    assert.deepEqual(names, ['vik', 'nik'])
+    const names2 = await User.where({ score: { lt: 30 } }).distinct('name')
+    assert.deepEqual(names2, ['vik'])
   })
 })

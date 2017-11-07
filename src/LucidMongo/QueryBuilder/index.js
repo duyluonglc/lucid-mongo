@@ -908,15 +908,22 @@ class QueryBuilder {
     const connection = await this.db.connect()
     const collection = connection.collection(this.collection)
     debug(aggregator, this.collection, $match, $group)
-    return new Promise((resolve, reject) => {
-      collection.aggregate([{ $match }, { $group }], (err, result) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null)
-        }
-      })
-    })
+    const result = await collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null
+  }
+
+  /**
+   * Distinct field collections
+   *
+   * @method distinct
+   *
+   * @return {Object}
+   */
+  async distinct (field) {
+    this._applyScopes()
+    const connection = await this.db.connect()
+    const collection = connection.collection(this.collection)
+    return this.query.collection(collection).distinct(...arguments)
   }
 
   /**

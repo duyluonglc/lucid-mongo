@@ -167,6 +167,16 @@ test.group('Database | QueryBuilder', (group) => {
     await this.database.collection('users').delete()
   })
 
+  test('distinct method', async (assert) => {
+    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
+    await this.database.collection('users').insert(users)
+    const names = await this.database.collection('users').distinct('name')
+    assert.deepEqual(names, ['vik', 'nik'])
+    const names2 = await this.database.collection('users').where({ score: { lt: 30 } }).distinct('name')
+    assert.deepEqual(names2, ['vik'])
+    await this.database.collection('users').delete()
+  })
+
   test('paginate results', async (assert) => {
     const users = _.map(_.range(10), () => {
       return { username: chance.word() }
