@@ -434,7 +434,9 @@ class BaseModel {
       '$relations',
       '$sideLoaded',
       '$parent',
-      '$frozen'
+      '$frozen',
+      '$visible',
+      '$hidden'
     ]
 
     this.$attributes = {}
@@ -445,6 +447,8 @@ class BaseModel {
     this.$sideLoaded = {}
     this.$parent = null
     this.$frozen = false
+    this.$visible = this.constructor.visible
+    this.$hidden = this.constructor.hidden
   }
 
   /**

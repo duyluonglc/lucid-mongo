@@ -436,8 +436,6 @@ class Model extends BaseModel {
    */
   static async create (payload) {
     const modelInstance = new this(payload)
-    modelInstance.$visible = this.visible
-    modelInstance.$hidden = this.hidden
     await modelInstance.save()
     return modelInstance
   }
@@ -497,45 +495,6 @@ class Model extends BaseModel {
    */
   get hasParent () {
     return !!this.$parent
-  }
-
-  /**
-   * Instantiate the model by defining constructor properties
-   * and also setting `__setters__` to tell the proxy that
-   * these values should be set directly on the constructor
-   * and not on the `attributes` object.
-   *
-   * @method instantiate
-   *
-   * @return {void}
-   *
-   * @private
-   */
-  _instantiate () {
-    this.__setters__ = [
-      '$attributes',
-      '$unsetAttributes',
-      '$persisted',
-      'primaryKeyValue',
-      '$originalAttributes',
-      '$relations',
-      '$sideLoaded',
-      '$parent',
-      '$frozen',
-      '$visible',
-      '$hidden'
-    ]
-
-    this.$attributes = {}
-    this.$unsetAttributes = {}
-    this.$persisted = false
-    this.$originalAttributes = {}
-    this.$relations = {}
-    this.$sideLoaded = {}
-    this.$parent = null
-    this.$frozen = false
-    this.$visible = null
-    this.$hidden = null
   }
 
   /**
