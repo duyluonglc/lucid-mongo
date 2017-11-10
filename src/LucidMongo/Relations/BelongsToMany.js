@@ -280,7 +280,8 @@ class BelongsToMany extends BaseRelation {
    */
   async _loadAndCachePivot () {
     if (_.size(this._existingPivotInstances) === 0) {
-      this._existingPivotInstances = (await this.pivotQuery().fetch()).rows
+      const pivotQuery = this.pivotQuery().where(this.foreignKey, this.$primaryKeyValue)
+      this._existingPivotInstances = (await pivotQuery.fetch()).rows
     }
   }
 

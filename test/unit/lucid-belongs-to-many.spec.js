@@ -1276,4 +1276,37 @@ test.group('Relations | Belongs To Many', (group) => {
 
     await user.posts().select('title').fetch()
   })
+
+  test('attach 1 related model with multiple parent', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const userResult = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nik' }])
+    const user1 = await User.find(userResult.insertedIds[0])
+    const user2 = await User.find(userResult.insertedIds[1])
+
+    const post = new Post()
+    post.title = 'Adonis 101'
+    await post.save()
+    await user1.posts().attach(post._id)
+    await user1.posts().attach(post._id)
+    await user2.posts().attach(post._id)
+    await user2.posts().attach(post._id)
+
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
+    assert.lengthOf(pivotValues, 2)
+    assert.equal(String(pivotValues[0].post_id), String(post._id))
+    assert.equal(String(pivotValues[0].user_id), String(user1._id))
+    assert.equal(String(pivotValues[1].post_id), String(post._id))
+    assert.equal(String(pivotValues[1].user_id), String(user2._id))
+  })
 })
