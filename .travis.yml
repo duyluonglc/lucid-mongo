@@ -8,15 +8,15 @@ addons:
     packages:
       - g++-4.8
 node_js:
-- node
-- 5.3.0
-- 4.0.0
+  - node
+  - 5.3.0
+  - 4.0.0
 services: mongodb
 before_script:
-- mongo db_test --eval 'db.addUser("user", "test");'
+  - mongo db_test --eval 'db.createUser({user:"user",pwd:"test",roles:["dbOwner"]});'
 sudo: false
 install:
-- npm install --no-optional
+  - npm install --no-optional
 script:
-- DB=mongodb npm test
+  - DB=mongodb npm test
 notifications:
