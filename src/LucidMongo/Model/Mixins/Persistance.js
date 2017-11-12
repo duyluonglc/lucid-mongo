@@ -42,7 +42,7 @@ Persistance.insert = function * () {
     this.parsePersistance(save.ops[0])
     // this.$primaryKeyValue = values[this.constructor.primaryKey] || save.insertedIds[1]
     this.exists = true
-    this.original = _.clone(this.attributes)
+    this.original = _.cloneDeep(this.attributes)
     return !!save
   }
   return yield this.executeInsertHooks(this, insertHandler)
@@ -83,7 +83,7 @@ Persistance.update = function * () {
     const save = yield query.where(this.constructor.primaryKey, this.$primaryKeyValue).updateAttributes(dirtyValues)
     if (save.result.ok > 0) {
       this.parsePersistance(_.omit(dirtyValues, ['$set', '$unset']))
-      this.original = _.clone(this.attributes)
+      this.original = _.cloneDeep(this.attributes)
     }
     return save
   }
