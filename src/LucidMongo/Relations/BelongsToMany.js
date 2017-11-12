@@ -277,15 +277,30 @@ class BelongsToMany extends Relation {
     const pivotQuery = query.queryBuilder.collection(connection.collection(this.pivotCollection))
     const pivots = yield pivotQuery.where(this.pivotLocalKey).in(values).find()
     const pivotOtherKeys = _.map(pivots, this.pivotOtherKey)
-    let results = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
-    results = this._addPivotKeys(results, pivots)
-    return results.groupBy((result) => {
-      return _.find(pivots, pivot => {
-        return String(pivot[this.pivotOtherKey]) === String(result._id)
-      })[this.pivotLocalKey]
-    }).mapValues(function (value) {
-      return helpers.toCollection(value)
-    }).value()
+    const relatedInstances = yield this.relatedQuery.whereIn('_id', pivotOtherKeys).fetch()
+    // results = this._addPivotKeys(results, pivots)
+    const results = {}
+    relatedInstances.value().forEach(related => {
+      _.filter(pivots, pivot => {
+        return String(related._id) === String(pivot[this.pivotOtherKey])
+      }).forEach(pivot => {
+        const newRelated = new related.constructor()
+        newRelated.attributes = _.cloneDeep(related.attributes)
+        newRelated.original = _.cloneDeep(related.original)
+        newRelated.exists = true
+        _.forEach(this.pivotItems, (item) => {
+          newRelated.attributes[`${this.pivotPrefix}${item}`] = _.get(pivot, item)
+        })
+        results[pivot[this.pivotLocalKey]] = results[pivot[this.pivotLocalKey]] || []
+        results[pivot[this.pivotLocalKey]].push(newRelated)
+      })
+    })
+
+    _.forEach(results, (result, key) => {
+      results[key] = helpers.toCollection(result)
+    })
+
+    return results
   }
 
   /**
