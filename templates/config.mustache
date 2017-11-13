@@ -30,8 +30,8 @@ module.exports = {
       password: Env.get('DB_PASSWORD', ''),
       database: Env.get('DB_DATABASE', 'adonis'),
       auth: {
-        source: Env.get('DB_AUTH_SOURCE', 'admin'),
-        mechanism: Env.get('DB_AUTH_MECHANISM', 'MONGODB-CR')
+        source: Env.get('DB_AUTH_SOURCE', ''),
+        mechanism: Env.get('DB_AUTH_MECHANISM', '')
       }
     }
   }
