@@ -19,7 +19,7 @@ test.group('Relations Parser', () => {
   })
 
   test('parse relationship string with callback', (assert) => {
-    const fn = function () {}
+    const fn = function () { }
     const parsed = RelationsParser.parseRelation('posts', fn)
     assert.deepEqual(parsed, { name: 'posts', nested: null, callback: fn })
   })
@@ -30,7 +30,7 @@ test.group('Relations Parser', () => {
   })
 
   test('parse nested relationship with callback', (assert) => {
-    const fn = function () {}
+    const fn = function () { }
     const parsed = RelationsParser.parseRelation('posts.comments', fn)
     assert.deepEqual(parsed, { name: 'posts', nested: { comments: fn }, callback: null })
   })
@@ -41,7 +41,7 @@ test.group('Relations Parser', () => {
   })
 
   test('parse deeply nested relationship with callback', (assert) => {
-    const fn = function () {}
+    const fn = function () { }
     const parsed = RelationsParser.parseRelation('posts.comments.votes', fn)
     assert.deepEqual(parsed, { name: 'posts', nested: { 'comments.votes': fn }, callback: null })
   })
@@ -51,8 +51,18 @@ test.group('Relations Parser', () => {
     assert.deepEqual(parsed, { posts: { name: 'posts', callback: null, nested: { comments: null, likes: null } } })
   })
 
+  test('normalize relations array to object', (assert) => {
+    const relations = RelationsParser._normalizeRelations(['posts', 'profile'])
+    assert.deepEqual(relations, { posts: null, profile: null })
+  })
+
+  test('parse multiple nested relations without callbacks in array', (assert) => {
+    const parsed = RelationsParser.parseRelations(['posts.comments', 'posts.likes'])
+    assert.deepEqual(parsed, { posts: { name: 'posts', callback: null, nested: { comments: null, likes: null } } })
+  })
+
   test('parse multiple nested relations with callback', (assert) => {
-    const fn = function () {}
+    const fn = function () { }
     const parsed = RelationsParser.parseRelations({ 'posts.comments': null, 'posts.likes': null, posts: fn })
     assert.deepEqual(parsed, { posts: { name: 'posts', callback: fn, nested: { comments: null, likes: null } } })
   })

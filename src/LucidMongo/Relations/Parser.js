@@ -21,6 +21,25 @@ const CE = require('../../Exceptions')
  */
 class RelationParser {
   /**
+   * Returns the relationships object
+   *
+   * @method _normalizeRelations
+   *
+   * @param {Object|String[]}             relations
+   *
+   * @return {Object}
+   */
+  _normalizeRelations (relations) {
+    if (!Array.isArray(relations)) {
+      return relations
+    }
+
+    return _.transform(relations, (result, relation) => {
+      return (result[relation] = null)
+    }, {})
+  }
+
+  /**
    * Parses an object of relationship strings into
    * a new object
    *
@@ -31,7 +50,7 @@ class RelationParser {
    * @return {Object}
    */
   parseRelations (relations) {
-    return _.transform(relations, (result, callback, relation) => {
+    return _.transform(this._normalizeRelations(relations), (result, callback, relation) => {
       const parsedRelation = this.parseRelation(relation, callback)
       const existingRelation = result[parsedRelation.name]
 
