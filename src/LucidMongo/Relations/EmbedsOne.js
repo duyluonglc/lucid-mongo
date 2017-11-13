@@ -45,7 +45,7 @@ class EmbedOne extends Relation {
       const modelInstance = new RelatedModel()
       modelInstance.attributes = value[this.toKey]
       modelInstance.exists = true
-      modelInstance.original = _.cloneDeep(modelInstance.attributes)
+      modelInstance.original = _.clone(modelInstance.attributes)
       return _(modelInstance)
     }).value()
   }
@@ -71,7 +71,7 @@ class EmbedOne extends Relation {
     const modelInstance = new RelatedModel()
     modelInstance.attributes = result[this.toKey]
     modelInstance.exists = true
-    modelInstance.original = _.cloneDeep(modelInstance.attributes)
+    modelInstance.original = _.clone(modelInstance.attributes)
     response[value] = _(modelInstance)
     return response
   }
