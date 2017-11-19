@@ -117,6 +117,7 @@ class ReferMany extends BaseRelation {
       const foreignKeyValues = relatedInstance.$sideLoaded[`refer_${this.primaryKey}`]
       foreignKeyValues.forEach(foreignKeyValue => {
         const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+
         /**
          * If there is already an existing instance for same parent
          * record. We should override the value and do WARN the
@@ -127,13 +128,16 @@ class ReferMany extends BaseRelation {
           existingRelation.value.addRow(relatedInstance)
           return result
         }
+  
         result.push({
           identity: foreignKeyValue,
           value: new Serializer([relatedInstance])
         })
       })
+
       return result
     }, [])
+
     return { key: this.primaryKey, values: transformedValues, defaultValue: new Serializer([]) }
   }
 
