@@ -76,12 +76,12 @@ class ReferMany extends BaseRelation {
   async eagerLoad (rows) {
     const relatedInstances = await this.relatedQuery.whereIn(this.primaryKey, this.mapValues(rows)).fetch()
     return this.group(relatedInstances.rows.map(related => {
-      const parent = _.find(rows, row => {
+      const parent = _.filter(rows, row => {
         const foreignKeys = row[this.foreignKey] || []
         const relatedPrimaryKey = related[this.primaryKey]
         return foreignKeys.map(String).includes(String(relatedPrimaryKey))
       })
-      related.$sideLoaded[`refer_${this.primaryKey}`] = parent[this.primaryKey]
+      related.$sideLoaded[`refer_${this.primaryKey}`] = _.map(parent, this.primaryKey)
       return related
     }))
   }
@@ -114,24 +114,27 @@ class ReferMany extends BaseRelation {
     const Serializer = this.RelatedModel.Serializer
 
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
-      const foreignKeyValue = relatedInstance.$sideLoaded[`refer_${this.primaryKey}`]
-      const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
+      const foreignKeyValues = relatedInstance.$sideLoaded[`refer_${this.primaryKey}`]
+      foreignKeyValues.forEach(foreignKeyValue => {
+        const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
-      /**
-       * If there is already an existing instance for same parent
-       * record. We should override the value and do WARN the
-       * user since hasOne should never have multiple
-       * related instance.
-       */
-      if (existingRelation) {
-        existingRelation.value.addRow(relatedInstance)
-        return result
-      }
+        /**
+         * If there is already an existing instance for same parent
+         * record. We should override the value and do WARN the
+         * user since hasOne should never have multiple
+         * related instance.
+         */
+        if (existingRelation) {
+          existingRelation.value.addRow(relatedInstance)
+          return result
+        }
 
-      result.push({
-        identity: foreignKeyValue,
-        value: new Serializer([relatedInstance])
+        result.push({
+          identity: foreignKeyValue,
+          value: new Serializer([relatedInstance])
+        })
       })
+
       return result
     }, [])
 
