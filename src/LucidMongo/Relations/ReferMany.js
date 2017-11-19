@@ -128,7 +128,7 @@ class ReferMany extends BaseRelation {
           existingRelation.value.addRow(relatedInstance)
           return result
         }
-  
+
         result.push({
           identity: foreignKeyValue,
           value: new Serializer([relatedInstance])
