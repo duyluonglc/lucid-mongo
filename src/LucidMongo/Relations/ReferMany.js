@@ -75,15 +75,19 @@ class ReferMany extends BaseRelation {
    */
   async eagerLoad (rows) {
     const relatedInstances = await this.relatedQuery.whereIn(this.primaryKey, this.mapValues(rows)).fetch()
-    return this.group(relatedInstances.rows.map(related => {
-      const parent = _.find(rows, row => {
-        const foreignKeys = row[this.foreignKey] || []
-        const relatedPrimaryKey = related[this.primaryKey]
-        return foreignKeys.map(String).includes(String(relatedPrimaryKey))
+    let result = []
+    rows.map(modelInstance => {
+      relatedInstances.rows.map(related => {
+        const foreignKeys = modelInstance[this.foreignKey] || []
+        if (foreignKeys.map(String).includes(String(related.primaryKeyValue))) {
+          const newRelated = new this.RelatedModel()
+          newRelated.newUp(related.$attributes)
+          newRelated.$sideLoaded[`refer_${this.foreignKey}`] = modelInstance.primaryKeyValue
+          result.push(newRelated)
+        }
       })
-      related.$sideLoaded[`refer_${this.primaryKey}`] = parent[this.primaryKey]
-      return related
-    }))
+    })
+    return this.group(result)
   }
 
   /**
@@ -114,7 +118,7 @@ class ReferMany extends BaseRelation {
     const Serializer = this.RelatedModel.Serializer
 
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
-      const foreignKeyValue = relatedInstance.$sideLoaded[`refer_${this.primaryKey}`]
+      const foreignKeyValue = relatedInstance.$sideLoaded[`refer_${this.foreignKey}`]
       const existingRelation = _.find(result, (row) => String(row.identity) === String(foreignKeyValue))
 
       /**
@@ -152,24 +156,6 @@ class ReferMany extends BaseRelation {
   }
 
   /**
-   * Saves the relationship
-   *
-   * @method _attachSingle
-   * @async
-   *
-   * @param  {Number|String}      value
-   *
-   * @return {Object}                    Instance of parent model
-   *
-   * @private
-   */
-  _attachSingle (value) {
-    const relates = this.parentInstance[this.foreignKey] || []
-    this.parentInstance.$attributes[this.foreignKey] = _.concat(relates, [value])
-    return this.parentInstance.save()
-  }
-
-  /**
    * Attach existing rows
    *
    * @method attach
@@ -178,14 +164,11 @@ class ReferMany extends BaseRelation {
    *
    * @return {Promise}
    */
-  async attach (references) {
+  attach (references) {
     const rows = references instanceof Array === false ? [references] : references
-
-    return Promise.all(rows.map((row) => {
-      const relates = this.parentInstance[this.foreignKey] | []
-      const existing = _.find(relates, key => String(key) === String(row))
-      return existing ? Promise.resolve(existing) : this._attachSingle(row)
-    }))
+    const relates = this.parentInstance[this.foreignKey] || []
+    this.parentInstance.$attributes[this.foreignKey] = _.unionBy(relates, rows, String)
+    return this.parentInstance.save()
   }
 
   /**

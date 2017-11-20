@@ -644,4 +644,90 @@ test.group('Relations | Refer Many', (group) => {
       assert.equal(message, 'E_INVALID_PARAMETER: referMany.saveMany expects an array of related model instances instead received object')
     }
   })
+
+  test('attach related models', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.referMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const user = await User.create({ username: 'virk' })
+
+    const post1 = await Post.create({ title: 'Adonis 101' })
+    const post2 = await Post.create({ title: 'Adonis 102' })
+    await user.posts().attach(post1._id)
+    await user.posts().attach(post1._id)
+    await user.posts().attach(post2._id)
+    await user.posts().attach(post2._id)
+
+    const posts = await user.posts().fetch()
+    assert.lengthOf(posts.rows, 2)
+    assert.equal(String(posts.rows[0]._id), String(post1._id))
+    assert.equal(String(posts.rows[1]._id), String(post2._id))
+  })
+
+  test('attach 1 related model with multiple parent', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.referMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const userResult = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nik' }])
+    const user1 = await User.find(userResult.insertedIds[0])
+    const user2 = await User.find(userResult.insertedIds[1])
+
+    const post1 = await Post.create({ title: 'Adonis 101' })
+    const post2 = await Post.create({ title: 'Adonis 102' })
+
+    await user1.posts().attach(post1._id)
+    await user1.posts().attach(post1._id)
+    await user2.posts().attach(post1._id)
+    await user2.posts().attach(post2._id)
+    await user2.posts().attach(post2._id)
+
+    const users = await ioc.use('Database').collection('users').find()
+    console.log(users)
+    assert.lengthOf(users, 2)
+    assert.lengthOf(users[0].post_ids, 1)
+    assert.lengthOf(users[1].post_ids, 2)
+  })
+
+  test('eager load multiple parent has same children', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.referMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const postResult = await ioc.use('Database').collection('posts').insert([{ title: 'Adonis 1' }, { title: 'Adonis 2' }])
+    await ioc.use('Database').collection('users').insert([
+      { username: 'virk', post_ids: [postResult.insertedIds[0]] }, { username: 'nik', post_ids: [postResult.insertedIds[0], postResult.insertedIds[1]] }
+    ])
+
+    const users = await User.with('posts').fetch()
+
+    assert.lengthOf(users.toJSON(), 2)
+    assert.lengthOf(users.first().toJSON().posts, 1)
+    assert.lengthOf(users.last().toJSON().posts, 2)
+  })
 })
