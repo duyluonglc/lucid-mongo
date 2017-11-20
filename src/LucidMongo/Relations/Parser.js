@@ -45,7 +45,7 @@ class RelationParser {
    *
    * @method parseRelations
    *
-   * @param  {Object}       relations
+   * @param  {Object|String[]}       relations
    *
    * @return {Object}
    */

@@ -231,7 +231,7 @@ test.group('Relations | Belongs To Many', (group) => {
     class Post extends Model {
     }
 
-    class PostUser extends Model {}
+    class PostUser extends Model { }
 
     class User extends Model {
       posts () {
@@ -1308,5 +1308,34 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(String(pivotValues[0].user_id), String(user1._id))
     assert.equal(String(pivotValues[1].post_id), String(post._id))
     assert.equal(String(pivotValues[1].user_id), String(user2._id))
+  })
+
+  test('eager load multiple parent has same children', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const userResult = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nik' }])
+    const postResult = await ioc.use('Database').collection('posts').insert([{ title: 'Adonis 1' }, { title: 'Adonis 2' }])
+
+    await ioc.use('Database').collection('post_user').insert([
+      { post_id: postResult.insertedIds[0], user_id: userResult.insertedIds[0] },
+      { post_id: postResult.insertedIds[0], user_id: userResult.insertedIds[1] },
+      { post_id: postResult.insertedIds[1], user_id: userResult.insertedIds[1] }
+    ])
+
+    const users = await User.with('posts').fetch()
+
+    assert.lengthOf(users.toJSON(), 2)
+    assert.lengthOf(users.first().toJSON().posts, 1)
+    assert.lengthOf(users.last().toJSON().posts, 2)
   })
 })
