@@ -138,6 +138,37 @@ test.group('Relations | Belongs To', (group) => {
     assert.equal(profiles.first().getRelated('user').username, 'nikk')
   })
 
+  test('eagerload with same related instance', async (assert) => {
+    class User extends Model {
+    }
+
+    class Post extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const rs = await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await ioc.use('Database').collection('posts').insert([
+      { user_id: rs.insertedIds[0], title: 'Adonis 101' },
+      { user_id: rs.insertedIds[0], title: 'Adonis 102' },
+      { user_id: rs.insertedIds[1], title: 'Adonis 103' }
+    ])
+
+    const posts = await Post.query().with('user').fetch()
+    assert.instanceOf(posts, VanillaSerializer)
+    assert.equal(posts.size(), 3)
+    assert.instanceOf(posts.rows[0].getRelated('user'), User)
+    assert.instanceOf(posts.rows[1].getRelated('user'), User)
+    assert.instanceOf(posts.rows[2].getRelated('user'), User)
+    assert.equal(posts.rows[0].getRelated('user').username, 'virk')
+    assert.equal(posts.rows[1].getRelated('user').username, 'virk')
+    assert.equal(posts.rows[2].getRelated('user').username, 'nikk')
+  })
+
   test('eagerload and paginate', async (assert) => {
     class User extends Model {
     }
