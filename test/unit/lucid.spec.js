@@ -1746,56 +1746,127 @@ test.group('Lucid | Aggregate', (group) => {
   test('count method', async (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const users = [{ name: 'vik' }, { name: 'vik' }, { name: 'nik' }, { name: 'nik' }]
+    const users = [
+      { name: 'vik', value: 10 },
+      { name: 'vik', value: 10 },
+      { name: 'nik', value: 20 },
+      { name: 'nik', value: 10 }
+    ]
     await ioc.use('Database').collection('users').insert(users)
     const count = await User.count()
     assert.equal(count, 4)
     const count2 = await User.count('name')
     assert.deepEqual(count2, [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
+    const count3 = await User.count({ name: '$name', value: '$value' })
+    assert.deepEqual(count3, [
+      { _id: { name: 'nik', value: 10 }, count: 1 },
+      { _id: { name: 'nik', value: 20 }, count: 1 },
+      { _id: { name: 'vik', value: 10 }, count: 2 }
+    ])
   })
 
   test('sum method', async (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 10 }, { name: 'nik', score: 10 }, { name: 'nik', score: 10 }]
+    const users = [
+      { name: 'vik', value: 10, scope: 1 },
+      { name: 'vik', value: 10, scope: 2 },
+      { name: 'nik', value: 20, scope: 2 },
+      { name: 'nik', value: 10, scope: 2 }
+    ]
     await ioc.use('Database').collection('users').insert(users)
-    const sum = await User.sum('score')
-    assert.equal(sum, 40)
-    const sum2 = await User.sum('score', 'name')
-    assert.deepEqual(sum2, [{ _id: 'nik', sum: 20 }, { _id: 'vik', sum: 20 }])
+    const sum = await User.sum('value')
+    assert.equal(sum, 50)
+    const sum2 = await User.sum('value', 'name')
+    assert.deepEqual(sum2, [{ _id: 'nik', sum: 30 }, { _id: 'vik', sum: 20 }])
+    const sum3 = await User.sum('value', { name: '$name', scope: '$scope' })
+    assert.deepEqual(sum3, [
+      { _id: { name: 'nik', scope: 2 }, sum: 30 },
+      { _id: { name: 'vik', scope: 2 }, sum: 10 },
+      { _id: { name: 'vik', scope: 1 }, sum: 10 }
+    ])
   })
 
   test('avg method', async (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 10 }, { name: 'nik', score: 10 }, { name: 'nik', score: 10 }]
+    const users = [
+      { name: 'vik', value: 10, scope: 1 },
+      { name: 'vik', value: 10, scope: 2 },
+      { name: 'nik', value: 20, scope: 2 },
+      { name: 'nik', value: 10, scope: 2 }
+    ]
     await ioc.use('Database').collection('users').insert(users)
-    const avg = await User.avg('score')
-    assert.equal(avg, 10)
-    const avg2 = await User.avg('score', 'name')
-    assert.deepEqual(avg2, [{ _id: 'nik', avg: 10 }, { _id: 'vik', avg: 10 }])
+    const avg = await User.avg('value')
+    assert.equal(avg, 12.5)
+    const avg2 = await User.avg('value', 'name')
+    assert.deepEqual(avg2, [{ _id: 'nik', avg: 15 }, { _id: 'vik', avg: 10 }])
+    const sum3 = await User.avg('value', { name: '$name', scope: '$scope' })
+    assert.deepEqual(sum3, [
+      { _id: { name: 'nik', scope: 2 }, avg: 15 },
+      { _id: { name: 'vik', scope: 2 }, avg: 10 },
+      { _id: { name: 'vik', scope: 1 }, avg: 10 }
+    ])
   })
 
   test('max method', async (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
+    const users = [
+      { name: 'vik', value: 10, scope: 1 },
+      { name: 'vik', value: 30, scope: 2 },
+      { name: 'nik', value: 30, scope: 2 },
+      { name: 'nik', value: 40, scope: 2 }
+    ]
     await ioc.use('Database').collection('users').insert(users)
-    const max = await User.max('score')
+    const max = await User.max('value')
     assert.equal(max, 40)
-    const max2 = await User.max('score', 'name')
+    const max2 = await User.max('value', 'name')
     assert.deepEqual(max2, [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
+    const max3 = await User.max('value', { name: '$name', scope: '$scope' })
+    assert.deepEqual(max3, [
+      { _id: { name: 'nik', scope: 2 }, max: 40 },
+      { _id: { name: 'vik', scope: 2 }, max: 30 },
+      { _id: { name: 'vik', scope: 1 }, max: 10 }
+    ])
   })
 
   test('min method', async (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
+    const users = [
+      { name: 'vik', value: 10, scope: 1 },
+      { name: 'vik', value: 30, scope: 2 },
+      { name: 'nik', value: 30, scope: 2 },
+      { name: 'nik', value: 40, scope: 2 }
+    ]
     await ioc.use('Database').collection('users').insert(users)
-    const min = await User.min('score')
+    const min = await User.min('value')
     assert.equal(min, 10)
-    const min2 = await User.min('score', 'name')
+    const min2 = await User.min('value', 'name')
     assert.deepEqual(min2, [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
+    const min3 = await User.min('value', { name: '$name', scope: '$scope' })
+    assert.deepEqual(min3, [
+      { _id: { name: 'nik', scope: 2 }, min: 30 },
+      { _id: { name: 'vik', scope: 2 }, min: 30 },
+      { _id: { name: 'vik', scope: 1 }, min: 10 }
+    ])
+  })
+
+  test('aggregate method', async (assert) => {
+    class User extends Model { }
+    User._bootIfNotBooted()
+    const users = [
+      { name: 'vik', value: 10, scope: 1 },
+      { name: 'vik', value: 30, scope: 2 },
+      { name: 'nik', value: 30, scope: 2 },
+      { name: 'nik', value: 40, scope: 2 }
+    ]
+    await ioc.use('Database').collection('users').insert(users)
+    const $match = { name: 'nik' }
+    const $group = { _id: '', sum: { $sum: '$value' } }
+    const result = await User.query().aggregate(([{ $match }, { $group }]))
+    assert.deepEqual(result, [{ _id: '', sum: 70 }])
   })
 
   test('distinct method', async (assert) => {

@@ -106,6 +106,17 @@ class QueryBuilder {
   }
 
   /**
+   * @method getCollection
+   *
+   * @returns MongodbCollection
+   * @memberof QueryBuilder
+   */
+  async getCollection () {
+    const connection = await this.db.connect()
+    return connection.collection(this.collection)
+  }
+
+  /**
    *
    * @method query
    *
@@ -885,7 +896,13 @@ class QueryBuilder {
    */
   async _aggregate (aggregator, key, groupBy) {
     const $match = this.query._conditions
-    const $group = { _id: groupBy ? ('$' + groupBy) : '' }
+    const $group = { }
+    if (_.isString(groupBy)) {
+      $group._id = '$' + groupBy
+    } else if (_.isObject) {
+      $group._id = groupBy
+    }
+
     switch (aggregator) {
       case 'count':
         $group[aggregator] = { $sum: 1 }
@@ -905,11 +922,16 @@ class QueryBuilder {
       default:
         break
     }
-    const connection = await this.db.connect()
-    const collection = connection.collection(this.collection)
+    const collection = await this.getCollection()
     debug(aggregator, this.collection, $match, $group)
     const result = await collection.aggregate([{ $match }, { $group }]).toArray()
     return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null
+  }
+
+  async aggregate (...args) {
+    const collection = await this.getCollection()
+    debug(...args, this.collection)
+    return collection.aggregate(...args).toArray()
   }
 
   /**
@@ -921,8 +943,7 @@ class QueryBuilder {
    */
   async distinct (field) {
     this._applyScopes()
-    const connection = await this.db.connect()
-    const collection = connection.collection(this.collection)
+    const collection = await this.getCollection()
     return this.query.collection(collection).distinct(...arguments)
   }
 
