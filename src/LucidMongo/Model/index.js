@@ -335,13 +335,13 @@ class Model extends BaseModel {
    * @method addHook
    *
    * @param  {String} forEvent
-   * @param  {Function|String} handler
+   * @param  {Function|String|Array} handlers
    *
-   * @return {void}
+   * @chainable
    *
    * @static
    */
-  static addHook (forEvent, handler) {
+  static addHook (forEvent, handlers) {
     const [cycle, event] = util.getCycleAndEvent(forEvent)
 
     /**
@@ -352,9 +352,14 @@ class Model extends BaseModel {
     }
 
     /**
-     * Add the handler
+     * Add the handlers
      */
-    this.$hooks[cycle].addHandler(event, handler)
+    handlers = Array.isArray(handlers) ? handlers : [handlers]
+    handlers.forEach((handler) => {
+      this.$hooks[cycle].addHandler(event, handler)
+    })
+
+    return this
   }
 
   /**
