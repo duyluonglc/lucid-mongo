@@ -745,6 +745,21 @@ class BelongsToMany extends BaseRelation {
   }
 
   /**
+   * Calls `detach` and `attach` together.
+   *
+   * @method sync
+   *
+   * @param  {Number|String|Array} relatedPrimaryKeyValue
+   * @param  {Function} [pivotCallback]
+   *
+   * @return {void}
+   */
+  async sync (references, pivotCallback) {
+    await this.detach()
+    return this.attach(references, pivotCallback)
+  }
+
+  /**
    * Save the related model instance and setup the relationship
    * inside pivot collection
    *

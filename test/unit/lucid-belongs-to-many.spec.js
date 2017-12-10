@@ -1338,4 +1338,30 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.lengthOf(users.first().toJSON().posts, 1)
     assert.lengthOf(users.last().toJSON().posts, 2)
   })
+
+  test('sync pivot rows by dropping old and adding new', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+    const postId1 = new ObjectID()
+    const postId2 = new ObjectID()
+    await user.posts().attach([postId1])
+    await user.posts().sync([postId2])
+    const pivotValues = await ioc.use('Database').collection('post_user').find()
+    assert.lengthOf(pivotValues, 1)
+    assert.equal(String(pivotValues[0].user_id), String(user.primaryKeyValue))
+    assert.equal(String(pivotValues[0].post_id), String(postId2))
+  })
 })
