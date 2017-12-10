@@ -74,7 +74,11 @@ class ReferMany extends BaseRelation {
    * @return {Object}
    */
   async eagerLoad (rows) {
-    const relatedInstances = await this.relatedQuery.whereIn(this.primaryKey, this.mapValues(rows)).fetch()
+    const mappedRows = this.mapValues(rows)
+    if (!mappedRows || !mappedRows.length) {
+      return this.group([])
+    }
+    const relatedInstances = await this.relatedQuery.whereIn(this.primaryKey, mappedRows).fetch()
     let result = []
     rows.map(modelInstance => {
       relatedInstances.rows.map(related => {

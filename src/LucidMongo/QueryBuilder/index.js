@@ -296,7 +296,7 @@ class QueryBuilder {
     }
 
     const modelInstance = this._mapRowToInstance(row)
-
+    // await this._eagerLoad([modelInstance])
     /**
      * Eagerload relations when defined on query
      */

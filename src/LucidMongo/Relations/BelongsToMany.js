@@ -423,7 +423,12 @@ class BelongsToMany extends BaseRelation {
    * @return {Object}
    */
   async eagerLoad (rows) {
-    this.whereInPivot(this.foreignKey, this.mapValues(rows))
+    const mappedRows = this.mapValues(rows)
+    if (!mappedRows || !mappedRows.length) {
+      return this.group([])
+    }
+    this.whereInPivot(this.foreignKey, mappedRows)
+
     const pivotInstances = await this.pivotQuery().fetch()
     const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
     const relatedInstances = await this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).fetch()

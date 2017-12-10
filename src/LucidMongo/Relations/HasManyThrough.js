@@ -181,7 +181,10 @@ class HasManyThrough extends BaseRelation {
    * @return {Object}
    */
   async eagerLoad (rows) {
-    // this.selectThrough(this.foreignKey)
+    const mappedRows = this.mapValues(rows)
+    if (!mappedRows || !mappedRows.length) {
+      return this.group([])
+    }
     this._selectFields()
     const thoughInstances = await this.throughQuery
       .with(this.relatedMethod, builder => {
@@ -189,7 +192,7 @@ class HasManyThrough extends BaseRelation {
         builder.query.options = this.relatedQuery.query.options
         builder.query._fields = this.relatedQuery.query._fields
       })
-      .whereIn(this.foreignKey, this.mapValues(rows))
+      .whereIn(this.foreignKey, mappedRows)
       .fetch()
     const relatedRows = []
     thoughInstances.rows.forEach(thoughInstance => {

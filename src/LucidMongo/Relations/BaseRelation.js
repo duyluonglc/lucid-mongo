@@ -15,11 +15,12 @@ const proxyGet = require('../../../lib/proxyGet')
 const methodsList = [
   'increment',
   'decrement',
+  'sum',
   'avg',
   'min',
   'max',
   'count',
-  'remove',
+  'delete',
   'ids',
   'pair',
   'pluckFirst',
@@ -50,9 +51,50 @@ class BaseRelation {
     this.primaryKey = primaryKey
     this.foreignKey = foreignKey
     this.relatedQuery = this.RelatedModel.query()
+
+    /**
+     * this is default value to eagerload data, but users
+     * can pass their custom function by calling
+     * `eagerLoadQuery` method and pass a
+     * closure to it.
+     *
+     * @method _eagerLoadFn
+     *
+     * @param  {Object} query
+     * @param  {String} fk
+     * @param  {Array} rows
+     *
+     * @return {void}
+     */
+    this._eagerLoadFn = function (query, fk, values) {
+      query.whereIn(fk, values)
+    }
+
+    /**
+     * This is set by `relatedWhere` method in case of a self
+     * join
+     *
+     * @type {Number|Null}
+     */
+    this.relatedCollectionAlias = null
+
     return new Proxy(this, {
       get: proxyGet('relatedQuery')
     })
+  }
+
+  /**
+   * Define a custom eagerload query.
+   *
+   * NOTE: Defining eagerload query leaves everything on you
+   * to resolve the correct rows and they must be an array
+   *
+   * @method eagerLoadQuery
+   *
+   * @return {void}
+   */
+  eagerLoadQuery (fn) {
+    this._eagerLoadFn = fn
   }
 
   /**
@@ -132,7 +174,12 @@ class BaseRelation {
    * @return {Object}
    */
   async eagerLoad (rows) {
-    const relatedInstances = await this.relatedQuery.whereIn(this.foreignKey, this.mapValues(rows)).fetch()
+    const mappedRows = this.mapValues(rows)
+    if (!mappedRows || !mappedRows.length) {
+      return this.group([])
+    }
+    this._eagerLoadFn(this.relatedQuery, this.foreignKey, mappedRows)
+    const relatedInstances = await this.relatedQuery.fetch()
     return this.group(relatedInstances.rows)
   }
 
