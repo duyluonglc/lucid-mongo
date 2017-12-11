@@ -115,7 +115,11 @@ class Database {
       ? `?authSource=${config.connection.auth.source}&authMechanism=${config.connection.auth.mechanism}`
       : ''
 
-    this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}${authString}`
+    const ssl = (config.connection.ssl)
+      ? `?ssl=${config.connection.ssl}&`
+      : ''
+
+    this.connectionString = `mongodb://${security}${config.connection.host}:${config.connection.port}/${config.connection.database}${ssl}${authString}`
     this.connection = null
     this._globalTrx = null
     this.query()
