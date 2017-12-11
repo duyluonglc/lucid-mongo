@@ -17,7 +17,7 @@ const _ = require('lodash')
 // const debug = require('debug')('mquery')
 
 const proxyHandler = {
-  get(target, name) {
+  get (target, name) {
     if (typeof (name) === 'symbol' || name === 'inspect') {
       return target[name]
     }
@@ -44,7 +44,7 @@ const proxyHandler = {
 }
 
 class SchemaBuilder {
-  constructor(collection) {
+  constructor (collection) {
     this.collection = collection
     this.createIndexes = []
     this.dropIndexes = []
@@ -63,7 +63,7 @@ class SchemaBuilder {
     this.references = () => this
   }
 
-  index(name, keys, options) {
+  index (name, keys, options) {
     if (!name) {
       throw new CE.InvalidArgumentException(`param name is required to create index`)
     }
@@ -75,11 +75,11 @@ class SchemaBuilder {
     this.createIndexes.push({ keys, options })
   }
 
-  dropIndex(name) {
+  dropIndex (name) {
     this.dropIndexes.push(name)
   }
 
-  async build() {
+  async build () {
     for (var i in this.createIndexes) {
       var createIndex = this.createIndexes[i]
       await this.collection.createIndex(createIndex.keys, createIndex.options)
@@ -103,7 +103,7 @@ class SchemaBuilder {
  * @group Database
  */
 class Database {
-  constructor(config) {
+  constructor (config) {
     if (config.client !== 'mongodb') {
       throw new CE.RuntimeException('invalid connection type')
     }
@@ -126,21 +126,21 @@ class Database {
     return new Proxy(this, proxyHandler)
   }
 
-  async connect(collectionName) {
+  async connect (collectionName) {
     if (!this.connection) {
       this.connection = await MongoClient.connect(this.connectionString)
     }
     return Promise.resolve(this.connection)
   }
 
-  async getCollection(collectionName) {
+  async getCollection (collectionName) {
     if (!this.connection) {
       this.connection = await MongoClient.connect(this.connectionString)
     }
     return Promise.resolve(this.connection.collection(collectionName))
   }
 
-  collection(collectionName) {
+  collection (collectionName) {
     this.collectionName = collectionName
     this.query()
     return this
@@ -172,7 +172,7 @@ class Database {
    *
    * @return {Object}
    */
-  get schema() {
+  get schema () {
     return {
       collection: async (collectionName, callback) => {
         // debug('create collection', { collectionName })
@@ -238,7 +238,7 @@ class Database {
    * @returns
    * @memberof Database
    */
-  sort(...arg) {
+  sort (...arg) {
     this.queryBuilder.sort(...arg)
     return this
   }
@@ -250,7 +250,7 @@ class Database {
    * @returns
    * @memberof Database
    */
-  limit(...arg) {
+  limit (...arg) {
     this.queryBuilder.limit(...arg)
     return this
   }
@@ -262,7 +262,7 @@ class Database {
    * @returns
    * @memberof Database
    */
-  skip(...arg) {
+  skip (...arg) {
     this.queryBuilder.skip(...arg)
     return this
   }
@@ -274,7 +274,7 @@ class Database {
    * @returns
    * @memberof Database
    */
-  select(...arg) {
+  select (...arg) {
     this.queryBuilder.select(...arg)
     return this
   }
@@ -286,7 +286,7 @@ class Database {
    *
    * @return {Object}
    */
-  query() {
+  query () {
     this.queryBuilder = mquery()
     this.replaceMethods()
     return this.queryBuilder
@@ -299,7 +299,7 @@ class Database {
    *
    * @return {Object}
    */
-  get fn() {
+  get fn () {
     return {
       remove: (path) => console.log('remove', path),
       now: () => new Date()
@@ -312,7 +312,7 @@ class Database {
    * @readonly
    * @memberof Database
    */
-  get conditions() {
+  get conditions () {
     return this.queryBuilder._conditions
   }
 
@@ -321,7 +321,7 @@ class Database {
    *
    * @memberof Database
    */
-  clone() {
+  clone () {
     return _.cloneDeep(this.queryBuilder)
   }
 
@@ -333,7 +333,7 @@ class Database {
    *
    * @return {Promise}
    */
-  close() {
+  close () {
     return this.connection.close()
   }
 
@@ -344,7 +344,7 @@ class Database {
    *
    * @return {Object}
    */
-  async find() {
+  async find () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     return this.queryBuilder.collection(collection).find()
@@ -357,7 +357,7 @@ class Database {
    *
    * @return {Object}
    */
-  async findOne() {
+  async findOne () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     return this.queryBuilder.collection(collection).findOne()
@@ -370,7 +370,7 @@ class Database {
    *
    * @return {Object}
    */
-  async first() {
+  async first () {
     return this.findOne()
   }
 
@@ -381,7 +381,7 @@ class Database {
    *
    * @return {Object}
    */
-  async pluck(field) {
+  async pluck (field) {
     this.queryBuilder.select(field)
     const result = await this.find()
     return _.map(result, field)
@@ -394,7 +394,7 @@ class Database {
    *
    * @return {Object}
    */
-  async update() {
+  async update () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     return this.queryBuilder.collection(collection).update(...arguments)
@@ -407,7 +407,7 @@ class Database {
    *
    * @return {Object}
    */
-  async delete() {
+  async delete () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     return this.queryBuilder.collection(collection).remove(...arguments)
@@ -420,7 +420,7 @@ class Database {
    *
    * @return {Object}
    */
-  async paginate(page, limit) {
+  async paginate (page, limit) {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     const countByQuery = await this.aggregate('count')
@@ -437,7 +437,7 @@ class Database {
    *
    * @return {Object}
    */
-  async insert(row) {
+  async insert (row) {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     return collection.insert(row)
@@ -450,7 +450,7 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  count(...args) {
+  count (...args) {
     return this.aggregate('count', null, ...args)
   }
 
@@ -461,7 +461,7 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  sum(...args) {
+  sum (...args) {
     return this.aggregate('sum', ...args)
   }
 
@@ -472,7 +472,7 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  avg(...args) {
+  avg (...args) {
     return this.aggregate('avg', ...args)
   }
 
@@ -483,7 +483,7 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  max(...args) {
+  max (...args) {
     return this.aggregate('max', ...args)
   }
 
@@ -494,7 +494,7 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  min(...args) {
+  min (...args) {
     return this.aggregate('min', ...args)
   }
 
@@ -505,7 +505,7 @@ class Database {
    *
    * @return {Object}
    */
-  async aggregate(aggregator, key, groupBy) {
+  async aggregate (aggregator, key, groupBy) {
     const $match = this.conditions
     const $group = { _id: '$' + groupBy }
     switch (aggregator) {
@@ -541,7 +541,7 @@ class Database {
    *
    * @return {Object}
    */
-  async distinct() {
+  async distinct () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
     return this.queryBuilder.collection(collection).distinct(...arguments)
@@ -554,7 +554,7 @@ class Database {
    * @static
    * @memberof QueryBuilder
    */
-  static get conditionMethods() {
+  static get conditionMethods () {
     return [
       'eq',
       'ne',
@@ -574,7 +574,7 @@ class Database {
    *
    * @memberof QueryBuilder
    */
-  replaceMethods() {
+  replaceMethods () {
     for (let name of this.constructor.conditionMethods) {
       let originMethod = this.queryBuilder[name]
       this.queryBuilder[name] = (param) => {
@@ -591,7 +591,7 @@ class Database {
    * @static
    * @memberof QueryBuilder
    */
-  static get supportMethods() {
+  static get supportMethods () {
     return [
       'all',
       'exists',
@@ -622,7 +622,7 @@ class Database {
    * @returns {this}
    * @memberof QueryBuilder
    */
-  where() {
+  where () {
     if (_.isPlainObject(arguments[0])) {
       _.forEach(arguments[0], (conditions, key) => {
         if (key === 'and' || key === 'or' || key === 'nor') {
