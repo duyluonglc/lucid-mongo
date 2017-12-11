@@ -852,15 +852,66 @@ class Model {
   }
 
   /**
-   * shorthand to get access to the select method on
+   * shorthand to get access to the count method on
    * query builder chain.
    *
    * @return {Object}
    *
    * @public
    */
-  static * count () {
-    return yield this.query().count()
+  static count (...args) {
+    return this.query().count(...args)
+  }
+
+  /**
+   * shorthand to get access to the avg method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+  static avg (...args) {
+    return this.query().avg(...args)
+  }
+
+  /**
+   * shorthand to get access to the sum method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+
+  static sum (...args) {
+    return this.query().sum(...args)
+  }
+
+  /**
+   * shorthand to get access to the max method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+
+  static max (...args) {
+    return this.query().max(...args)
+  }
+
+  /**
+   * shorthand to get access to the min method on
+   * query builder chain.
+   *
+   * @return {Object}
+   *
+   * @public
+   */
+
+  static min (...args) {
+    return this.query().min(...args)
   }
 
   /**

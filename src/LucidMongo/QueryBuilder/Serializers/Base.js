@@ -158,16 +158,12 @@ class BaseSerializer {
     const collection = connection.collection(this.queryBuilder.HostModel.collection)
     const $match = this.queryBuilder.modelQueryBuilder._conditions
     const $group = {
-      _id: '$' + groupBy,
-      count: {$sum: 1}
+      _id: _.isPlainObject(groupBy) ? groupBy : _.isString(groupBy) ? '$' + groupBy : null,
+      count: { $sum: 1 }
     }
-    return new Promise((resolve, reject) => {
-      debug('count', this.queryBuilder.HostModel.collection, $match, $group)
-      collection.aggregate([{$match}, {$group}], (err, result) => {
-        if (err) reject(err)
-        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].count))
-      })
-    })
+    debug('count', this.queryBuilder.HostModel.collection, $match, $group)
+    const result = yield collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : (_.isEmpty(result) ? 0 : result[0].count)
   }
 
   /**
@@ -183,16 +179,11 @@ class BaseSerializer {
     const collection = connection.collection(this.queryBuilder.HostModel.collection)
     const $match = this.queryBuilder.modelQueryBuilder._conditions
     const $group = {
-      _id: '$' + groupBy,
-      max: {$max: '$' + key}
+      _id: _.isPlainObject(groupBy) ? groupBy : _.isString(groupBy) ? '$' + groupBy : null,
+      max: { $max: '$' + key }
     }
-    return new Promise((resolve, reject) => {
-      debug('max', this.queryBuilder.HostModel.collection, $match, $group)
-      collection.aggregate([{$match}, {$group}], (err, result) => {
-        if (err) reject(err)
-        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].max))
-      })
-    })
+    const result = yield collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : (_.isEmpty(result) ? null : result[0].max)
   }
 
   /**
@@ -208,16 +199,11 @@ class BaseSerializer {
     const collection = connection.collection(this.queryBuilder.HostModel.collection)
     const $match = this.queryBuilder.modelQueryBuilder._conditions
     const $group = {
-      _id: '$' + groupBy,
-      min: {$min: '$' + key}
+      _id: _.isPlainObject(groupBy) ? groupBy : _.isString(groupBy) ? '$' + groupBy : null,
+      min: { $min: '$' + key }
     }
-    return new Promise((resolve, reject) => {
-      debug('min', this.queryBuilder.HostModel.collection, $match, $group)
-      collection.aggregate([{$match}, {$group}], (err, result) => {
-        if (err) reject(err)
-        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].min))
-      })
-    })
+    const result = yield collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : (_.isEmpty(result) ? null : result[0].min)
   }
 
   /**
@@ -233,16 +219,11 @@ class BaseSerializer {
     const collection = connection.collection(this.queryBuilder.HostModel.collection)
     const $match = this.queryBuilder.modelQueryBuilder._conditions
     const $group = {
-      _id: '$' + groupBy,
-      sum: {$sum: '$' + key}
+      _id: _.isPlainObject(groupBy) ? groupBy : _.isString(groupBy) ? '$' + groupBy : null,
+      sum: { $sum: '$' + key }
     }
-    return new Promise((resolve, reject) => {
-      debug('sum', this.queryBuilder.HostModel.collection, $match, $group)
-      collection.aggregate([{$match}, {$group}], (err, result) => {
-        if (err) reject(err)
-        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].sum))
-      })
-    })
+    const result = yield collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : (_.isEmpty(result) ? 0 : result[0].sum)
   }
 
   /**
@@ -258,16 +239,11 @@ class BaseSerializer {
     const collection = connection.collection(this.queryBuilder.HostModel.collection)
     const $match = this.queryBuilder.modelQueryBuilder._conditions
     const $group = {
-      _id: '$' + groupBy,
-      avg: {$avg: '$' + key}
+      _id: _.isPlainObject(groupBy) ? groupBy : _.isString(groupBy) ? '$' + groupBy : null,
+      avg: { $avg: '$' + key }
     }
-    return new Promise((resolve, reject) => {
-      debug('avg', this.queryBuilder.HostModel.collection, $match, $group)
-      collection.aggregate([{$match}, {$group}], (err, result) => {
-        if (err) reject(err)
-        resolve(groupBy ? result : (_.isEmpty(result) ? null : result[0].avg))
-      })
-    })
+    const result = yield collection.aggregate([{ $match }, { $group }]).toArray()
+    return groupBy ? result : (_.isEmpty(result) ? null : result[0].avg)
   }
 }
 
