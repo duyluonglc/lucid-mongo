@@ -23,7 +23,7 @@ Apart from being just a query builder, lucid-mongo has following features.
 5. Migrations
 6. Factories and Seeds
 
-Lucid-mongo version 2.0 now can be used as standalone or used with AdonisJS 
+Lucid-mongo version 2.0 now can be used as standalone or used with AdonisJS
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
 You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
@@ -91,7 +91,8 @@ module.exports = {
       auth: {
          source: Env.get('DB_AUTH_SOURCE', ''),
          mechanism: Env.get('DB_AUTH_MECHANISM', '')
-      }
+      },
+      ssl: ('DB_SSL, '')
     }
   }
 
@@ -157,7 +158,7 @@ const users =  await User.where({ name: 'peter' })
 
 const users =  await User.where({
   or: [
-    { gender: 'female', age: { gte: 20 } }, 
+    { gender: 'female', age: { gte: 20 } },
     { gender: 'male', age: { gte: 22 } }
   ]
 }).fetch()
@@ -291,7 +292,7 @@ class Bill extends Model {
 
   const user = await User.with(['emails', 'phones']).find(1)
 
-  const user = await User.with({ 
+  const user = await User.with({
     email: {where: {verified: true}, sort: '-age'}
   }).find(1)
 
@@ -345,8 +346,8 @@ The where query conditions will be converted to objectId too
 ```js
 const article = await Article.find('58ccb403f895502b84582c63')
 const articles = await Article
-  .where({ 
-    department_id: { in: ['58ccb403f895502b84582c63', '58ccb403f895502b84582c63'] } 
+  .where({
+    department_id: { in: ['58ccb403f895502b84582c63', '58ccb403f895502b84582c63'] }
   })
   .fetch()
 ```
@@ -391,7 +392,7 @@ Result:
 ```json
 { "type" : "Point", "coordinates" : [ 1, 1 ] }
 ```
-After get from db it will be retransformed to 
+After get from db it will be retransformed to
 ```js
 {lat: 1, lng: 1}
 ```
@@ -405,7 +406,7 @@ After get from db it will be retransformed to
 
   const phone = await db.collection('phones')
     .where({userId: '58ccb403f895502b84582c63'}).findOne()
-    
+
   const count = await db.collection('user')
     .where({active: true}).count()
 ```

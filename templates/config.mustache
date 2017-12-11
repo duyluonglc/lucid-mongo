@@ -32,7 +32,8 @@ module.exports = {
       auth: {
         source: Env.get('DB_AUTH_SOURCE', ''),
         mechanism: Env.get('DB_AUTH_MECHANISM', '')
-      }
+      },
+      ssl: Env.get('DB_SSL, '')
     }
   }
 }
