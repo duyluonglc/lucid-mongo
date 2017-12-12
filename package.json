@@ -2,7 +2,7 @@
   "name": "lucid-mongo",
   "description": "A Mongodb ODM",
   "main": "index.js",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "scripts": {
     "lint": "standard",
     "pretest": "npm run test:cleanup && npm run lint",
@@ -42,6 +42,7 @@
     "geopoint": "^1.0.1",
     "lodash": "^4.17.4",
     "moment": "^2.19.1",
+    "mongo-uri-builder": "^1.0.3",
     "mongodb": "^2.2.33",
     "mquery": "^2.3.2",
     "pluralize": "^7.0.0",
