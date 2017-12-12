@@ -10,7 +10,7 @@ module.exports = {
   default: {
     client: 'mongodb',
     connection: {
-      user: 'admin',
+      username: 'admin',
       password: '',
       database: 'default'
     }
@@ -19,7 +19,7 @@ module.exports = {
   alternateConnection: {
     client: 'mongodb',
     connection: {
-      user: 'admin',
+      username: 'admin',
       password: '',
       database: 'alternate'
     }
@@ -28,7 +28,7 @@ module.exports = {
   defaultPrefix: {
     client: 'mongodb',
     connection: {
-      user: 'admin',
+      username: 'admin',
       password: '',
       database: 'default'
     },
