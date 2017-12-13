@@ -82,19 +82,26 @@ module.exports = {
 
   mongodb: {
     client: 'mongodb',
+    connectionString: Env.get('DB_CONNECTION_STRING', ''),
     connection: {
       host: Env.get('DB_HOST', 'localhost'),
       port: Env.get('DB_PORT', 27017),
-      user: Env.get('DB_USER', 'root'),
+      username: Env.get('DB_USER', 'admin'),
       password: Env.get('DB_PASSWORD', ''),
       database: Env.get('DB_DATABASE', 'adonis'),
-      auth: {
-         source: Env.get('DB_AUTH_SOURCE', ''),
-         mechanism: Env.get('DB_AUTH_MECHANISM', '')
+      options: {
+        // replicaSet: Env.get('DB_REPLICA_SET', '')
+        // ssl: ('DB_SSL, '')
+        // connectTimeoutMS: Env.get('DB_CONNECT_TIMEOUT_MS', 15000),
+        // socketTimeoutMS: Env.get('DB_SOCKET_TIMEOUT_MS', 180000),
+        // w: ('DB_W, 0),
+        // readPreference: Env.get('DB_READ_PREFERENCE', 'secondary'),
+        // authSource: Env.get('DB_AUTH_SOURCE', ''),
+        // authMechanism: Env.get('DB_AUTH_MECHANISM', ''),
+        // other options
       }
     }
   }
-
 }
 ```
 
@@ -108,14 +115,18 @@ $ npm i --save lucid-mongo
 ```js
 const config = {
   connection: 'mongodb',
+  connectionString: 'mongo://username:password@localhost/my_database'
   mongodb: {
     client: 'mongodb',
     connection: {
       host: 'localhost',
       port: 27017,
-      user: 'my_user',
+      username: 'my_user',
       password: 'my_password',
       database: 'my_database'
+      options: {
+      
+      }
     }
   }
 }
@@ -195,21 +206,26 @@ const images = await Image.where({location: {nearSphere: {lat: 1, lng: 1}, maxDi
 
 ### Aggregation
 ```js
+  // count without group by
   const count = await Customer.count()
 
-  const count = await Customer
+  // count group by `position`
+  const count_rows = await Customer
     .where({ invited: { $exist: true } })
     .count('position')
 
+  // max age without group by
   const max = await Employee.max('age')
 
-  const total = await Employee
+  // sum `salary` group by `department_id`
+  const total_rows = await Employee
     .where(active, true)
     .sum('salary', 'department_id')
 
-  const avg = await Employee
+  // average group by `department_id` and `role_id`
+  const avg_rows = await Employee
     .where(active, true)
-    .avg('salary', { department: 'department_id', role: '$role_id' })
+    .avg('salary', { department: '$department_id', role: '$role_id' })
 ```
 
 ### Relations
@@ -220,7 +236,7 @@ This package support relations like adonis-lucid:
 - hasManyThrough
 - belongsToMany
 
-[More Documentation of adonis relationships](http://adonisjs.com/docs/3.2/relationships)
+[More Documentation of adonis relationships](http://adonisjs.com/docs/4.0/relationships)
 
 mongodb has no join query so this package has no query like: `has`, `whereHas`, `doesntHave`, `whereDoesntHave`
 
@@ -408,6 +424,14 @@ After get from db it will be retransformed to
     
   const count = await db.collection('user')
     .where({active: true}).count()
+```
+
+### Get mongodb client object
+In case the query builder does not match your requirement you can get mongodbClient to do your custom query
+```js
+  const Database = use('Database')
+  const mongoClient = await Database.connect()
+  const result = await mongoClient.collection('invenstory').find( { size: { h: 14, w: 21, uom: "cm" } } ).toArray()
 ```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
