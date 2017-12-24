@@ -40,7 +40,7 @@ module.exports = {
 
   createCollections (db) {
     return Promise.all([
-      db.schema.createCollection('users', function (collection) {
+      db.schema.createCollectionIfNotExists('users', function (collection) {
         collection.increments()
         collection.integer('vid')
         collection.integer('country_id')
@@ -49,7 +49,7 @@ module.exports = {
         collection.timestamp('login_at')
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('cars', function (collection) {
+      db.schema.createCollectionIfNotExists('cars', function (collection) {
         collection.increments()
         collection.integer('user_id')
         collection.string('name')
@@ -57,14 +57,14 @@ module.exports = {
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('parts', function (collection) {
+      db.schema.createCollectionIfNotExists('parts', function (collection) {
         collection.increments()
         collection.integer('car_id')
         collection.string('part_name')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('profiles', function (collection) {
+      db.schema.createCollectionIfNotExists('profiles', function (collection) {
         collection.increments()
         collection.integer('user_id')
         collection.integer('country_id')
@@ -73,34 +73,34 @@ module.exports = {
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('pictures', function (collection) {
+      db.schema.createCollectionIfNotExists('pictures', function (collection) {
         collection.increments()
         collection.integer('profile_id')
         collection.string('storage_path')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('identities', function (collection) {
+      db.schema.createCollectionIfNotExists('identities', function (collection) {
         collection.increments()
         collection.integer('user_id')
         collection.boolean('is_active').defaultTo(true)
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('my_users', function (collection) {
+      db.schema.createCollectionIfNotExists('my_users', function (collection) {
         collection.integer('uuid')
         collection.string('username')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('posts', function (collection) {
+      db.schema.createCollectionIfNotExists('posts', function (collection) {
         collection.increments('id')
         collection.integer('user_id')
         collection.string('title')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('post_user', function (collection) {
+      db.schema.createCollectionIfNotExists('post_user', function (collection) {
         collection.increments('id')
         collection.integer('post_id')
         collection.integer('user_id')
@@ -108,19 +108,19 @@ module.exports = {
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('countries', function (collection) {
+      db.schema.createCollectionIfNotExists('countries', function (collection) {
         collection.increments('id')
         collection.string('name')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('categories', function (collection) {
+      db.schema.createCollectionIfNotExists('categories', function (collection) {
         collection.increments('id')
         collection.string('name')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('sections', function (collection) {
+      db.schema.createCollectionIfNotExists('sections', function (collection) {
         collection.increments('id')
         collection.integer('category_id')
         collection.string('name')
@@ -128,26 +128,26 @@ module.exports = {
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('post_section', function (collection) {
+      db.schema.createCollectionIfNotExists('post_section', function (collection) {
         collection.increments('id')
         collection.integer('post_id')
         collection.integer('section_id')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
       }),
-      db.schema.createCollection('party_users', function (table) {
+      db.schema.createCollectionIfNotExists('party_users', function (table) {
         table.increments('id')
         table.integer('party_id')
         table.string('username')
         table.timestamps()
       }),
-      db.schema.createCollection('teams', function (table) {
+      db.schema.createCollectionIfNotExists('teams', function (table) {
         table.increments('id')
         table.integer('party_id')
         table.string('name')
         table.timestamps()
       }),
-      db.schema.createCollection('team_user', function (table) {
+      db.schema.createCollectionIfNotExists('team_user', function (table) {
         table.increments('id')
         table.integer('team_party_id')
         table.integer('user_party_id')
