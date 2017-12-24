@@ -108,26 +108,29 @@ class Database {
     if (config.client !== 'mongodb') {
       throw new CE.RuntimeException('invalid connection type')
     }
-
+    this.databaseName = config.connection.database
     this.connectionString = config.connection.connectionString || mongoUriBuilder(config.connection)
     this.connection = null
+    this.db = null
     this._globalTrx = null
     this.query()
     return new Proxy(this, proxyHandler)
   }
 
   async connect (collectionName) {
-    if (!this.connection) {
+    if (!this.db) {
       this.connection = await MongoClient.connect(this.connectionString)
+      this.db = this.connection.db(this.databaseName)
     }
-    return Promise.resolve(this.connection)
+    return Promise.resolve(this.db)
   }
 
   async getCollection (collectionName) {
-    if (!this.connection) {
+    if (!this.db) {
       this.connection = await MongoClient.connect(this.connectionString)
+      this.db = this.connection.db(this.databaseName)
     }
-    return Promise.resolve(this.connection.collection(collectionName))
+    return Promise.resolve(this.db.collection(collectionName))
   }
 
   collection (collectionName) {
@@ -175,7 +178,7 @@ class Database {
       createCollection: async (collectionName, callback) => {
         // debug('create collection', {collectionName})
         const db = await this.connect()
-        const collections = await db.collections()
+        const collections = await db.listCollections().toArray()
         if (_.find(collections, collection => collection.name === collectionName)) {
           throw new Error('already exists')
         }
@@ -187,7 +190,7 @@ class Database {
       createCollectionIfNotExists: async (collectionName, callback) => {
         // debug('create collection if not exists', { collectionName })
         const db = await this.connect()
-        const collections = await db.collections()
+        const collections = await db.listCollections().toArray()
         if (!_.find(collections, collection => collection.name === collectionName)) {
           const collection = await db.createCollection(collectionName)
           const schemaBuilder = new SchemaBuilder(collection)
@@ -203,7 +206,7 @@ class Database {
       dropCollectionIfExists: async (collectionName) => {
         // debug('drop collection if not exists', { collectionName })
         const db = await this.connect()
-        const collections = await db.collections()
+        const collections = await db.listCollections().toArray()
         if (_.find(collections, collection => collection.name === collectionName)) {
           return db.dropCollection(collectionName)
         }
@@ -215,7 +218,7 @@ class Database {
       },
       hasCollection: async (collectionName) => {
         const db = await this.connect()
-        const collections = await db.collections()
+        const collections = await db.listCollections().toArray()
         return !!_.find(collections, collection => collection.name === collectionName)
       }
     }
