@@ -457,7 +457,7 @@ class Model extends BaseModel {
    * @throws {InvalidArgumentException} If payloadArray is not an array
    */
   static async createMany (payloadArray) {
-    if (payloadArray instanceof Array === false) {
+    if (!Array.isArray(payloadArray)) {
       throw GE
         .InvalidArgumentException
         .invalidParameter(`${this.name}.createMany expects an array of values`, payloadArray)
