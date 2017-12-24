@@ -1217,6 +1217,18 @@ test.group('Model', (group) => {
     }
   })
 
+  test('allow to unfreeze model instance', async (assert) => {
+    assert.plan(1)
+    class User extends Model {
+    }
+
+    const user = new User()
+    user.freeze()
+    user.unfreeze()
+
+    assert.isFalse(user.$frozen)
+  })
+
   test('dates should be an empty array when createdAtColumn and updatedAtColumn is not defined', async (assert) => {
     class User extends Model {
       static get createdAtColumn () {
