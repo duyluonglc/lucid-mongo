@@ -14,6 +14,7 @@ const moment = require('moment')
 const GeoPoint = require('geopoint')
 const ObjectID = require('mongodb').ObjectID
 const VanillaSerializer = require('../Serializers/Vanilla')
+const { ioc } = require('../../../lib/iocResolver')
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 /**
@@ -227,6 +228,21 @@ class BaseModel {
         value.latitude()
       ]
     } : value
+  }
+
+  /**
+   * Resolves the serializer for the current model.
+   *
+   * If serializer is a string, then it is resolved using
+   * the Ioc container, otherwise it is assumed that
+   * a `class` is returned.
+   *
+   * @method resolveSerializer
+   *
+   * @returns {Class}
+   */
+  static resolveSerializer () {
+    return typeof (this.Serializer) === 'string' ? ioc.use(this.Serializer) : this.Serializer
   }
 
   /**
@@ -502,13 +518,13 @@ class BaseModel {
     this.$frozen = true
   }
 
-/**
- * Unfreezes the model allowing further modifications
- *
- * @method unfreeze
- *
- * @return {void}
- */
+  /**
+   * Unfreezes the model allowing further modifications
+   *
+   * @method unfreeze
+   *
+   * @return {void}
+   */
   unfreeze () {
     this.$frozen = false
   }

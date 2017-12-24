@@ -47,7 +47,7 @@ class EmbedsOne extends BaseRelation {
    * @return {Object} @multiple([key=String, values=Array, defaultValue=Null])
    */
   group (relatedInstances) {
-    const Serializer = this.RelatedModel.Serializer
+    const Serializer = this.RelatedModel.resolveSerializer()
 
     const transformedValues = _.transform(relatedInstances, (result, relatedInstance) => {
       const foreignKeyValue = relatedInstance.$sideLoaded[`embed_${this.foreignKey}`]
