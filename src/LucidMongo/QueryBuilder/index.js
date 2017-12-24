@@ -443,10 +443,23 @@ class QueryBuilder {
    *
    * @return {Array}
    */
-  async ids () {
+  ids () {
+    return this.pluck(this.Model.primaryKey)
+  }
+
+  /**
+ * Returns an array of selected field
+ *
+ * @method pluck
+ * @param {String} field
+ * @async
+ *
+ * @return {Array}
+ */
+  async pluck (field) {
     this._applyScopes()
-    const rows = await this.select(this.Model.primaryKey).fetch()
-    return rows.rows.map((row) => row[this.Model.primaryKey])
+    const rows = await this.select(field).fetch()
+    return rows.rows.map((row) => row[field])
   }
 
   /**
@@ -835,7 +848,6 @@ class QueryBuilder {
    * @return {Object}
    */
   count (groupBy) {
-    this._applyScopes()
     return this._aggregate('count', null, groupBy)
   }
 
@@ -847,7 +859,6 @@ class QueryBuilder {
    * @return {Object}
    */
   max (key, groupBy) {
-    this._applyScopes()
     return this._aggregate('max', key, groupBy)
   }
 
@@ -859,7 +870,6 @@ class QueryBuilder {
    * @return {Object}
    */
   min (key, groupBy) {
-    this._applyScopes()
     return this._aggregate('min', key, groupBy)
   }
 
@@ -871,7 +881,6 @@ class QueryBuilder {
    * @return {Object}
    */
   sum (key, groupBy) {
-    this._applyScopes()
     return this._aggregate('sum', key, groupBy)
   }
 
@@ -883,7 +892,6 @@ class QueryBuilder {
    * @return {Object}
    */
   avg (key, groupBy) {
-    this._applyScopes()
     return this._aggregate('avg', key, groupBy)
   }
 
@@ -895,6 +903,7 @@ class QueryBuilder {
    * @return {Object}
    */
   async _aggregate (aggregator, key, groupBy) {
+    this._applyScopes()
     const $match = this.query._conditions
     const $group = { }
     if (_.isString(groupBy)) {
