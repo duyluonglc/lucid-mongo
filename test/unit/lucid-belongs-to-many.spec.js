@@ -42,6 +42,9 @@ test.group('Relations | Belongs To Many', (group) => {
     await ioc.use('Adonis/Src/Database').collection('users').delete()
     await ioc.use('Adonis/Src/Database').collection('posts').delete()
     await ioc.use('Adonis/Src/Database').collection('post_user').delete()
+    await ioc.use('Adonis/Src/Database').collection('team_user').delete()
+    await ioc.use('Adonis/Src/Database').collection('party_users').delete()
+    await ioc.use('Adonis/Src/Database').collection('teams').delete()
   })
 
   group.after(async () => {
@@ -1387,5 +1390,63 @@ test.group('Relations | Belongs To Many', (group) => {
     const user = new User()
     const userPosts = user.posts()
     assert.equal(userPosts.$pivotCollection, 'post_users')
+  })
+
+  test('attach model via different primary key', async (assert) => {
+    class Team extends Model {
+    }
+
+    class User extends Model {
+      static get collection () {
+        return 'party_users'
+      }
+
+      teams () {
+        return this.belongsToMany(Team, 'user_party_id', 'team_party_id', 'party_id', 'party_id')
+      }
+    }
+
+    User._bootIfNotBooted()
+    Team._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    user.party_id = 20
+    await user.save()
+
+    await user.teams().attach(10)
+    const pivotValues = await ioc.use('Database').collection('team_user').find()
+    assert.lengthOf(pivotValues, 1)
+    assert.equal(pivotValues[0].user_party_id, 20)
+    assert.equal(pivotValues[0].team_party_id, 10)
+  })
+
+  test('create and attach model via different primary key', async (assert) => {
+    class Team extends Model {
+    }
+
+    class User extends Model {
+      static get collection () {
+        return 'party_users'
+      }
+
+      teams () {
+        return this.belongsToMany(Team, 'user_party_id', 'team_party_id', 'party_id', 'party_id')
+      }
+    }
+
+    User._bootIfNotBooted()
+    Team._bootIfNotBooted()
+
+    const user = new User()
+    user.username = 'virk'
+    user.party_id = 20
+    await user.save()
+
+    await user.teams().create({ name: 'draculas', party_id: 10 })
+    const pivotValues = await ioc.use('Database').collection('team_user').find()
+    assert.lengthOf(pivotValues, 1)
+    assert.equal(pivotValues[0].user_party_id, 20)
+    assert.equal(pivotValues[0].team_party_id, 10)
   })
 })

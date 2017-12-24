@@ -134,6 +134,24 @@ module.exports = {
         collection.integer('section_id')
         collection.timestamps()
         collection.timestamp('deleted_at').nullable()
+      }),
+      db.schema.createCollection('party_users', function (table) {
+        table.increments('id')
+        table.integer('party_id')
+        table.string('username')
+        table.timestamps()
+      }),
+      db.schema.createCollection('teams', function (table) {
+        table.increments('id')
+        table.integer('party_id')
+        table.string('name')
+        table.timestamps()
+      }),
+      db.schema.createCollection('team_user', function (table) {
+        table.increments('id')
+        table.integer('team_party_id')
+        table.integer('user_party_id')
+        table.timestamps()
       })
     ])
   },
