@@ -18,6 +18,7 @@
 
 const _ = require('lodash')
 const GE = require('@adonisjs/generic-exceptions')
+const { ioc } = require('../../../lib/iocResolver')
 
 const BaseRelation = require('./BaseRelation')
 const util = require('../../../lib/util')
@@ -313,7 +314,7 @@ class BelongsToMany extends BaseRelation {
    * @chainable
    */
   pivotModel (pivotModel) {
-    this._PivotModel = pivotModel
+    this._PivotModel = typeof (pivotModel) === 'string' ? ioc.use(pivotModel) : pivotModel
     return this
   }
 

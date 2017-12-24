@@ -700,7 +700,6 @@ test.group('Relations | Refer Many', (group) => {
     await user2.posts().attach(post2._id)
 
     const users = await ioc.use('Database').collection('users').find()
-    console.log(users)
     assert.lengthOf(users, 2)
     assert.lengthOf(users[0].post_ids, 1)
     assert.lengthOf(users[1].post_ids, 2)

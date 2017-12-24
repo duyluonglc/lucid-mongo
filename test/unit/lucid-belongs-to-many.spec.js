@@ -1364,4 +1364,28 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(String(pivotValues[0].user_id), String(user.primaryKeyValue))
     assert.equal(String(pivotValues[0].post_id), String(postId2))
   })
+
+  test('define pivot model via ioc container string', (assert) => {
+    class Post extends Model {
+    }
+
+    ioc.fake('App/Models/PostUser', () => {
+      class PostUser extends Model {
+      }
+      return PostUser
+    })
+
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post).pivotModel('App/Models/PostUser')
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const user = new User()
+    const userPosts = user.posts()
+    assert.equal(userPosts.$pivotCollection, 'post_users')
+  })
 })
