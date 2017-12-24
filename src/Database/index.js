@@ -175,7 +175,7 @@ class Database {
       createCollection: async (collectionName, callback) => {
         // debug('create collection', {collectionName})
         const db = await this.connect()
-        const collections = await db.listCollections().toArray()
+        const collections = await db.collections()
         if (_.find(collections, collection => collection.name === collectionName)) {
           throw new Error('already exists')
         }
@@ -187,7 +187,7 @@ class Database {
       createCollectionIfNotExists: async (collectionName, callback) => {
         // debug('create collection if not exists', { collectionName })
         const db = await this.connect()
-        const collections = await db.listCollections().toArray()
+        const collections = await db.collections()
         if (!_.find(collections, collection => collection.name === collectionName)) {
           const collection = await db.createCollection(collectionName)
           const schemaBuilder = new SchemaBuilder(collection)
@@ -203,7 +203,7 @@ class Database {
       dropCollectionIfExists: async (collectionName) => {
         // debug('drop collection if not exists', { collectionName })
         const db = await this.connect()
-        const collections = await db.listCollections().toArray()
+        const collections = await db.collections()
         if (_.find(collections, collection => collection.name === collectionName)) {
           return db.dropCollection(collectionName)
         }
@@ -215,7 +215,7 @@ class Database {
       },
       hasCollection: async (collectionName) => {
         const db = await this.connect()
-        const collections = await db.listCollections().toArray()
+        const collections = await db.collections()
         return !!_.find(collections, collection => collection.name === collectionName)
       }
     }
