@@ -11,7 +11,8 @@
     "test:local": "npm run test:cleanup && FORCE_COLOR=true DB=mongodb node bin/index.js --local",
     "test": "nyc npm run test:local",
     "test:win": "set DB=mongodb&& node bin/index.js --win",
-    "coverage": "nyc report --reporter=text-lcov | coveralls"
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "keywords": [
     "adonis",
@@ -60,6 +61,7 @@
     "japa": "^1.0.5",
     "japa-cli": "^1.0.1",
     "nyc": "^11.3.0",
+    "semantic-release": "^11.0.2",
     "standard": "^10.0.3"
   },
   "config": {
