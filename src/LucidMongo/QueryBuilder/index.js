@@ -546,7 +546,7 @@ class QueryBuilder {
           builder[key](value)
         })
       }
-    } else if (_.isArray(args[0])) {
+    } else if (Array.isArray(args[0])) {
       _.forEach(args[0], related => {
         this.with(related)
       })
@@ -710,7 +710,7 @@ class QueryBuilder {
     if (_.isPlainObject(arguments[0])) {
       _.forEach(arguments[0], (conditions, key) => {
         if (key === 'and' || key === 'or' || key === 'nor') {
-          if (!_.isArray(conditions)) {
+          if (!Array.isArray(conditions)) {
             throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
           }
           let queries = []

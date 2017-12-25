@@ -822,9 +822,9 @@ class Model extends BaseModel {
     /**
      * Pick visible fields or remove hidden fields
      */
-    if (_.isArray(this.$visible)) {
+    if (Array.isArray(this.$visible)) {
       evaluatedAttrs = _.pick(evaluatedAttrs, this.$visible)
-    } else if (_.isArray(this.$hidden)) {
+    } else if (Array.isArray(this.$hidden)) {
       evaluatedAttrs = _.omit(evaluatedAttrs, this.$hidden)
     }
 

@@ -80,7 +80,7 @@ class BelongsToMany extends BaseRelation {
   //  * @chainable
   //  */
   // select (columns) {
-  //   this._relatedFields = _.isArray(columns) ? columns : _.toArray(arguments)
+  //   this._relatedFields = Array.isArray(columns) ? columns : _.toArray(arguments)
   //   return this
   // }
 
@@ -363,7 +363,7 @@ class BelongsToMany extends BaseRelation {
    * @chainable
    */
   withPivot (fields) {
-    fields = _.isArray(fields) ? fields : [fields]
+    fields = Array.isArray(fields) ? fields : [fields]
     this._pivot.withFields = this._pivot.withFields.concat(fields)
     return this
   }

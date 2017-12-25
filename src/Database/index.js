@@ -619,7 +619,7 @@ class Database {
     if (_.isPlainObject(arguments[0])) {
       _.forEach(arguments[0], (conditions, key) => {
         if (key === 'and' || key === 'or' || key === 'nor') {
-          if (!_.isArray(conditions)) {
+          if (!Array.isArray(conditions)) {
             throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
           }
           let queries = []

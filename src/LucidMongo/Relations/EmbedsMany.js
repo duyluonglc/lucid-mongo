@@ -110,7 +110,7 @@ class EmbedsMany extends BaseRelation {
     await this._persistParentIfRequired()
 
     let embeds = this.parentInstance.$attributes[this.foreignKey] ? _.cloneDeep(this.parentInstance.$attributes[this.foreignKey]) : []
-    if (!_.isArray(embeds)) {
+    if (!Array.isArray(embeds)) {
       embeds = [embeds]
     }
     if (!relatedInstance.primaryKeyValue) {
@@ -153,10 +153,10 @@ class EmbedsMany extends BaseRelation {
     }
 
     let embeds = _.clone(this.parentInstance.$attributes[this.foreignKey]) || []
-    if (!_.isArray(embeds)) {
+    if (!Array.isArray(embeds)) {
       embeds = [embeds]
     }
-    references = _.isArray(references) ? references : [references]
+    references = Array.isArray(references) ? references : [references]
     references.forEach(reference => {
       _.remove(embeds, embed => String(embed[this.primaryKey]) === String(reference))
     })

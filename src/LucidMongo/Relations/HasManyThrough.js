@@ -88,7 +88,7 @@ class HasManyThrough extends BaseRelation {
    * @chainable
    */
   select (columns) {
-    const columnsArray = _.isArray(columns) ? columns : _.toArray(arguments)
+    const columnsArray = Array.isArray(columns) ? columns : _.toArray(arguments)
     this._fields = this._fields.concat(columnsArray)
     return this
   }
@@ -103,7 +103,7 @@ class HasManyThrough extends BaseRelation {
    * @chainable
    */
   selectThrough (columns) {
-    const columnsArray = _.isArray(columns) ? columns : _.toArray(arguments)
+    const columnsArray = Array.isArray(columns) ? columns : _.toArray(arguments)
     this._throughFields = this._throughFields.concat(columnsArray)
     return this
   }
@@ -146,7 +146,7 @@ class HasManyThrough extends BaseRelation {
    * @chainable
    */
   selectRelated (columns) {
-    const columnsArray = _.isArray(columns) ? columns : _.toArray(arguments)
+    const columnsArray = Array.isArray(columns) ? columns : _.toArray(arguments)
     this._relatedFields = this._relatedFields.concat(columnsArray)
     return this
   }
