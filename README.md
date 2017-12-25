@@ -2,10 +2,6 @@
 
 lucid-mongo is a mongo query builder and ORM. It also has support for database migrations, seeds and factories as @adonis/lucid.
 
-<a target='_blank' rel='nofollow' href='https://app.codesponsor.io/link/eirsozktUrMNsBqxuDUzA528/duyluonglc/lucid-mongo'>
-  <img alt='Sponsor' width='888' height='68' src='https://app.codesponsor.io/embed/eirsozktUrMNsBqxuDUzA528/duyluonglc/lucid-mongo.svg' />
-</a>
-
 [![Version](https://img.shields.io/npm/v/lucid-mongo.svg)](https://www.npmjs.com/package/lucid-mongo)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 [![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=develop)](https://travis-ci.org/duyluonglc/lucid-mongo)
