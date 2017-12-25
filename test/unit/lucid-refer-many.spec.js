@@ -19,6 +19,7 @@ const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
 const VanillaSerializer = require('../../src/LucidMongo/Serializers/Vanilla')
+const _ = require('lodash')
 
 test.group('Relations | Refer Many', (group) => {
   group.before(async () => {
@@ -72,7 +73,7 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file1.png' },
       { file: 'images/file2.png' }
     ])
-    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const user = await User.find(rs.insertedIds[0])
     const pictures = await user.pictures().fetch()
@@ -97,7 +98,7 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file1.png' },
       { file: 'images/file2.png' }
     ])
-    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const user = await User.find(rs.insertedIds[0])
     const picture = await user.pictures().first()
@@ -122,7 +123,7 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file1.png' },
       { file: 'images/file2.png' }
     ])
-    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const user = await User.query().with('pictures').first()
     assert.instanceOf(user.getRelated('pictures'), VanillaSerializer)
@@ -147,7 +148,8 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file1.png', likes: 1000 },
       { file: 'images/file2.png', likes: 3000 }
     ])
-    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const users = await User.query().with('pictures', (builder) => {
       builder.where('likes', '>', 2000)
@@ -232,7 +234,7 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file2.png', part_ids: [partsResult.insertedIds[2], partsResult.insertedIds[3]] }
     ])
 
-    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const user = await User.query().with('pictures.parts').first()
     assert.equal(user.getRelated('pictures').size(), 2)
@@ -272,7 +274,7 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file2.png', part_ids: [partsResult.insertedIds[2], partsResult.insertedIds[3]] }
     ])
 
-    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const user = await User.query().with('pictures.parts', (builder) => builder.where('part_name', 'engine')).first()
     assert.equal(user.getRelated('pictures').size(), 2)
@@ -312,7 +314,7 @@ test.group('Relations | Refer Many', (group) => {
       { likes: 3000, file: 'images/file2.png', part_ids: [partsResult.insertedIds[2], partsResult.insertedIds[3]] }
     ])
 
-    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: result.insertedIds })
+    await ioc.use('Database').collection('users').insert({ username: 'virk', picture_ids: _.toArray(result.insertedIds) })
 
     const user = await User.query().with('pictures', (builder) => {
       builder.where('likes', '>', 2000)
@@ -342,7 +344,7 @@ test.group('Relations | Refer Many', (group) => {
       { file: 'images/file3.png' }
     ])
 
-    await ioc.use('Database').collection('users').insert([{ username: 'virk', picture_ids: result.insertedIds }, { username: 'nikk', picture_ids: result.insertedIds }])
+    await ioc.use('Database').collection('users').insert([{ username: 'virk', picture_ids: _.toArray(result.insertedIds) }, { username: 'nikk', picture_ids: _.toArray(result.insertedIds) }])
 
     const users = await User.query().with('pictures').paginate()
     assert.equal(users.size(), 2)

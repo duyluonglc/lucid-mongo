@@ -190,10 +190,14 @@ class BaseModel {
    * @return {String}
    */
   static formatObjectID (key, value) {
-    if (_.isArray(value)) {
+    if (value instanceof ObjectID) {
+      return value
+    } else if (_.isString(value)) {
+      return ObjectID(value)
+    } else if (Array.isArray(value) || _.isPlainObject(value)) {
       return _.map(value, item => this.formatObjectID(key, item))
     }
-    return value instanceof ObjectID ? value : ObjectID(value)
+    return null
   }
 
   /**

@@ -108,26 +108,29 @@ class Database {
     if (config.client !== 'mongodb') {
       throw new CE.RuntimeException('invalid connection type')
     }
-
+    this.databaseName = config.connection.database
     this.connectionString = config.connection.connectionString || mongoUriBuilder(config.connection)
     this.connection = null
+    this.db = null
     this._globalTrx = null
     this.query()
     return new Proxy(this, proxyHandler)
   }
 
   async connect (collectionName) {
-    if (!this.connection) {
+    if (!this.db) {
       this.connection = await MongoClient.connect(this.connectionString)
+      this.db = this.connection.db(this.databaseName)
     }
-    return Promise.resolve(this.connection)
+    return Promise.resolve(this.db)
   }
 
   async getCollection (collectionName) {
-    if (!this.connection) {
+    if (!this.db) {
       this.connection = await MongoClient.connect(this.connectionString)
+      this.db = this.connection.db(this.databaseName)
     }
-    return Promise.resolve(this.connection.collection(collectionName))
+    return Promise.resolve(this.db.collection(collectionName))
   }
 
   collection (collectionName) {
@@ -616,7 +619,7 @@ class Database {
     if (_.isPlainObject(arguments[0])) {
       _.forEach(arguments[0], (conditions, key) => {
         if (key === 'and' || key === 'or' || key === 'nor') {
-          if (!_.isArray(conditions)) {
+          if (!Array.isArray(conditions)) {
             throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
           }
           let queries = []
