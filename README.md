@@ -91,10 +91,10 @@ module.exports = {
       database: Env.get('DB_DATABASE', 'adonis'),
       options: {
         // replicaSet: Env.get('DB_REPLICA_SET', '')
-        // ssl: ('DB_SSL, '')
+        // ssl: Env.get('DB_SSL, '')
         // connectTimeoutMS: Env.get('DB_CONNECT_TIMEOUT_MS', 15000),
         // socketTimeoutMS: Env.get('DB_SOCKET_TIMEOUT_MS', 180000),
-        // w: ('DB_W, 0),
+        // w: Env.get('DB_W, 0),
         // readPreference: Env.get('DB_READ_PREFERENCE', 'secondary'),
         // authSource: Env.get('DB_AUTH_SOURCE', ''),
         // authMechanism: Env.get('DB_AUTH_MECHANISM', ''),
@@ -102,6 +102,25 @@ module.exports = {
       }
     }
   }
+}
+```
+
+### fix login with session auth issue
+When use @adonis/auth with session, you will get this error
+`Cannot store ObjectID data type to session store`
+ Cause the Session only supports basic types as String, Number, boolean. try call toJSON before store data to session
+```js
+Route.post('/login', async ({request, auth}) => {
+  const { email, password } = request.all()
+
+  // await auth.attempt(email, password) // replace this
+
+  const user = await auth.validate(email, password, true)
+
+  await auth.login(user.toJSON())
+
+  // login success
+  ...
 }
 ```
 
@@ -431,7 +450,7 @@ In case the query builder does not match your requirement you can get mongodbCli
 ```js
   const Database = use('Database')
   const mongoClient = await Database.connect()
-  const result = await mongoClient.collection('invenstory').find( { size: { h: 14, w: 21, uom: "cm" } } ).toArray()
+  const result = await mongoClient.collection('inventory').find( { size: { h: 14, w: 21, uom: "cm" } } ).toArray()
 ```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
