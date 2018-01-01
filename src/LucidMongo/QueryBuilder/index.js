@@ -822,6 +822,19 @@ class QueryBuilder {
   }
 
   /**
+   * Where field not in array
+   *
+   * @param {String} key
+   * @param {Mixed} [value]
+   *
+   * @chainable
+   */
+  whereNotIn (key, values) {
+    this.query.where(key).nin(values)
+    return this
+  }
+
+  /**
    * Convert select query
    *
    * @public
