@@ -50,12 +50,13 @@ class LucidMongoProvider extends ServiceProvider {
    * Registering the serializer for auth
    */
   _registerSerializer () {
-    try {
-      this.app.extend('Adonis/Src/Auth',
-        'LucidMongo',
-        (app) => require('../src/Serializers/LucidMongoSerializer'),
-        'serializer')
-    } catch (error) { }
+    this.app.bind('Adonis/Src/Serializers/LucidMongoSerializer', (app) => require('../src/Serializers/LucidMongoSerializer'))
+    // try {
+    //   this.app.extend('Adonis/Src/Auth',
+    //     'LucidMongo',
+    //     (app) => require('../src/Serializers/LucidMongoSerializer'),
+    //     'serializer')
+    // } catch (error) { }
   }
 
   /**

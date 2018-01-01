@@ -73,7 +73,7 @@ DB_DATABASE=adonis
 Edit the config/auth.js file for including the serializer. For example on the api schema
 ```js
   api: {
-    serializer: 'LucidMongo',
+    serializer: 'Adonis/Src/Serializers/LucidMongoSerializer',
     scheme: 'api',
     model: 'App/Models/User',
     token: 'App/Models/Token',
