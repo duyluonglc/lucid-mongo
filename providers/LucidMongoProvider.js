@@ -9,7 +9,7 @@
  * file that was distributed with this source code.
 */
 
-const { ServiceProvider } = require('@adonisjs/fold')
+const { ioc, ServiceProvider } = require('@adonisjs/fold')
 
 class LucidMongoProvider extends ServiceProvider {
   /**
@@ -50,13 +50,12 @@ class LucidMongoProvider extends ServiceProvider {
    * Registering the serializer for auth
    */
   _registerSerializer () {
-    this.app.bind('Adonis/Src/Serializers/LucidMongoSerializer', (app) => require('../src/Serializers/LucidMongoSerializer'))
-    // try {
-    //   this.app.extend('Adonis/Src/Auth',
-    //     'LucidMongo',
-    //     (app) => require('../src/Serializers/LucidMongoSerializer'),
-    //     'serializer')
-    // } catch (error) { }
+    try {
+      ioc.extend('Adonis/Src/Auth',
+        'LucidMongo',
+        (app) => require('../src/LucidMongo/Serializers/LucidMongoSerializer'),
+        'serializer')
+    } catch (error) { }
   }
 
   /**
