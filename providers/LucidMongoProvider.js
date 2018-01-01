@@ -47,6 +47,16 @@ class LucidMongoProvider extends ServiceProvider {
   }
 
   /**
+   * Registering the serializer for auth
+   */
+  _registerSerializer () {
+    this.app.extend('Adonis/Src/Auth',
+      'LucidMongo',
+      (app) => require('../src/Serializers/LucidMongoSerializer'),
+      'serializer')
+  }
+
+  /**
    * Adds the unique rule to the validator
    *
    * @method _addUniqueRule
@@ -76,6 +86,7 @@ class LucidMongoProvider extends ServiceProvider {
   register () {
     this._registerDatabase()
     this._registerModel()
+    this._registerSerializer()
   }
 
   /**

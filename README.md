@@ -101,6 +101,20 @@ module.exports = {
 }
 ```
 
+### Configuring Auth serializer
+Edit the config/auth.js file for including the serializer. For example on the api schema
+```js
+  api: {
+    serializer: 'LucidMongo',
+    scheme: 'api',
+    model: 'App/Models/User',
+    token: 'App/Models/Token',
+    uid: 'username', // The user identifier. Ej: email, username
+    password: '', // Password field if using user-password validation
+    expiry: '30d', // Not yet implemented
+  },
+```
+
 ### fix login with session auth issue
 When use @adonis/auth with session, you will get this error
 `Cannot store ObjectID data type to session store`
