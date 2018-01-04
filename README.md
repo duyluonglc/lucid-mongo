@@ -134,7 +134,7 @@ Edit the config/auth.js file for including the serializer. For example on the ap
   },
 
   api: {
-    serializer: 'Adonis/Src/Serializers/LucidMongoSerializer',
+    serializer: 'LucidMongo',
     scheme: 'api',
     model: 'App/Models/User',
     token: 'App/Models/Token',
