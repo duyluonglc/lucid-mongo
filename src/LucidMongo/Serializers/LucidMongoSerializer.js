@@ -113,7 +113,12 @@ class LucidMongoSerializer {
    */
   async findById (id) {
     debug('finding user with primary key as %s', id)
-    return this._getQuery().where(this.primaryKey, id).first()
+    const user = this._getQuery().where(this.primaryKey, id).first()
+    if (user) {
+      user.$attributes[this.primaryKey] = String(user.primaryKeyValue)
+      return user
+    }
+    return null
   }
 
   /**
@@ -127,7 +132,12 @@ class LucidMongoSerializer {
    */
   async findByUid (uid) {
     debug('finding user with %s as %s', this._config.uid, uid)
-    return this._getQuery().where(this._config.uid, uid).first()
+    const user = await this._getQuery().where(this._config.uid, uid).first()
+    if (user) {
+      user.$attributes[this.primaryKey] = String(user.primaryKeyValue)
+      return user
+    }
+    return null
   }
 
   /**
@@ -159,9 +169,14 @@ class LucidMongoSerializer {
    */
   async findByToken (token, type) {
     debug('finding user for %s token', token)
-    const tokenRow = await this._Token.where({ token, type, is_revoked: false }).first()
-    if (tokenRow) {
-      return tokenRow.getRelated('user')
+    token = await this._Token.where({ token, type, is_revoked: false }).first()
+    if (token) {
+      const user = await token.user().first()
+      if (user) {
+        user.$attributes[this.primaryKey] = String(user.primaryKeyValue)
+        return user
+      }
+      return null
     }
     return null
   }
