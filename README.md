@@ -101,23 +101,47 @@ module.exports = {
 }
 ```
 
-### fix login with session auth issue
-When use @adonis/auth with session, you will get this error
-`Cannot store ObjectID data type to session store`
- Cause the Session only supports basic types as String, Number, boolean. try call toJSON before store data to session
+### Configuring Auth serializer
+Edit the config/auth.js file for including the serializer. For example on the api schema
 ```js
-Route.post('/login', async ({request, auth}) => {
-  const { email, password } = request.all()
+  session: {
+    serializer: 'LucidMongo',
+    model: 'App/Models/User',
+    scheme: 'session',
+    uid: 'email',
+    password: 'password'
+  },
+  
+  basic: {
+    serializer: 'LucidMongo',
+    model: 'App/Models/User',
+    scheme: 'basic',
+    uid: 'email',
+    password: 'password'
+  },
 
-  // await auth.attempt(email, password) // replace this
+  jwt: {
+    serializer: 'LucidMongo',
+    model: 'App/Models/User',
+    token: 'App/Models/Token',
+    scheme: 'jwt',
+    uid: 'email',
+    password: 'password',
+    expiry: '20m',
+    options: {
+      secret: 'self::app.appKey'
+    }
+  },
 
-  const user = await auth.validate(email, password, true)
-
-  await auth.login(user.toJSON())
-
-  // login success
-  ...
-}
+  api: {
+    serializer: 'LucidMongo',
+    scheme: 'api',
+    model: 'App/Models/User',
+    token: 'App/Models/Token',
+    uid: 'username',
+    password: '',
+    expiry: '30d',
+  },
 ```
 
 ## Use standalone (still in development)
