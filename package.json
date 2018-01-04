@@ -2,7 +2,7 @@
   "name": "lucid-mongo",
   "description": "A Mongodb ODM",
   "main": "index.js",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "scripts": {
     "lint": "standard",
     "pretest": "npm run test:cleanup && npm run lint",
@@ -13,9 +13,6 @@
     "test:win": "set DB=mongodb&& node bin/index.js --win",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
-  },
-  "release": {
-    "branch": "develop"
   },
   "keywords": [
     "adonis",
