@@ -113,7 +113,7 @@ class LucidMongoSerializer {
    */
   async findById (id) {
     debug('finding user with primary key as %s', id)
-    const user = this._getQuery().where(this.primaryKey, id).first()
+    const user = await this._getQuery().where(this.primaryKey, id).first()
     if (user) {
       user.$attributes[this.primaryKey] = String(user.primaryKeyValue)
       return user
