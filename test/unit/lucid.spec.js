@@ -1728,6 +1728,26 @@ test.group('Lucid | Query delete', (group) => {
     const newUsers = await User.all()
     assert.lengthOf(newUsers.rows, 2)
   })
+
+  test('call after paginate hook when calling paginate method', async (assert) => {
+    assert.plan(3)
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+
+    const fn = async function (instances, pages) {
+      assert.deepEqual(pages, { perPage: 20, total: helpers.formatNumber(2), page: 1, lastPage: 1 })
+
+      instances.forEach((instance) => {
+        assert.instanceOf(instance, User)
+      })
+    }
+
+    User.addHook('afterPaginate', fn)
+    await ioc.use('Database').collection('users').insert([{ username: 'virk' }, { username: 'nikk' }])
+    await User.query().paginate()
+  })
 })
 
 test.group('Lucid | Aggregate', (group) => {
