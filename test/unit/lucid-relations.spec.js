@@ -941,4 +941,90 @@ test.group('Relations | HasOne', (group) => {
     assert.equal(users.pages.perPage, 1)
     assert.equal(users.pages.lastPage, 2)
   })
+
+  test('fetch nested relations with same root', async (assert) => {
+    class Car extends Model {
+    }
+
+    class Profile extends Model {
+    }
+
+    class User extends Model {
+      car () {
+        return this.hasOne(Car)
+      }
+
+      profile () {
+        return this.hasOne(Profile)
+      }
+    }
+
+    class Identity extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    [Car, Profile, User, Identity].forEach(model => {
+      model._bootIfNotBooted()
+    })
+
+    const resultUser = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: resultUser.insertedIds[0], profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('cars').insert({ user_id: resultUser.insertedIds[0], name: 'Peugeot', model: '307' })
+    await ioc.use('Database').collection('identities').insert({ user_id: resultUser.insertedIds[0], is_active: true })
+
+    const identities = await Identity.query().with('user.car').with('user.profile').fetch()
+    const user = identities.first().getRelated('user')
+
+    assert.exists(user.getRelated('car'))
+    assert.exists(user.getRelated('profile'))
+  })
+
+  test('fetch deep nested relations with same root', async (assert) => {
+    class Part extends Model {
+    }
+
+    class Car extends Model {
+      parts () {
+        return this.hasMany(Part)
+      }
+    }
+
+    class Profile extends Model {
+    }
+
+    class User extends Model {
+      car () {
+        return this.hasOne(Car)
+      }
+
+      profile () {
+        return this.hasOne(Profile)
+      }
+    }
+
+    class Identity extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    [Car, Profile, User, Identity, Part].forEach(model => {
+      model._bootIfNotBooted()
+    })
+
+    const resultUser = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: resultUser.insertedIds[0], profile_name: 'virk', likes: 3 })
+    const resultCar = await ioc.use('Database').collection('cars').insert({ user_id: resultUser.insertedIds[0], name: 'Peugeot', model: '307' })
+    await ioc.use('Database').collection('identities').insert({ user_id: resultUser.insertedIds[0], is_active: true })
+    await ioc.use('Database').collection('parts').insert({ car_id: resultCar.insertedIds[0], part_name: 'Wheel drive' })
+
+    const identities = await Identity.query().with('user.car').with('user.profile').with('user.car.parts').fetch()
+    const user = identities.first().getRelated('user')
+
+    assert.exists(user.getRelated('car'))
+    assert.exists(user.getRelated('profile'))
+    assert.exists(user.getRelated('car').getRelated('parts').first())
+  })
 })
