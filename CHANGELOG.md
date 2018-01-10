@@ -1,3 +1,44 @@
+<a name="2.2.3"></a>
+## [2.2.3](https://github.com/duyluonglc/lucid-mongo/compare/v2.1.0...v2.2.3) (2018-01-10)
+
+
+### Bug Fixes
+
+* **belongsToMany:** pivotModel allow class and ioc container string ([d76e839](https://github.com/duyluonglc/lucid-mongo/commit/d76e839))
+* **connection:** fix connection mongodb driver 3.0 ([fbd9e36](https://github.com/duyluonglc/lucid-mongo/commit/fbd9e36))
+* **database:** use collections instead listCollections ([dfed4a0](https://github.com/duyluonglc/lucid-mongo/commit/dfed4a0))
+* **Database:** database.close should remove connection ([992c1f7](https://github.com/duyluonglc/lucid-mongo/commit/992c1f7))
+* **eagerloading:** fetch all nested relations ([46f0006](https://github.com/duyluonglc/lucid-mongo/commit/46f0006))
+* **hooks:** hook afterPaginate ([f027712](https://github.com/duyluonglc/lucid-mongo/commit/f027712))
+* **package:** fix break change mongodb 3.0.0 ([43e582a](https://github.com/duyluonglc/lucid-mongo/commit/43e582a))
+* **package:** fix missing package ([c3a619c](https://github.com/duyluonglc/lucid-mongo/commit/c3a619c))
+* **package:** fix package-lock ([516fabb](https://github.com/duyluonglc/lucid-mongo/commit/516fabb))
+* **package:** update mongodb 3.0.0 ([8446f39](https://github.com/duyluonglc/lucid-mongo/commit/8446f39))
+* **provider:** fix serializer register fails test ([737fa95](https://github.com/duyluonglc/lucid-mongo/commit/737fa95))
+* **queryBuilder:** apply scopes for all query methods ([d197478](https://github.com/duyluonglc/lucid-mongo/commit/d197478))
+* **serializer:** fix findById ([67e1480](https://github.com/duyluonglc/lucid-mongo/commit/67e1480))
+* **serializer:** fix register serializer ([b2de724](https://github.com/duyluonglc/lucid-mongo/commit/b2de724))
+* **serializer:** fix register serializer ([4ffb4f6](https://github.com/duyluonglc/lucid-mongo/commit/4ffb4f6))
+* **serializer:** fix register serializer ([00d8326](https://github.com/duyluonglc/lucid-mongo/commit/00d8326))
+* **serializer:** resolve serializer return string via ioc container ([d540ec1](https://github.com/duyluonglc/lucid-mongo/commit/d540ec1))
+* **testing:** fix createCollection ([fa804a3](https://github.com/duyluonglc/lucid-mongo/commit/fa804a3))
+
+
+### Features
+
+* use Array.isArray of instanceof ([03d0bb5](https://github.com/duyluonglc/lucid-mongo/commit/03d0bb5))
+* use Array.isArray of instanceof ([851071b](https://github.com/duyluonglc/lucid-mongo/commit/851071b))
+* **connection:** Add options to mongodb connection string ([95684c4](https://github.com/duyluonglc/lucid-mongo/commit/95684c4))
+* **lucid:** allow to unfreeze model instance ([0d86fd9](https://github.com/duyluonglc/lucid-mongo/commit/0d86fd9))
+* **migrations:** introduce a silent flag to silent the output ([2aa044a](https://github.com/duyluonglc/lucid-mongo/commit/2aa044a))
+* **package:** add semantic-release ([28096a4](https://github.com/duyluonglc/lucid-mongo/commit/28096a4))
+* **queryBuilder:** add alias of whereNotIn ([ad3bd10](https://github.com/duyluonglc/lucid-mongo/commit/ad3bd10))
+* **seed:** auto close db on when seeder finishes ([43be672](https://github.com/duyluonglc/lucid-mongo/commit/43be672))
+* **serializer:** add serializer for authentication ([13e5603](https://github.com/duyluonglc/lucid-mongo/commit/13e5603))
+* **serializer:** fix serializer ([16c39e7](https://github.com/duyluonglc/lucid-mongo/commit/16c39e7))
+
+
+
 <a name="2.2.2"></a>
 ## [2.2.2](https://github.com/duyluonglc/lucid-mongo/compare/v2.1.0...v2.2.2) (2018-01-10)
 
