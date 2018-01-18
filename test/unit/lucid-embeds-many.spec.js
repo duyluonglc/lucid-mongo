@@ -254,6 +254,31 @@ test.group('Relations | Embeds many', (group) => {
     assert.lengthOf(user.$attributes.emails, 1)
   })
 
+  test('update existing relation', async (assert) => {
+    class User extends Model {
+      emails () {
+        return this.embedsMany(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    const email = await user.emails().create({ address: 'example@gmail.com' })
+    email.merge({ enabled: true })
+    await user.emails().save(email)
+    await user.reload()
+    assert.lengthOf(user.$attributes.emails, 1)
+    const newEmail = await user.emails().first()
+    assert.equal(newEmail.enabled, true)
+  })
+
   test('delete a relation', async (assert) => {
     class User extends Model {
       emails () {
