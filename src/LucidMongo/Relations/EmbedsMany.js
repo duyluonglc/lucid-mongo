@@ -118,7 +118,7 @@ class EmbedsMany extends BaseRelation {
       embeds.push(relatedInstance.$attributes)
     } else {
       embeds = embeds.map(embed => {
-        return String(embed.primaryKeyValue) === String(relatedInstance.primaryKeyValue) ? relatedInstance.$attributes : embed
+        return String(embed[this.primaryKey]) === String(relatedInstance.primaryKeyValue) ? relatedInstance.$attributes : embed
       })
     }
     this.parentInstance[this.foreignKey] = embeds
