@@ -45,7 +45,7 @@
     "moment": "^2.20.1",
     "mongo-uri-builder": "^1.0.3",
     "mongodb": "^3.0.0",
-    "mquery": "^2.3.3",
+    "mquery": "^3.0.0",
     "pluralize": "^7.0.0",
     "pretty-hrtime": "^1.0.3",
     "require-all": "^2.2.0"
