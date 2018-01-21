@@ -270,13 +270,16 @@ test.group('Relations | Embeds many', (group) => {
 
     await ioc.use('Database').collection('users').insert({ username: 'virk' })
     const user = await User.first()
-    const email = await user.emails().create({ address: 'example@gmail.com' })
+    await user.emails().create({ address: 'example@gmail1.com' })
+    await user.emails().create({ address: 'example@gmail2.com' })
+    const email = await user.emails().first()
     email.merge({ enabled: true })
     await user.emails().save(email)
     await user.reload()
-    assert.lengthOf(user.$attributes.emails, 1)
-    const newEmail = await user.emails().first()
-    assert.equal(newEmail.enabled, true)
+    assert.lengthOf(user.$attributes.emails, 2)
+    const emails = await user.emails().fetch()
+    assert.equal(emails.first().enabled, true)
+    assert.equal(emails.last().enabled, undefined)
   })
 
   test('delete a relation', async (assert) => {
