@@ -15,6 +15,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const moment = require('moment')
 const GeoPoint = require('geo-point')
+const ObjectID = require('mongodb').ObjectID
 // const _ = require('lodash')
 const { ioc } = require('@adonisjs/fold')
 const { Config, setupResolver } = require('@adonisjs/sink')
@@ -305,7 +306,7 @@ test.group('Field geometry format', (group) => {
     assert.deepEqual(newUser.location.coordinates, [3, 2])
   })
 
-  test('Should convert date field as GeoPoint after fetch from database', async (assert) => {
+  test('Should convert geometry field as GeoPoint after fetch from database', async (assert) => {
     class User extends Model {
       static get geometries () {
         return ['location']
@@ -457,17 +458,14 @@ test.group('Field boolean format', (group) => {
       is_active: 1
     })
     const user = await User.first()
-    user.is_active = {
-      latitude: 2,
-      longitude: 3
-    }
+    user.is_active = 1
     await user.save()
     assert.equal(user.$attributes.is_active === true, true)
     const newUser = await ioc.use('Database').collection('users').findOne()
     assert.equal(newUser.is_active === true, true)
   })
 
-  test('Should convert date field as GeoPoint after fetch from database', async (assert) => {
+  test('Should convert boolean field as boolean after fetch from database', async (assert) => {
     class User extends Model {
       static get booleans () {
         return ['is_active']
@@ -499,5 +497,132 @@ test.group('Field boolean format', (group) => {
     assert.deepEqual(query.query._conditions, {
       is_active: true
     })
+  })
+})
+
+test.group('Field ObjectID format', (group) => {
+  group.before(async () => {
+    ioc.singleton('Adonis/Src/Database', function () {
+      const config = new Config()
+      config.set('database', {
+        connection: 'testing',
+        testing: helpers.getConfig()
+      })
+      return new DatabaseManager(config)
+    })
+    ioc.alias('Adonis/Src/Database', 'Database')
+
+    await fs.ensureDir(path.join(__dirname, './tmp'))
+    await helpers.createCollections(ioc.use('Database'))
+    setupResolver()
+  })
+
+  group.afterEach(async () => {
+    await ioc.use('Database').collection('users').delete()
+  })
+
+  group.after(async () => {
+    await helpers.dropCollections(ioc.use('Database'))
+    ioc.use('Database').close()
+    try {
+      await fs.remove(path.join(__dirname, './tmp'))
+    } catch (error) {
+      if (process.platform !== 'win32' || error.code !== 'EBUSY') {
+        throw error
+      }
+    }
+  }).timeout(0)
+
+  test('Should parse the ObjectID field when assign', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = new User()
+    user.group_id = '5a40077430f075256427a147'
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should parse the ObjectID field when assign by constructor', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = new User({
+      group_id: '5a40077430f075256427a147'
+    })
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should parse the ObjectID field when fill', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = new User()
+    user.fill({
+      group_id: '5a40077430f075256427a147'
+    })
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should store ObjectID field as ObjectID', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = await User.create({
+      group_id: '5a40077430f075256427a147'
+    })
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+    const newUser = await ioc.use('Database').collection('users').findOne()
+    assert.instanceOf(newUser.group_id, ObjectID)
+    assert.equal(String(newUser.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should update ObjectID field as ObjectID', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    await User.create({
+      group_id: '5a40077430f075256427a147'
+    })
+    const user = await User.first()
+    user.group_id = '5a40077430f075256427a148'
+    await user.save()
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a148')
+    const newUser = await ioc.use('Database').collection('users').findOne()
+    assert.instanceOf(newUser.group_id, ObjectID)
+    assert.equal(String(newUser.group_id), '5a40077430f075256427a148')
+  })
+
+  test('Should convert ObjectID params as ObjectID when build query', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({
+      group_id: '5a40077430f075256427a147'
+    })
+    assert.instanceOf(query.query._conditions.group_id, ObjectID)
+    assert.equal(String(query.query._conditions.group_id), '5a40077430f075256427a147')
   })
 })

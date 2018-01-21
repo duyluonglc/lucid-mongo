@@ -393,7 +393,7 @@ up () {
 The objectId fields will be converted to mongodb.ObjectID before save to db.
 ```js
 class Article extends LucidMongo {
-  static get objectIds() { return ['_id', 'categoryId'] } //default return ['_id']
+  static get objectIDs() { return ['_id', 'categoryId'] } //default return ['_id']
 }
 ```
 The where query conditions will be converted to objectId too
