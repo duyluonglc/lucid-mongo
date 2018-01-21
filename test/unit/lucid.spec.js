@@ -61,7 +61,7 @@ test.group('Model', (group) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.query()
-    assert.equal(query, '{"options":{},"_conditions":{}}')
+    assert.deepEqual(query, { options: {}, _conditions: {} })
   })
 
   test('define different collection for a model', (assert) => {
