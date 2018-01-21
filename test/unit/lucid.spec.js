@@ -61,7 +61,7 @@ test.group('Model', (group) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.query()
-    assert.deepEqual(query, { options: {}, _conditions: {} })
+    assert.deepEqual(query.query._conditions, { })
   })
 
   test('define different collection for a model', (assert) => {
@@ -634,7 +634,7 @@ test.group('Model', (group) => {
 
     const date = new Date()
     const query = User.query().where('username', 'virk').isLogged(date)
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gt': moment(date).toISOString() } })
+    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gt': moment(date).toDate() } })
   })
 
   test('find model instance using find method', async (assert) => {
@@ -1531,7 +1531,7 @@ test.group('Lucid | Query builder', (group) => {
   test('query where near', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const query = User.where({ location: { near: { lat: 1, lng: 2 }, maxDistance: 1000 } })
+    const query = User.where({ location: { near: { latitude: 1, longitude: 2 }, maxDistance: 1000 } })
     assert.deepEqual(query.query._conditions, {
       location: {
         $near: [2, 1],
@@ -1545,7 +1545,7 @@ test.group('Lucid | Query builder', (group) => {
       static get geometries () { return ['location'] }
     }
     User._bootIfNotBooted()
-    const query = User.where({ location: { nearSphere: { lat: 1, lng: 2 }, maxDistance: 1000 } })
+    const query = User.where({ location: { nearSphere: { latitude: 1, longitude: 2 }, maxDistance: 1000 } })
     assert.deepEqual(query.query._conditions, {
       'location': {
         '$near': {
