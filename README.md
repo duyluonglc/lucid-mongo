@@ -39,10 +39,10 @@ adonis install lucid-mongo
 ```
 
 ### Breaking update
-| Adonis version  | Lucid Mongo version |
-| ------------- | ------------- |
-| 3.x.x  | 1.x.x  |
-| 4.x.x  | 2.x.x  |
+| Adonis version | Lucid Mongo version |
+| -------------- | ------------------- |
+| 3.x.x          | 1.x.x               |
+| 4.x.x          | 2.x.x               |
 
 [See the doc of v1.x here](https://github.com/duyluonglc/lucid-mongo/blob/1.x/README.md)
 
@@ -237,9 +237,9 @@ const users =  await User.where(function() {
 
 
 // to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
-const images = await Image.where({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
+const images = await Image.where({location: {near: {latitude: 1, longitude: 1}, maxDistance: 5000}}).fetch()
 
-const images = await Image.where({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
+const images = await Image.where({location: {nearSphere: {latitude: 1, longitude: 1}, maxDistance: 500}}).fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
@@ -393,7 +393,7 @@ up () {
 The objectId fields will be converted to mongodb.ObjectID before save to db.
 ```js
 class Article extends LucidMongo {
-  static get objectIdFields() { return ['_id', 'categoryId'] } //default return ['_id']
+  static get objectIds() { return ['_id', 'categoryId'] } //default return ['_id']
 }
 ```
 The where query conditions will be converted to objectId too
@@ -409,7 +409,7 @@ const articles = await Article
 > Type of `date`
 ```js
 class Staff extends LucidMongo {
-  static get dateFields() { return ['dob'] }
+  static get dates() { return ['dob'] }
 }
 ```
 The field declare as date will be converted to moment js object after get from db
@@ -417,7 +417,7 @@ The field declare as date will be converted to moment js object after get from d
 const staff = await Staff.first()
 const yearAgo = staff.dob.fromNow()
 ```
-You can set attribute of model as moment js object, field will be converted to date before save to db
+You can set attribute of model as moment|Date|string, this field will be converted to date before save to db
 ```js
 staff.dob = moment(request.input('dob'))
 ```
@@ -431,7 +431,7 @@ Date type is UTC timezone
 > Type of `geometry`
 ```js
 class Image extends LucidMongo {
-  static get geoFields() { return ['location'] }
+  static get geometries() { return ['location'] }
 }
 ```
 When declare field type as geometry the field will be transformed to geoJSON type
@@ -439,16 +439,22 @@ When declare field type as geometry the field will be transformed to geoJSON typ
 ```js
 const image = await Image.create({
   fileName: fileName,
-  location: {lat: 1, lng: 1}
+  location: {
+    latitude: 1,
+    longitude: 2
+  }
 })
 ```
 Result:
 ```json
-{ "type" : "Point", "coordinates" : [ 1, 1 ] }
+{ "type" : "Point", "coordinates" : [ 2, 1 ] }
 ```
 After get from db it will be retransformed to 
 ```js
-{lat: 1, lng: 1}
+{
+  latitude: 1,
+  longitude: 2
+}
 ```
 
 ### Use query builder

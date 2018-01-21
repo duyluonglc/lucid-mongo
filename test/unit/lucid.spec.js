@@ -579,7 +579,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk')._applyScopes().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'deleted_at': null })
+    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'deleted_at': null })
   })
 
   test('instruct query builder to ignore all query scopes', async (assert) => {
@@ -591,7 +591,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk').ignoreScopes()._applyScopes().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk' })
+    assert.deepEqual(query.query._conditions, { 'username': 'virk' })
   })
 
   test('instruct query builder to ignore selected scopes', async (assert) => {
@@ -607,7 +607,7 @@ test.group('Model', (group) => {
     }, 'loggedOnce')
 
     const query = User.query().where('username', 'virk').ignoreScopes(['softDeletes'])._applyScopes().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': { '$gte': '2017' } })
+    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gte': '2017' } })
   })
 
   test('define local scopes', async (assert) => {
@@ -620,7 +620,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     const query = User.query().where('username', 'virk').isLogged().toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': { '$exists': true } })
+    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$exists': true } })
   })
 
   test('pass arguments to local scopes', async (assert) => {
@@ -634,7 +634,7 @@ test.group('Model', (group) => {
 
     const date = new Date()
     const query = User.query().where('username', 'virk').isLogged(date).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { 'username': 'virk', 'login_at': { '$gt': moment(date).toISOString() } })
+    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gt': moment(date).toISOString() } })
   })
 
   test('find model instance using find method', async (assert) => {
@@ -1518,21 +1518,21 @@ test.group('Lucid | Query builder', (group) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.where({ and: [{ name: 'vik' }, { age: { gte: 30 } }] }).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { $and: [{ name: 'vik' }, { age: { gte: 30 } }] })
+    assert.deepEqual(query.query._conditions, { $and: [{ name: 'vik' }, { age: { gte: 30 } }] })
   })
 
   test('query where or', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.where({ or: [{ name: 'vik' }, { age: { gte: 30 } }] }).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { $or: [{ name: 'vik' }, { age: { gte: 30 } }] })
+    assert.deepEqual(query.query._conditions, { $or: [{ name: 'vik' }, { age: { gte: 30 } }] })
   })
 
   test('query where near', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.where({ location: { near: { lat: 1, lng: 2 }, maxDistance: 1000 } }).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, {
+    assert.deepEqual(query.query._conditions, {
       location: {
         $near: [2, 1],
         $maxDistance: 1000
@@ -1546,7 +1546,7 @@ test.group('Lucid | Query builder', (group) => {
     }
     User._bootIfNotBooted()
     const query = User.where({ location: { nearSphere: { lat: 1, lng: 2 }, maxDistance: 1000 } }).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, {
+    assert.deepEqual(query.query._conditions, {
       'location': {
         '$near': {
           '$geometry': {
@@ -1573,8 +1573,8 @@ test.group('Lucid | Query builder', (group) => {
     const query = User.where(function () {
       this.where('name', 'vik').limit(10)
     }).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { name: 'vik' })
-    assert.deepEqual(JSON.parse(query).options, { limit: 10 })
+    assert.deepEqual(query.query._conditions, { name: 'vik' })
+    assert.deepEqual(query.query.options, { limit: 10 })
   })
 
   test('where method similar sql', (assert) => {
@@ -1588,7 +1588,7 @@ test.group('Lucid | Query builder', (group) => {
       .where('field4', '<=', 20)
       .where('field5', '<>', 'disabled')
       .toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, {
+    assert.deepEqual(query.query._conditions, {
       name: 'vik',
       field1: { $gt: 20 },
       field2: { $lt: 20 },
@@ -1602,21 +1602,21 @@ test.group('Lucid | Query builder', (group) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.where('name').eq('vik').where('age').gte(20).toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { name: 'vik', age: { $gte: 20 } })
+    assert.deepEqual(query.query._conditions, { name: 'vik', age: { $gte: 20 } })
   })
 
   test('whereNull method', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.query().whereNull('name').toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { name: { $exists: false } })
+    assert.deepEqual(query.query._conditions, { name: { $exists: false } })
   })
 
   test('whereNotNull method', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.query().whereNotNull('name').toSQL()
-    assert.deepEqual(JSON.parse(query)._conditions, { name: { $exists: true } })
+    assert.deepEqual(query.query._conditions, { name: { $exists: true } })
   })
 })
 

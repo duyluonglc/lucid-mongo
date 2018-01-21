@@ -40,7 +40,7 @@
     "@adonisjs/generic-exceptions": "^1.0.0",
     "chance": "^1.0.13",
     "debug": "^3.1.0",
-    "geopoint": "^1.0.1",
+    "geo-point": "^1.1.2",
     "lodash": "^4.17.4",
     "moment": "^2.20.1",
     "mongo-uri-builder": "^1.0.3",

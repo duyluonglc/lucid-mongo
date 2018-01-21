@@ -11,7 +11,7 @@
 
 const _ = require('lodash')
 const moment = require('moment')
-const GeoPoint = require('geopoint')
+const GeoPoint = require('geo-point')
 const ObjectID = require('mongodb').ObjectID
 const VanillaSerializer = require('../Serializers/Vanilla')
 const { ioc } = require('../../../lib/iocResolver')
@@ -225,13 +225,7 @@ class BaseModel {
    * @return {String}
    */
   static formatGeometry (key, value) {
-    return value instanceof GeoPoint ? {
-      type: 'Point',
-      coordinates: [
-        value.longitude(),
-        value.latitude()
-      ]
-    } : value
+    return value instanceof GeoPoint ? value.toGeoJSON() : value
   }
 
   /**
@@ -302,10 +296,7 @@ class BaseModel {
    * @static
    */
   static castGeometry (key, value) {
-    return value instanceof GeoPoint ? {
-      latitude: value.latitude(),
-      longitude: value.longitude()
-    } : value
+    return value instanceof GeoPoint ? value.toObject() : value
   }
 
   /**
@@ -382,11 +373,11 @@ class BaseModel {
     }
 
     if (typeof value === 'object' && value.latitude !== undefined && value.longitude !== undefined) {
-      return new GeoPoint(value.latitude, value.longitude)
+      return GeoPoint.fromObject(value)
     }
 
     if (typeof value === 'object' && value.type === 'Point' && value.coordinates !== undefined) {
-      return new GeoPoint(value.coordinates[1], value.coordinates[0])
+      return GeoPoint.fromGeoJSON(value)
     }
 
     return value

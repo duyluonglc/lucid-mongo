@@ -12,7 +12,7 @@
 const _ = require('lodash')
 const query = require('mquery')
 const debug = require('debug')('mquery')
-
+const GeoPoint = require('geo-point')
 const EagerLoad = require('../EagerLoad')
 // const RelationsParser = require('../Relations/Parser')
 const CE = require('../../Exceptions')
@@ -666,6 +666,61 @@ class QueryBuilder {
         return this
       }
     }
+
+    const near = this.query.near
+
+    this.query.near = (condition, maxDistance, minDistance) => {
+      let center = null
+      if (this.Model.geometries && this.Model.geometries.includes(this.query._path)) {
+        if (condition instanceof GeoPoint) {
+          center = condition.toGeoJSON()
+        } else if (Array.isArray(condition)) {
+          center = GeoPoint.fromLngLatArray(condition).toGeoJSON()
+        } else if (_.isPlainObject(condition) && condition.latitude && condition.longitude) {
+          center = GeoPoint.fromObject(condition).toGeoJSON()
+        } else {
+          center = condition
+        }
+      } else {
+        center = Array.isArray(condition) ? condition : [condition.longitude, condition.latitude]
+      }
+      const param = { center }
+      if (maxDistance !== undefined) {
+        param.maxDistance = maxDistance
+      }
+      if (minDistance !== undefined) {
+        param.minDistance = minDistance
+      }
+      near.apply(this.query, [param])
+      return this
+    }
+
+    this.query.nearSphere = (condition, maxDistance, minDistance) => {
+      let center = null
+      if (this.Model.geometries && this.Model.geometries.includes(this.query._path)) {
+        if (condition instanceof GeoPoint) {
+          center = condition.toGeoJSON()
+        } else if (Array.isArray(condition)) {
+          center = GeoPoint.fromLngLatArray(condition).toGeoJSON()
+        } else if (_.isPlainObject(condition) && condition.latitude && condition.longitude) {
+          center = GeoPoint.fromObject(condition).toGeoJSON()
+        } else {
+          center = condition
+        }
+      } else {
+        center = Array.isArray(condition) ? condition : [condition.longitude, condition.latitude]
+      }
+      center.spherical = true
+      const param = { center }
+      if (maxDistance !== undefined) {
+        param.maxDistance = maxDistance
+      }
+      if (minDistance !== undefined) {
+        param.minDistance = minDistance
+      }
+      near.apply(this.query, [param])
+      return this
+    }
   }
 
   /**
@@ -720,18 +775,10 @@ class QueryBuilder {
           this.query[key](queries)
         } else if (_.isPlainObject(conditions)) {
           _.forEach(conditions, (c, k) => {
-            if (k === 'near' || k === 'nearSphere') {
-              let point = { center: [c.lng, c.lat] }
-              if (this.Model.geometries && this.Model.geometries.includes(key)) {
-                point = { center: { type: 'Point', coordinates: [c.lng, c.lat], spherical: k === 'nearSphere' } }
-              }
-              if (conditions.maxDistance) {
-                point.maxDistance = conditions.maxDistance
-              }
-              if (conditions.minDistance) {
-                point.minDistance = conditions.minDistance
-              }
-              this.query.where(key).near(point)
+            if (k === 'near') {
+              this.query.where(key).near(c, conditions.maxDistance, conditions.minDistance)
+            } else if (k === 'nearSphere') {
+              this.query.where(key).nearSphere(c, conditions.maxDistance, conditions.minDistance)
             } else if (this.constructor.supportMethods.includes(k)) {
               if (k !== 'maxDistance' && k !== 'minDistance') {
                 this.query.where(key)[k](c)
@@ -932,7 +979,7 @@ class QueryBuilder {
   async _aggregate (aggregator, key, groupBy) {
     this._applyScopes()
     const $match = this.query._conditions
-    const $group = { }
+    const $group = {}
     if (_.isString(groupBy)) {
       $group._id = '$' + groupBy
     } else if (_.isObject) {

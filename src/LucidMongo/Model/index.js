@@ -11,7 +11,7 @@
 
 const _ = require('lodash')
 const moment = require('moment')
-const GeoPoint = require('geopoint')
+const GeoPoint = require('geo-point')
 const ObjectID = require('mongodb').ObjectID
 const { resolver, ioc } = require('../../../lib/iocResolver')
 const GE = require('@adonisjs/generic-exceptions')
@@ -539,6 +539,8 @@ class Model extends BaseModel {
     _(this.constructor.booleans)
       .filter((key) => values[key] !== undefined && typeof (this[util.getSetterName(key)]) !== 'function')
       .each((key) => { values[key] = this.constructor.formatBoolean(key, values[key]) })
+
+    return values
   }
 
   /**
@@ -660,11 +662,10 @@ class Model extends BaseModel {
      */
     this._setCreatedAt(this.$attributes)
     this._setUpdatedAt(this.$attributes)
-    this._formatFields(this.$attributes)
-
+    const attributes = this._formatFields(_.cloneDeep(this.$attributes))
     const result = await this.constructor
-      .query()
-      .insert(this.$attributes)
+    .query()
+    .insert(attributes)
 
     /**
      * Only set the primary key value when incrementing is
@@ -893,7 +894,7 @@ class Model extends BaseModel {
    */
   newUp (row) {
     this.$persisted = true
-    this.$attributes = row
+    this.fill(row)
     this._convertFieldToObjectInstances()
     this._syncOriginals()
   }
