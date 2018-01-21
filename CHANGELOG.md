@@ -1,3 +1,20 @@
+<a name="2.2.4"></a>
+## [2.2.4](https://github.com/duyluonglc/lucid-mongo/compare/v2.2.3...v2.2.4) (2018-01-21)
+
+
+### Bug Fixes
+
+* **EmbedsMany:** fix can not save with embedsMany relation ([d887b7c](https://github.com/duyluonglc/lucid-mongo/commit/d887b7c))
+* **FieldType:** fix field type does not work ([a5294f7](https://github.com/duyluonglc/lucid-mongo/commit/a5294f7))
+* **package:** update mquery to version 3.0.0 ([c609868](https://github.com/duyluonglc/lucid-mongo/commit/c609868))
+
+
+### Features
+
+* **relation:** add query method to relation ([c0c4b99](https://github.com/duyluonglc/lucid-mongo/commit/c0c4b99))
+
+
+
 <a name="2.2.3"></a>
 ## [2.2.3](https://github.com/duyluonglc/lucid-mongo/compare/v2.1.0...v2.2.3) (2018-01-10)
 
