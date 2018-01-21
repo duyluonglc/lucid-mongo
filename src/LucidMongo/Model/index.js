@@ -894,7 +894,7 @@ class Model extends BaseModel {
    */
   newUp (row) {
     this.$persisted = true
-    this.fill(row)
+    this.$attributes = row
     this._convertFieldToObjectInstances()
     this._syncOriginals()
   }
