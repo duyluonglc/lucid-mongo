@@ -542,18 +542,12 @@ class QueryBuilder {
       this._eagerLoads[args[0]] = args[1]
     } else if (args[1] && _.isObject(args[1])) {
       this._eagerLoads[args[0]] = (builder) => {
-        _.forEach(args[1], (value, key) => {
-          builder[key](value)
-        })
+        _.forEach(args[1], (value, key) => builder[key](value))
       }
     } else if (Array.isArray(args[0])) {
-      _.forEach(args[0], related => {
-        this.with(related)
-      })
+      _.forEach(args[0], related => this.with(related))
     } else if (_.isObject(args[0])) {
-      _.forEach(args[0], (scope, key) => {
-        this.with(key, scope)
-      })
+      _.forEach(args[0], (scope, key) => this.with(key, scope))
     } else {
       this._eagerLoads[args[0]] = (builder) => { }
     }

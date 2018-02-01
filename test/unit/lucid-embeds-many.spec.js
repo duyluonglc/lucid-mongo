@@ -116,7 +116,7 @@ test.group('Relations | Embeds many', (group) => {
     await ioc.use('Database').collection('users').insert({ username: 'virk', emails: [{ _id: 1, address: 'example@gmail.com' }, { _id: 2, address: 'example2@gmail.com' }] })
     const user = await User.first()
     assert.instanceOf(user, User)
-    const email = user.emails().find(1)
+    const email = user.emails().find('58ccb403f895502b84582c63')
     assert.instanceOf(email, Email)
     assert.equal(email.address, 'example@gmail.com')
   })

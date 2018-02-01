@@ -15,6 +15,7 @@ const GeoPoint = require('geo-point')
 const ObjectID = require('mongodb').ObjectID
 const VanillaSerializer = require('../Serializers/Vanilla')
 const { ioc } = require('../../../lib/iocResolver')
+const GE = require('@adonisjs/generic-exceptions')
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 /**
@@ -352,7 +353,16 @@ class BaseModel {
    * @static
    */
   static parseObjectID (key, value) {
-    return value instanceof ObjectID || !value ? value : ObjectID(value)
+    if (value instanceof ObjectID) {
+      return value
+    } else if (_.isString(value)) {
+      return ObjectID(value)
+    } else if (Array.isArray(value) || _.isPlainObject(value)) {
+      return _.map(value, item => this.parseObjectID(key, item))
+    }
+    throw GE
+      .InvalidArgumentException
+      .invalidParameter(`Can not convert ${JSON.stringify(value)} to mongo ObjectID`)
   }
 
   /**

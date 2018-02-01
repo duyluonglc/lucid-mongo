@@ -310,14 +310,14 @@ test.group('Relations | HasOne', (group) => {
      * Fake profile 1 for 2nd user
      */
     const fakeProfile1 = new Profile()
-    fakeProfile1._id = 1
+    fakeProfile1._id = '58ccb403f895502b84582c61'
     fakeProfile1.user_id = users.rows[1]._id
 
     /**
      * Fake profile 2 but for first user
      */
     const fakeProfile2 = new Profile()
-    fakeProfile2._id = 2
+    fakeProfile2._id = '58ccb403f895502b84582c62'
     fakeProfile2.user_id = users.rows[0]._id
 
     const { values: grouped } = users.first().profile().group([fakeProfile1, fakeProfile2])
@@ -352,14 +352,14 @@ test.group('Relations | HasOne', (group) => {
      * Fake profile 1 for 2nd user
      */
     const fakeProfile1 = new Profile()
-    fakeProfile1._id = 1
+    fakeProfile1._id = '58ccb403f895502b84582c61'
     fakeProfile1.user_id = users.rows[1]._id
 
     /**
      * Fake profile 2 but for first user
      */
     const fakeProfile2 = new Profile()
-    fakeProfile2._id = 2
+    fakeProfile2._id = '58ccb403f895502b84582c62'
     fakeProfile2.user_id = users.rows[0]._id
 
     /**
@@ -367,7 +367,7 @@ test.group('Relations | HasOne', (group) => {
      * only one relation, the latest one will be used
      */
     const fakeProfile3 = new Profile()
-    fakeProfile3._id = 3
+    fakeProfile3._id = '58ccb403f895502b84582c63'
     fakeProfile3.user_id = users.rows[0]._id
 
     const { values: grouped } = users.first().profile().group([fakeProfile1, fakeProfile2, fakeProfile3])

@@ -340,19 +340,26 @@ class Bill extends Model {
 ### Query relationships
 
 ```js
-  const user = await User.with('emails').find(1)
+  const users = await User.with('emails').fetch()
 
-  const user = await User.with('emails', query => query.where({ status: 'verified' })).find(1)
+  const user = await User.with('emails', query => {
+    query.where({ status: 'verified' })
+  }).first()
 
-  const user = await User.with(['emails', 'phones']).find(1)
+  const user = await User.with(['emails', 'phones']).first()
 
   const user = await User.with({ 
-    email: {where: {verified: true}, sort: '-age'}
-  }).find(1)
+    emails: { 
+      where: { verified: true }, 
+      sort: '-created_at' 
+    }
+  }).first()
 
-  const user = await User.with({email: query => {
-    query.where(active, true)
-  }}).find(1)
+  const user = await User.with({
+    emails: query => {
+      query.where(active, true)
+    }
+  }).first()
 
 ```
 
