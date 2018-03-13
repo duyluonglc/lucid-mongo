@@ -168,7 +168,12 @@ class LucidMongoSerializer {
    * @return {Object|Null}
    */
   async findByToken (token, type) {
+    if (!this._Token) {
+      return null
+    }
+
     debug('finding user for %s token', token)
+
     token = await this._Token.where({ token, type, is_revoked: false }).first()
     if (token) {
       const user = await token.user().first()
