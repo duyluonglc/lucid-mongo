@@ -115,7 +115,7 @@ class EmbedsOne extends BaseRelation {
     if (!relatedInstance.primaryKeyValue) {
       relatedInstance.primaryKeyValue = new ObjectID()
     }
-    this.parentInstance.$attributes[this.foreignKey] = relatedInstance.$attributes
+    this.parentInstance.$attributes[this.foreignKey] = relatedInstance._formatFields(relatedInstance.$attributes)
     await this.parentInstance.save()
     return relatedInstance
   }

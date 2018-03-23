@@ -109,16 +109,20 @@ class EmbedsMany extends BaseRelation {
 
     await this._persistParentIfRequired()
 
-    let embeds = this.parentInstance.$attributes[this.foreignKey] ? _.cloneDeep(this.parentInstance.$attributes[this.foreignKey]) : []
+    let embeds = this.parentInstance.$attributes[this.foreignKey]
+      ? _.cloneDeep(this.parentInstance.$attributes[this.foreignKey])
+      : []
+
     if (!Array.isArray(embeds)) {
       embeds = [embeds]
     }
     if (!relatedInstance.primaryKeyValue) {
       relatedInstance.primaryKeyValue = new ObjectID()
-      embeds.push(relatedInstance.$attributes)
+      embeds.push(relatedInstance._formatFields(relatedInstance.$attributes))
     } else {
       embeds = embeds.map(embed => {
-        return String(embed[this.primaryKey]) === String(relatedInstance.primaryKeyValue) ? relatedInstance.$attributes : embed
+        return String(embed[this.primaryKey]) === String(relatedInstance.primaryKeyValue)
+          ? relatedInstance._formatFields(relatedInstance.$attributes) : embed
       })
     }
     this.parentInstance[this.foreignKey] = embeds
