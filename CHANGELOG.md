@@ -1,3 +1,25 @@
+<a name="3.0.0"></a>
+# [3.0.0](https://github.com/duyluonglc/lucid-mongo/compare/v2.2.3...v3.0.0) (2018-03-23)
+
+
+### Bug Fixes
+
+* **document:** fix objectIDs typo ([5dce705](https://github.com/duyluonglc/lucid-mongo/commit/5dce705))
+* **embed:** format embed fields before save ([cfcaa44](https://github.com/duyluonglc/lucid-mongo/commit/cfcaa44))
+* **EmbedsMany:** fix can not save with embedsMany relation ([d887b7c](https://github.com/duyluonglc/lucid-mongo/commit/d887b7c))
+* **FieldType:** fix field type does not work ([a5294f7](https://github.com/duyluonglc/lucid-mongo/commit/a5294f7))
+* **newUp:** fix newUp run parse twice ([a9d4f1f](https://github.com/duyluonglc/lucid-mongo/commit/a9d4f1f))
+* **package:** update mquery to version 3.0.0 ([c609868](https://github.com/duyluonglc/lucid-mongo/commit/c609868))
+
+
+### Features
+
+* **FieldFormat:** parse array of ObjectID ([f7d2f58](https://github.com/duyluonglc/lucid-mongo/commit/f7d2f58))
+* **queryBuilder:** change pattern condition of where method ([0448566](https://github.com/duyluonglc/lucid-mongo/commit/0448566))
+* **relation:** add query method to relation ([c0c4b99](https://github.com/duyluonglc/lucid-mongo/commit/c0c4b99))
+
+
+
 <a name="2.2.5"></a>
 ## [2.2.5](https://github.com/duyluonglc/lucid-mongo/compare/v2.2.3...v2.2.5) (2018-01-21)
 
