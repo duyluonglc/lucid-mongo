@@ -332,32 +332,6 @@ test.group('Field geometry format', (group) => {
     assert.equal(users.first().$attributes.location.latitude, 1)
     assert.equal(users.first().$attributes.location.longitude, 2)
   })
-
-  test('Should convert geometry params as geometry when build query', async (assert) => {
-    class User extends Model {
-      static get geometries () {
-        return ['location']
-      }
-    }
-    User._bootIfNotBooted()
-    const query = User.where({
-      location: {
-        near: { latitude: 1, longitude: 2 }
-      },
-      is_active: true
-    })
-    assert.deepEqual(query.query._conditions, {
-      location: {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [2, 1]
-          }
-        }
-      },
-      is_active: true
-    })
-  })
 })
 
 test.group('Field boolean format', (group) => {
@@ -484,7 +458,7 @@ test.group('Field boolean format', (group) => {
     assert.equal(users.first().$attributes.is_active === true, true)
   })
 
-  test('Should convert boolean params as boolean when build query', async (assert) => {
+  test('Should convert non boolean params as boolean when build query', async (assert) => {
     class User extends Model {
       static get booleans () {
         return ['is_active']
@@ -494,6 +468,7 @@ test.group('Field boolean format', (group) => {
     const query = User.where({
       is_active: 1
     })
+
     assert.deepEqual(query.query._conditions, {
       is_active: true
     })
@@ -533,7 +508,7 @@ test.group('Field ObjectID format', (group) => {
     }
   }).timeout(0)
 
-  test('Should parse the ObjectID field when assign', async (assert) => {
+  test('Should parse the string to ObjectID field when assign', async (assert) => {
     class User extends Model {
       static get objectIDs () {
         return ['_id', 'group_id']
@@ -546,7 +521,20 @@ test.group('Field ObjectID format', (group) => {
     assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
   })
 
-  test('Should parse the ObjectID field when assign by constructor', async (assert) => {
+  test('Should keep the ObjectID field when assign', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = new User()
+    user.group_id = ObjectID('5a40077430f075256427a147')
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should parse the string field to ObjectID when assign by constructor', async (assert) => {
     class User extends Model {
       static get objectIDs () {
         return ['_id', 'group_id']
@@ -560,7 +548,21 @@ test.group('Field ObjectID format', (group) => {
     assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
   })
 
-  test('Should parse the ObjectID field when fill', async (assert) => {
+  test('Should keep the ObjectID field when assign by constructor', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = new User({
+      group_id: ObjectID('5a40077430f075256427a147')
+    })
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should parse the string field to ObjectID when fill', async (assert) => {
     class User extends Model {
       static get objectIDs () {
         return ['_id', 'group_id']
@@ -575,7 +577,22 @@ test.group('Field ObjectID format', (group) => {
     assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
   })
 
-  test('Should store ObjectID field as ObjectID', async (assert) => {
+  test('Should keep the ObjectID field when fill', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = new User()
+    user.fill({
+      group_id: ObjectID('5a40077430f075256427a147')
+    })
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should store string field as ObjectID', async (assert) => {
     class User extends Model {
       static get objectIDs () {
         return ['_id', 'group_id']
@@ -592,7 +609,7 @@ test.group('Field ObjectID format', (group) => {
     assert.equal(String(newUser.group_id), '5a40077430f075256427a147')
   })
 
-  test('Should update ObjectID field as ObjectID', async (assert) => {
+  test('Should update string field as ObjectID', async (assert) => {
     class User extends Model {
       static get objectIDs () {
         return ['_id', 'group_id']
@@ -612,7 +629,27 @@ test.group('Field ObjectID format', (group) => {
     assert.equal(String(newUser.group_id), '5a40077430f075256427a148')
   })
 
-  test('Should convert ObjectID params as ObjectID when build query', async (assert) => {
+  test('Should keep ObjectID field as ObjectID', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    await User.create({
+      group_id: '5a40077430f075256427a147'
+    })
+    const user = await User.first()
+    user.group_id = ObjectID('5a40077430f075256427a148')
+    await user.save()
+    assert.instanceOf(user.$attributes.group_id, ObjectID)
+    assert.equal(String(user.$attributes.group_id), '5a40077430f075256427a148')
+    const newUser = await ioc.use('Database').collection('users').findOne()
+    assert.instanceOf(newUser.group_id, ObjectID)
+    assert.equal(String(newUser.group_id), '5a40077430f075256427a148')
+  })
+
+  test('Should convert string params as ObjectID when build query', async (assert) => {
     class User extends Model {
       static get objectIDs () {
         return ['_id', 'group_id']
@@ -624,5 +661,33 @@ test.group('Field ObjectID format', (group) => {
     })
     assert.instanceOf(query.query._conditions.group_id, ObjectID)
     assert.equal(String(query.query._conditions.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should keep ObjectID params as ObjectID when build query', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({
+      group_id: ObjectID('5a40077430f075256427a147')
+    })
+    assert.instanceOf(query.query._conditions.group_id, ObjectID)
+    assert.equal(String(query.query._conditions.group_id), '5a40077430f075256427a147')
+  })
+
+  test('Should convert array of string params as ObjectID when build query', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where('group_id').in(['5a40077430f075256427a147', '5a40077430f075256427a148'])
+    assert.instanceOf(query.query._conditions.group_id.$in[0], ObjectID)
+    assert.instanceOf(query.query._conditions.group_id.$in[1], ObjectID)
+    assert.equal(String(query.query._conditions.group_id.$in[0]), '5a40077430f075256427a147')
+    assert.equal(String(query.query._conditions.group_id.$in[1]), '5a40077430f075256427a148')
   })
 })

@@ -12,7 +12,7 @@
 const _ = require('lodash')
 const query = require('mquery')
 const debug = require('debug')('mquery')
-const GeoPoint = require('geo-point')
+// const GeoPoint = require('geo-point')
 const EagerLoad = require('../EagerLoad')
 // const RelationsParser = require('../Relations/Parser')
 const CE = require('../../Exceptions')
@@ -641,6 +641,13 @@ class QueryBuilder {
       'in',
       'nin',
       'all',
+      'near',
+      'maxDistance',
+      'mod',
+      'includes',
+      'polygon',
+      'elemMatch',
+      'geometry',
       'intersects'
     ]
   }
@@ -660,93 +667,6 @@ class QueryBuilder {
         return this
       }
     }
-
-    const near = this.query.near
-
-    this.query.near = (condition, maxDistance, minDistance) => {
-      let center = null
-      if (this.Model.geometries && this.Model.geometries.includes(this.query._path)) {
-        if (condition instanceof GeoPoint) {
-          center = condition.toGeoJSON()
-        } else if (Array.isArray(condition)) {
-          center = GeoPoint.fromLngLatArray(condition).toGeoJSON()
-        } else if (_.isPlainObject(condition) && condition.latitude && condition.longitude) {
-          center = GeoPoint.fromObject(condition).toGeoJSON()
-        } else {
-          center = condition
-        }
-      } else {
-        center = Array.isArray(condition) ? condition : [condition.longitude, condition.latitude]
-      }
-      const param = { center }
-      if (maxDistance !== undefined) {
-        param.maxDistance = maxDistance
-      }
-      if (minDistance !== undefined) {
-        param.minDistance = minDistance
-      }
-      near.apply(this.query, [param])
-      return this
-    }
-
-    this.query.nearSphere = (condition, maxDistance, minDistance) => {
-      let center = null
-      if (this.Model.geometries && this.Model.geometries.includes(this.query._path)) {
-        if (condition instanceof GeoPoint) {
-          center = condition.toGeoJSON()
-        } else if (Array.isArray(condition)) {
-          center = GeoPoint.fromLngLatArray(condition).toGeoJSON()
-        } else if (_.isPlainObject(condition) && condition.latitude && condition.longitude) {
-          center = GeoPoint.fromObject(condition).toGeoJSON()
-        } else {
-          center = condition
-        }
-      } else {
-        center = Array.isArray(condition) ? condition : [condition.longitude, condition.latitude]
-      }
-      center.spherical = true
-      const param = { center }
-      if (maxDistance !== undefined) {
-        param.maxDistance = maxDistance
-      }
-      if (minDistance !== undefined) {
-        param.minDistance = minDistance
-      }
-      near.apply(this.query, [param])
-      return this
-    }
-  }
-
-  /**
-   * Support Methods
-   *
-   * @readonly
-   * @static
-   * @memberof QueryBuilder
-   */
-  static get supportMethods () {
-    return [
-      'all',
-      'exists',
-      'elemMatch',
-      'eq',
-      'gt',
-      'gte',
-      'lt',
-      'lte',
-      'in',
-      'ne',
-      'nin',
-      'nor',
-      'regex',
-      'size',
-      'mod',
-      'slice',
-      'intersects',
-      'regex',
-      'maxDistance',
-      'minDistance'
-    ]
   }
 
   /**
@@ -757,42 +677,34 @@ class QueryBuilder {
    */
   where () {
     if (_.isPlainObject(arguments[0])) {
-      _.forEach(arguments[0], (conditions, key) => {
-        if (key === 'and' || key === 'or' || key === 'nor') {
+      let queryObject = arguments[0]
+      for (const key in queryObject) {
+        const conditions = queryObject[key]
+        if (key === '$and' || key === '$or' || key === '$nor') {
           if (!Array.isArray(conditions)) {
             throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
           }
-          let queries = []
-          _.forEach(conditions, (condition) => {
-            queries.push(query().where(condition)._conditions)
-          })
-          this.query[key](queries)
+          let formatedConditions = []
+          for (const condition of conditions) {
+            formatedConditions.push(query().where(condition)._conditions)
+          }
+          queryObject[key] = formatedConditions
         } else if (_.isPlainObject(conditions)) {
-          _.forEach(conditions, (c, k) => {
-            if (k === 'near') {
-              this.query.where(key).near(c, conditions.maxDistance, conditions.minDistance)
-            } else if (k === 'nearSphere') {
-              this.query.where(key).nearSphere(c, conditions.maxDistance, conditions.minDistance)
-            } else if (this.constructor.supportMethods.includes(k)) {
-              if (k !== 'maxDistance' && k !== 'minDistance') {
-                this.query.where(key)[k](c)
-              }
-            } else {
-              throw new CE.RuntimeException(`Method "$${k}" is not support by query builder`)
+          for (const subKey in conditions) {
+            const reg = /^\$(eq|ne|gt|gte|lt|lte|in|nin|all|near|intersects|elemMatch|includes)$/
+            if (reg.test(subKey)) {
+              queryObject[key][subKey] = this.Model.formatField(key, queryObject[key][subKey])
             }
-          })
-        } else {
-          const value = this.Model.formatField(key, conditions)
-          this.query.where(key, value)
+          }
         }
-      })
+        queryObject[key] = this.Model.formatField(key, queryObject[key])
+      }
+      this.query.where(queryObject)
     } else if (_.isFunction(arguments[0])) {
       arguments[0].bind(this).call()
     } else {
       if (arguments.length === 2) {
-        const key = arguments[0]
-        const value = this.Model.formatField(arguments[0], arguments[1])
-        this.query.where(key, value)
+        this.query.where(arguments[0]).eq(arguments[1])
       } else if (arguments.length === 3) {
         switch (arguments[1]) {
           case '=':

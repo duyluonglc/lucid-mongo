@@ -61,7 +61,7 @@ test.group('Model', (group) => {
     class User extends Model { }
     User._bootIfNotBooted()
     const query = User.query()
-    assert.deepEqual(query.query._conditions, { })
+    assert.deepEqual(query.query._conditions, {})
   })
 
   test('define different collection for a model', (assert) => {
@@ -1517,24 +1517,24 @@ test.group('Lucid | Query builder', (group) => {
   test('query where and', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const query = User.where({ and: [{ name: 'vik' }, { age: { gte: 30 } }] })
-    assert.deepEqual(query.query._conditions, { $and: [{ name: 'vik' }, { age: { gte: 30 } }] })
+    const query = User.where({ $and: [{ name: 'vik' }, { age: { $gte: 30 } }] })
+    assert.deepEqual(query.query._conditions, { $and: [{ name: 'vik' }, { age: { $gte: 30 } }] })
   })
 
   test('query where or', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const query = User.where({ or: [{ name: 'vik' }, { age: { gte: 30 } }] })
-    assert.deepEqual(query.query._conditions, { $or: [{ name: 'vik' }, { age: { gte: 30 } }] })
+    const query = User.where({ $or: [{ name: 'vik' }, { age: { $gte: 30 } }] })
+    assert.deepEqual(query.query._conditions, { $or: [{ name: 'vik' }, { age: { $gte: 30 } }] })
   })
 
   test('query where near', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const query = User.where({ location: { near: { latitude: 1, longitude: 2 }, maxDistance: 1000 } })
+    const query = User.where({ location: { $near: { latitude: 1, longitude: 2 }, $maxDistance: 1000 } })
     assert.deepEqual(query.query._conditions, {
       location: {
-        $near: [2, 1],
+        $near: { latitude: 1, longitude: 2 },
         $maxDistance: 1000
       }
     })
@@ -1545,7 +1545,18 @@ test.group('Lucid | Query builder', (group) => {
       static get geometries () { return ['location'] }
     }
     User._bootIfNotBooted()
-    const query = User.where({ location: { nearSphere: { latitude: 1, longitude: 2 }, maxDistance: 1000 } })
+    const query = User.where({
+      location: {
+        $near: {
+          '$geometry': {
+            'type': 'Point',
+            'coordinates': [2, 1],
+            'spherical': true
+          },
+          $maxDistance: 1000
+        }
+      }
+    })
     assert.deepEqual(query.query._conditions, {
       'location': {
         '$near': {
@@ -1560,11 +1571,11 @@ test.group('Lucid | Query builder', (group) => {
     })
   })
 
-  test('through exception if method does not support', (assert) => {
+  test('query where with full text search', (assert) => {
     class User extends Model { }
     User._bootIfNotBooted()
-    const fn = () => User.where({ name: { foo: 1 } })
-    assert.throw(fn, 'Method "$foo" is not support by query builder')
+    const query = User.where({ name: { $search: 'vik' } })
+    assert.deepEqual(query.query._conditions, { name: { $search: 'vik' } })
   })
 
   test('query where with callback', (assert) => {
@@ -1917,7 +1928,7 @@ test.group('Lucid | Aggregate', (group) => {
     await ioc.use('Database').collection('users').insert(users)
     const names = await User.distinct('name')
     assert.deepEqual(names, ['vik', 'nik'])
-    const names2 = await User.where({ score: { lt: 30 } }).distinct('name')
+    const names2 = await User.where({ score: { $lt: 30 } }).distinct('name')
     assert.deepEqual(names2, ['vik'])
   })
 })

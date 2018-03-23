@@ -129,7 +129,7 @@ test.group('Relations | Has Many', (group) => {
     assert.deepEqual(user.getRelated('cars').rows.map((car) => car.$parent), ['User', 'User'])
   })
 
-  test('add constraints when eagerloading', async (assert) => {
+  test('add constraints when eager loading', async (assert) => {
     class Car extends Model {
     }
 
@@ -150,6 +150,34 @@ test.group('Relations | Has Many', (group) => {
 
     const users = await User.query().with('cars', (builder) => {
       builder.where('model', '>', '2000')
+    }).fetch()
+    const user = users.first()
+    assert.equal(user.getRelated('cars').size(), 1)
+    assert.equal(user.getRelated('cars').rows[0].name, 'audi')
+  })
+
+  test('add constraints with object eager loading', async (assert) => {
+    class Car extends Model {
+    }
+
+    class User extends Model {
+      cars () {
+        return this.hasMany(Car)
+      }
+    }
+
+    Car._bootIfNotBooted()
+    User._bootIfNotBooted()
+
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('cars').insert([
+      { user_id: rs.insertedIds[0], name: 'merc', model: '1990', is_active: false },
+      { user_id: rs.insertedIds[0], name: 'audi', model: '2001', is_active: true }
+    ])
+    const users = await User.query().with({
+      cars: (builder) => {
+        builder.where('is_active', true)
+      }
     }).fetch()
     const user = users.first()
     assert.equal(user.getRelated('cars').size(), 1)
@@ -320,7 +348,11 @@ test.group('Relations | Has Many', (group) => {
       { car_id: rsCar.insertedIds[1], part_name: 'engine' }
     ])
 
-    const user = await User.query().with('cars.parts', (builder) => builder.where('part_name', 'engine')).first()
+    const user = await User.query()
+      .with('cars.parts', (builder) => {
+        builder.where('part_name', 'engine')
+      })
+      .first()
     assert.equal(user.getRelated('cars').size(), 2)
     assert.equal(user.getRelated('cars').first().getRelated('parts').size(), 1)
     assert.equal(user.getRelated('cars').last().getRelated('parts').size(), 1)
@@ -359,7 +391,9 @@ test.group('Relations | Has Many', (group) => {
     ])
 
     const user = await User.query().with('cars', (builder) => {
-      builder.where('name', 'audi').with('parts', (builder) => builder.where('part_name', 'engine'))
+      builder.where('name', 'audi').with('parts', (builder) => {
+        builder.where('part_name', 'engine')
+      })
     }).first()
 
     assert.equal(user.getRelated('cars').size(), 1)

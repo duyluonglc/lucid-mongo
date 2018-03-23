@@ -191,14 +191,12 @@ class BaseModel {
    * @return {String}
    */
   static formatObjectID (key, value) {
-    if (value instanceof ObjectID) {
-      return value
-    } else if (_.isString(value)) {
+    if (_.isString(value) && ObjectID.isValid(value)) {
       return ObjectID(value)
-    } else if (Array.isArray(value) || _.isPlainObject(value)) {
+    } else if (Array.isArray(value)) {
       return _.map(value, item => this.formatObjectID(key, item))
     }
-    return null
+    return value
   }
 
   /**
@@ -212,7 +210,11 @@ class BaseModel {
    * @return {String}
    */
   static formatBoolean (key, value) {
-    return !!value
+    if (_.isObject(value)) {
+      return value
+    } else {
+      return !!value
+    }
   }
 
   /**
