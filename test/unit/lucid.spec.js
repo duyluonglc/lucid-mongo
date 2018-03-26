@@ -1146,7 +1146,7 @@ test.group('Model', (group) => {
     try {
       await User.createMany({ username: 'virk' })
     } catch ({ message }) {
-      assert.equal(message, 'E_INVALID_PARAMETER: User.createMany expects an array of values instead received object')
+      assert.match(message, /E_INVALID_PARAMETER: User.createMany expects an array of values instead received object/)
     }
   })
 
@@ -1158,7 +1158,7 @@ test.group('Model', (group) => {
     try {
       await User.findOrFail(1)
     } catch ({ message }) {
-      assert.equal(message, 'E_MISSING_DATABASE_ROW: Cannot find database row for User model')
+      assert.match(message, /E_MISSING_DATABASE_ROW: Cannot find database row for User model/)
     }
   })
 
@@ -1170,7 +1170,7 @@ test.group('Model', (group) => {
     try {
       await User.findByOrFail('username', 'virk')
     } catch ({ message }) {
-      assert.equal(message, 'E_MISSING_DATABASE_ROW: Cannot find database row for User model')
+      assert.match(message, /E_MISSING_DATABASE_ROW: Cannot find database row for User model/)
     }
   })
 
@@ -1182,7 +1182,7 @@ test.group('Model', (group) => {
     try {
       await User.firstOrFail()
     } catch ({ message }) {
-      assert.equal(message, 'E_MISSING_DATABASE_ROW: Cannot find database row for User model')
+      assert.match(message, /E_MISSING_DATABASE_ROW: Cannot find database row for User model/)
     }
   })
 
@@ -1213,7 +1213,7 @@ test.group('Model', (group) => {
     try {
       user.username = 'foo'
     } catch ({ message }) {
-      assert.equal(message, 'E_DELETED_MODEL: Cannot edit deleted model instance for User model')
+      assert.match(message, /E_DELETED_MODEL: Cannot edit deleted model instance for User model/)
     }
   })
 
@@ -1364,7 +1364,7 @@ test.group('Model', (group) => {
     try {
       await user.reload()
     } catch ({ message }) {
-      assert.equal(message, 'E_RUNTIME_ERROR: Cannot reload a deleted model instance')
+      assert.match(message, /E_RUNTIME_ERROR: Cannot reload a deleted model instance/)
     }
   })
 

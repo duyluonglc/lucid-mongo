@@ -114,8 +114,8 @@ class MorphMany extends BaseRelation {
    */
   async eagerLoad (rows) {
     const relatedInstances = await this.relatedQuery
-    .where(this.determiner, this.parentInstance.constructor.name)
-    .whereIn(this.localKey, this.mapValues(rows)).fetch()
+      .where(this.determiner, this.parentInstance.constructor.name)
+      .whereIn(this.localKey, this.mapValues(rows)).fetch()
     return this.group(relatedInstances.rows)
   }
 

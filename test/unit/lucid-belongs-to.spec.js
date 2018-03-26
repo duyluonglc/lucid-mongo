@@ -395,7 +395,7 @@ test.group('Relations | Belongs To', (group) => {
     try {
       await profile.user().dissociate()
     } catch ({ message }) {
-      assert.equal(message, 'E_UNSAVED_MODEL_INSTANCE: Cannot dissociate relationship since model instance is not persisted')
+      assert.match(message, /E_UNSAVED_MODEL_INSTANCE: Cannot dissociate relationship since model instance is not persisted/)
     }
   })
 
