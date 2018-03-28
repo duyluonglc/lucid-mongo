@@ -10,10 +10,11 @@
 */
 
 const test = require('japa')
-const Hooks = require('../../src/LucidMongo/Hooks')
-const helpers = require('./helpers')
 const { ioc } = require('@adonisjs/fold')
 const { setupResolver } = require('@adonisjs/sink')
+
+const Hooks = require('../../src/LucidMongo/Hooks')
+const helpers = require('./helpers')
 
 test.group('Hooks', (group) => {
   group.before(() => {
@@ -26,21 +27,21 @@ test.group('Hooks', (group) => {
 
   test('it should add handler for a hook', (assert) => {
     const hooks = new Hooks()
-    const fn = function () {}
+    const fn = function () { }
     hooks.addHandler('create', fn)
     assert.deepEqual(hooks._handlers, { create: [{ handler: fn, name: undefined }] })
   })
 
   test('it should add named handler for a hook', (assert) => {
     const hooks = new Hooks()
-    const fn = function () {}
+    const fn = function () { }
     hooks.addHandler('create', fn, 'hashPassword')
     assert.deepEqual(hooks._handlers, { create: [{ handler: fn, name: 'hashPassword' }] })
   })
 
   test('it should remove a named handler', (assert) => {
     const hooks = new Hooks()
-    const fn = function () {}
+    const fn = function () { }
     hooks.addHandler('create', fn, 'hashPassword')
     hooks.addHandler('create', fn, 'doSomething')
     assert.deepEqual(hooks._handlers, {
@@ -53,14 +54,14 @@ test.group('Hooks', (group) => {
 
   test('throw exception when trying to remove without name', (assert) => {
     const hooks = new Hooks()
-    hooks.addHandler('create', function () {}, 'hashPassword')
+    hooks.addHandler('create', function () { }, 'hashPassword')
     const fn = () => hooks.removeHandler('create')
-    assert.throw(fn, 'E_MISSING_PARAMETER: Missing parameter name expected by Hook.removeHandler as 2nd parameter')
+    assert.throw(fn, /E_MISSING_PARAMETER: Missing parameter name expected by Hook.removeHandler method as 2nd parameter/)
   })
 
   test('it should remove all handlers', (assert) => {
     const hooks = new Hooks()
-    const fn = function () {}
+    const fn = function () { }
     hooks.addHandler('create', fn, 'hashPassword')
     hooks.addHandler('create', fn, 'doSomething')
     assert.deepEqual(hooks._handlers, {

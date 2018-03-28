@@ -81,7 +81,7 @@ test.group('Seed Database', (group) => {
 
   test('run seeds in sequence', async (assert) => {
     ace.addCommand(Seed)
-    const g = global || GLOBAL
+    const g = global
     g.stack = []
 
     await fs.outputFile(path.join(__dirname, 'database/seeds/bar.js'), `
@@ -89,7 +89,7 @@ test.group('Seed Database', (group) => {
         run () {
           return new Promise((resolve) => {
             setTimeout(() => {
-              (global || GLOBAL).stack.push('bar')
+              (global).stack.push('bar')
               resolve()
             }, 10)
           })
@@ -101,7 +101,7 @@ test.group('Seed Database', (group) => {
     await fs.outputFile(path.join(__dirname, 'database/seeds/baz.js'), `
       class Seed {
         run () {
-          (global || GLOBAL).stack.push('baz')
+          (global).stack.push('baz')
         }
       }
       module.exports = Seed
@@ -113,7 +113,7 @@ test.group('Seed Database', (group) => {
 
   test('run only selected files', async (assert) => {
     ace.addCommand(Seed)
-    const g = global || GLOBAL
+    const g = global
     g.stack = []
 
     await fs.outputFile(path.join(__dirname, 'database/seeds/bar.js'), `
@@ -121,7 +121,7 @@ test.group('Seed Database', (group) => {
         run () {
           return new Promise((resolve) => {
             setTimeout(() => {
-              (global || GLOBAL).stack.push('bar')
+              (global).stack.push('bar')
               resolve()
             }, 10)
           })
@@ -133,7 +133,7 @@ test.group('Seed Database', (group) => {
     await fs.outputFile(path.join(__dirname, 'database/seeds/foo.js'), `
       class Seed {
         run () {
-          (global || GLOBAL).stack.push('foo')
+          (global).stack.push('foo')
         }
       }
       module.exports = Seed
@@ -145,7 +145,7 @@ test.group('Seed Database', (group) => {
 
   test('run only js files', async (assert) => {
     ace.addCommand(Seed)
-    const g = global || GLOBAL
+    const g = global
     g.stack = []
 
     await fs.outputFile(path.join(__dirname, 'database/seeds/bar.js'), `
@@ -153,7 +153,7 @@ test.group('Seed Database', (group) => {
         run () {
           return new Promise((resolve) => {
             setTimeout(() => {
-              (global || GLOBAL).stack.push('bar')
+              (global).stack.push('bar')
               resolve()
             }, 10)
           })
@@ -165,7 +165,7 @@ test.group('Seed Database', (group) => {
     await fs.outputFile(path.join(__dirname, 'database/seeds/.bar.js.swp'), `
       class Seed {
         run () {
-          (global || GLOBAL).stack.push('foo')
+          (global).stack.push('foo')
         }
       }
       module.exports = Seed

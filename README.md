@@ -39,12 +39,29 @@ adonis install lucid-mongo
 ```
 
 ### Breaking update
-| Adonis version  | Lucid Mongo version |
-| ------------- | ------------- |
-| 3.x.x  | 1.x.x  |
-| 4.x.x  | 2.x.x  |
+| Adonis version | Lucid Mongo version |
+| -------------- | ------------------- |
+| 3.x.x          | 1.x.x               |
+| 4.x.x          | 2.x.x               |
+| 4.x.x          | 3.x.x               |
 
+- From version 2 lucid-mongo use async, await instead generator function which used in version 1
 [See the doc of v1.x here](https://github.com/duyluonglc/lucid-mongo/blob/1.x/README.md)
+
+- From version 3 change pattern of the condition object when passing to where method
+```js
+  // version 2 style
+  const users =  await User
+    .where({ or: [{ age: { gte: 18, lte: 30 }}, { is_blocked: { exists: false } }] })
+    .sort({ age: -1 })
+    .fetch()
+    
+  // version 3 style
+  const users =  await User
+    .where({ $or: [{ age: { $gte: 18, $lte: 30 }}, { is_blocked: { $exists: false } }] })
+    .sort({ age: -1 })
+    .fetch()
+```
 
 Make sure to register the lucid provider to make use of `Database` and `LucidMongo` models. The providers are registered inside `start/app.js`
 
@@ -206,9 +223,9 @@ const users =  await User.where({ name: 'peter' })
   .limit(10).skip(20).fetch()
 
 const users =  await User.where({
-  or: [
-    { gender: 'female', age: { gte: 20 } }, 
-    { gender: 'male', age: { gte: 22 } }
+  $or: [
+    { gender: 'female', age: { $gte: 20 } }, 
+    { gender: 'male', age: { $gte: 22 } }
   ]
 }).fetch()
 
@@ -219,8 +236,8 @@ const user =  await User
   .first()
 
 const users =  await User
-  .where({ age: { gte: 18 } })
-  .sort({age: -1})
+  .where({ age: { $gte: 18 } })
+  .sort({ age: -1 })
   .fetch()
 
 const users =  await User
@@ -236,10 +253,18 @@ const users =  await User.where(function() {
 }).fetch()
 
 
-// to query geo near you need declare field type as geometry and add 2d or 2dsphere index in migration file
-const images = await Image.where({location: {near: {lat: 1, lng: 1}, maxDistance: 5000}}).fetch()
+// to query geo near you need add 2d or 2dsphere index in migration file
+const images = await Image
+  .where(location)
+  .near({ center: [1, 1] })
+  .maxDistance(5000)
+  .fetch()
 
-const images = await Image.where({location: {nearSphere: {lat: 1, lng: 1}, maxDistance: 500}}).fetch()
+const images = await Image
+  .where(location)
+  .near({ center: [1, 1], sphere: true })
+  .maxDistance(5000)
+  .fetch()
 ```
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
@@ -340,19 +365,26 @@ class Bill extends Model {
 ### Query relationships
 
 ```js
-  const user = await User.with('emails').find(1)
+  const users = await User.with('emails').fetch()
 
-  const user = await User.with('emails', query => query.where({ status: 'verified' })).find(1)
+  const user = await User.with('emails', query => {
+    query.where({ status: 'verified' })
+  }).first()
 
-  const user = await User.with(['emails', 'phones']).find(1)
+  const user = await User.with(['emails', 'phones']).first()
 
   const user = await User.with({ 
-    email: {where: {verified: true}, sort: '-age'}
-  }).find(1)
+    emails: { 
+      where: { verified: true }, 
+      sort: '-created_at' 
+    }
+  }).first()
 
-  const user = await User.with({email: query => {
-    query.where(active, true)
-  }}).find(1)
+  const user = await User.with({
+    emails: query => {
+      query.where(active, true)
+    }
+  }).first()
 
 ```
 
@@ -393,23 +425,21 @@ up () {
 The objectId fields will be converted to mongodb.ObjectID before save to db.
 ```js
 class Article extends LucidMongo {
-  static get objectIdFields() { return ['_id', 'categoryId'] } //default return ['_id']
+  static get objectIDs() { return ['_id', 'categoryId'] } //default return ['_id']
 }
 ```
 The where query conditions will be converted to objectId too
 ```js
 const article = await Article.find('58ccb403f895502b84582c63')
 const articles = await Article
-  .where({ 
-    department_id: { in: ['58ccb403f895502b84582c63', '58ccb403f895502b84582c63'] } 
-  })
+  .where({ department_id: '58ccb403f895502b84582c63' })
   .fetch()
 ```
 
 > Type of `date`
 ```js
 class Staff extends LucidMongo {
-  static get dateFields() { return ['dob'] }
+  static get dates() { return ['dob'] }
 }
 ```
 The field declare as date will be converted to moment js object after get from db
@@ -417,21 +447,21 @@ The field declare as date will be converted to moment js object after get from d
 const staff = await Staff.first()
 const yearAgo = staff.dob.fromNow()
 ```
-You can set attribute of model as moment js object, field will be converted to date before save to db
+You can set attribute of model as moment|Date|string, this field will be converted to date before save to db
 ```js
 staff.dob = moment(request.input('dob'))
 ```
 The where query conditions will be converted to date too
 ```js
 const user = await User
-  .where({ created_at: { gte: '2017-01-01' } })
+  .where({ created_at: { $gte: '2017-01-01' } })
   .fetch()
 ```
 Date type is UTC timezone
 > Type of `geometry`
 ```js
 class Image extends LucidMongo {
-  static get geoFields() { return ['location'] }
+  static get geometries() { return ['location'] }
 }
 ```
 When declare field type as geometry the field will be transformed to geoJSON type
@@ -439,19 +469,25 @@ When declare field type as geometry the field will be transformed to geoJSON typ
 ```js
 const image = await Image.create({
   fileName: fileName,
-  location: {lat: 1, lng: 1}
+  location: {
+    latitude: 1,
+    longitude: 2
+  }
 })
 ```
 Result:
 ```json
-{ "type" : "Point", "coordinates" : [ 1, 1 ] }
+{ "type" : "Point", "coordinates" : [ 2, 1 ] }
 ```
 After get from db it will be retransformed to 
 ```js
-{lat: 1, lng: 1}
+{
+  latitude: 1,
+  longitude: 2
+}
 ```
 
-### Use query builder
+### Use mquery builder
 ```js
   const Database = use('Database')
   const db = await Database.connection('mongodb')
@@ -459,7 +495,7 @@ After get from db it will be retransformed to
   const users = await db.collection('users').find()
 
   const phone = await db.collection('phones')
-    .where({userId: '58ccb403f895502b84582c63'}).findOne()
+    .where({userId: ObjectID('58ccb403f895502b84582c63')}).findOne()
     
   const count = await db.collection('user')
     .where({active: true}).count()

@@ -618,7 +618,7 @@ test.group('Relations | Refer Many', (group) => {
     try {
       await user.pictures().createMany({ name: 'mercedes', model: '1992' })
     } catch ({ message }) {
-      assert.equal(message, 'E_INVALID_PARAMETER: referMany.createMany expects an array of related model instances instead received object')
+      assert.match(message, /E_INVALID_PARAMETER: referMany.createMany expects an array of related model instances instead received object/)
     }
   })
 
@@ -643,7 +643,7 @@ test.group('Relations | Refer Many', (group) => {
     try {
       await user.pictures().saveMany(new Picture())
     } catch ({ message }) {
-      assert.equal(message, 'E_INVALID_PARAMETER: referMany.saveMany expects an array of related model instances instead received object')
+      assert.match(message, /E_INVALID_PARAMETER: referMany.saveMany expects an array of related model instances instead received object/)
     }
   })
 

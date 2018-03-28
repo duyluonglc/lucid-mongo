@@ -15,7 +15,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const { ioc } = require('@adonisjs/fold')
 const { Config } = require('@adonisjs/sink')
-
+const ObjectID = require('mongodb').ObjectID
 const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
@@ -113,12 +113,12 @@ test.group('Relations | Embeds many', (group) => {
     User._bootIfNotBooted()
     Email._bootIfNotBooted()
 
-    await ioc.use('Database').collection('users').insert({ username: 'virk', emails: [{ _id: 1, address: 'example@gmail.com' }, { _id: 2, address: 'example2@gmail.com' }] })
+    await ioc.use('Database').collection('users').insert({ username: 'virk', emails: [{ _id: ObjectID(), address: 'example@gmail.com' }, { _id: ObjectID(), address: 'example2@gmail.com' }] })
     const user = await User.first()
     assert.instanceOf(user, User)
-    const email = user.emails().find(1)
+    const email = user.emails().find(user.$attributes.emails[1]._id)
     assert.instanceOf(email, Email)
-    assert.equal(email.address, 'example@gmail.com')
+    assert.equal(email.address, 'example2@gmail.com')
   })
 
   test('through exception when call paginate', async (assert) => {
@@ -252,6 +252,92 @@ test.group('Relations | Embeds many', (group) => {
     assert.equal(email.address, 'example@gmail.com')
     await user.reload()
     assert.lengthOf(user.$attributes.emails, 1)
+  })
+
+  test('call hooks when create new relation', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      emails () {
+        return this.embedsMany(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    const fn = async function (instance) {
+      assert.instanceOf(instance, Email)
+    }
+
+    Email.addHook('beforeCreate', fn)
+    Email.addHook('afterCreate', fn)
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    await user.emails().create({ address: 'example@gmail.com' })
+  })
+
+  test('update existing relation', async (assert) => {
+    class User extends Model {
+      emails () {
+        return this.embedsMany(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    await user.emails().create({ address: 'example@gmail1.com' })
+    await user.emails().create({ address: 'example@gmail2.com' })
+    const email = await user.emails().first()
+    email.merge({ enabled: true })
+    await user.emails().save(email)
+    await user.reload()
+    assert.lengthOf(user.$attributes.emails, 2)
+    const emails = await user.emails().fetch()
+    assert.equal(emails.first().enabled, true)
+    assert.equal(emails.last().enabled, undefined)
+  })
+
+  test('call hooks when create new relation', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      emails () {
+        return this.embedsMany(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    const fn = async function (instance) {
+      assert.instanceOf(instance, Email)
+    }
+
+    Email.addHook('beforeUpdate', fn)
+    Email.addHook('afterUpdate', fn)
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    await user.emails().create({ address: 'example@gmail1.com' })
+    await user.emails().create({ address: 'example@gmail2.com' })
+    const email = await user.emails().first()
+    email.merge({ enabled: true })
+    await user.emails().save(email)
   })
 
   test('delete a relation', async (assert) => {

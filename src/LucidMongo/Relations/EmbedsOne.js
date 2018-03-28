@@ -113,10 +113,20 @@ class EmbedsOne extends BaseRelation {
     await this._persistParentIfRequired()
 
     if (!relatedInstance.primaryKeyValue) {
+      await this.RelatedModel.$hooks.before.exec('create', relatedInstance)
       relatedInstance.primaryKeyValue = new ObjectID()
+      relatedInstance._setCreatedAt(relatedInstance.$attributes)
+      relatedInstance._setUpdatedAt(relatedInstance.$attributes)
+      this.parentInstance.$attributes[this.foreignKey] = relatedInstance._formatFields(relatedInstance.$attributes)
+      await this.parentInstance.save()
+      await this.RelatedModel.$hooks.after.exec('create', relatedInstance)
+    } else {
+      await this.RelatedModel.$hooks.before.exec('update', relatedInstance)
+      relatedInstance._setUpdatedAt(relatedInstance.$attributes)
+      this.parentInstance.$attributes[this.foreignKey] = relatedInstance._formatFields(relatedInstance.$attributes)
+      await this.parentInstance.save()
+      await this.RelatedModel.$hooks.after.exec('update', relatedInstance)
     }
-    this.parentInstance.$attributes[this.foreignKey] = relatedInstance.$attributes
-    await this.parentInstance.save()
     return relatedInstance
   }
 

@@ -120,7 +120,7 @@ test.group('Relations | HasOne', (group) => {
     try {
       await user.profile().fetch()
     } catch ({ message }) {
-      assert.equal(message, 'E_UNSAVED_MODEL_INSTANCE: Cannot process relation, since User model is not persisted to database or relational value is undefined')
+      assert.match(message, /E_UNSAVED_MODEL_INSTANCE: Cannot process relation, since User model is not persisted to database or relational value is undefined/)
     }
   })
 
@@ -310,14 +310,14 @@ test.group('Relations | HasOne', (group) => {
      * Fake profile 1 for 2nd user
      */
     const fakeProfile1 = new Profile()
-    fakeProfile1._id = 1
+    fakeProfile1._id = '58ccb403f895502b84582c61'
     fakeProfile1.user_id = users.rows[1]._id
 
     /**
      * Fake profile 2 but for first user
      */
     const fakeProfile2 = new Profile()
-    fakeProfile2._id = 2
+    fakeProfile2._id = '58ccb403f895502b84582c62'
     fakeProfile2.user_id = users.rows[0]._id
 
     const { values: grouped } = users.first().profile().group([fakeProfile1, fakeProfile2])
@@ -352,14 +352,14 @@ test.group('Relations | HasOne', (group) => {
      * Fake profile 1 for 2nd user
      */
     const fakeProfile1 = new Profile()
-    fakeProfile1._id = 1
+    fakeProfile1._id = '58ccb403f895502b84582c61'
     fakeProfile1.user_id = users.rows[1]._id
 
     /**
      * Fake profile 2 but for first user
      */
     const fakeProfile2 = new Profile()
-    fakeProfile2._id = 2
+    fakeProfile2._id = '58ccb403f895502b84582c62'
     fakeProfile2.user_id = users.rows[0]._id
 
     /**
@@ -367,7 +367,7 @@ test.group('Relations | HasOne', (group) => {
      * only one relation, the latest one will be used
      */
     const fakeProfile3 = new Profile()
-    fakeProfile3._id = 3
+    fakeProfile3._id = '58ccb403f895502b84582c63'
     fakeProfile3.user_id = users.rows[0]._id
 
     const { values: grouped } = users.first().profile().group([fakeProfile1, fakeProfile2, fakeProfile3])
@@ -475,7 +475,7 @@ test.group('Relations | HasOne', (group) => {
       { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with('profile', { where: { likes: { gt: 2 } } }).fetch()
+    const result = await User.query().with('profile', { where: { likes: { $gt: 2 } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
@@ -546,7 +546,7 @@ test.group('Relations | HasOne', (group) => {
       { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with({ 'profile': { where: { likes: { gt: 2 } } } }).fetch()
+    const result = await User.query().with({ 'profile': { where: { likes: { $gt: 2 } } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
@@ -754,7 +754,7 @@ test.group('Relations | HasOne', (group) => {
     try {
       await user.load('cars')
     } catch ({ message }) {
-      assert.equal(message, 'E_CANNOT_OVERRIDE_RELATION: Trying to eagerload cars relationship twice')
+      assert.match(message, /E_CANNOT_OVERRIDE_RELATION: Trying to eagerload cars relationship twice/)
     }
   })
 
@@ -940,5 +940,91 @@ test.group('Relations | HasOne', (group) => {
     assert.equal(users.pages.page, 1)
     assert.equal(users.pages.perPage, 1)
     assert.equal(users.pages.lastPage, 2)
+  })
+
+  test('fetch nested relations with same root', async (assert) => {
+    class Car extends Model {
+    }
+
+    class Profile extends Model {
+    }
+
+    class User extends Model {
+      car () {
+        return this.hasOne(Car)
+      }
+
+      profile () {
+        return this.hasOne(Profile)
+      }
+    }
+
+    class Identity extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    [Car, Profile, User, Identity].forEach(model => {
+      model._bootIfNotBooted()
+    })
+
+    const resultUser = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: resultUser.insertedIds[0], profile_name: 'virk', likes: 3 })
+    await ioc.use('Database').collection('cars').insert({ user_id: resultUser.insertedIds[0], name: 'Peugeot', model: '307' })
+    await ioc.use('Database').collection('identities').insert({ user_id: resultUser.insertedIds[0], is_active: true })
+
+    const identities = await Identity.query().with('user.car').with('user.profile').fetch()
+    const user = identities.first().getRelated('user')
+
+    assert.exists(user.getRelated('car'))
+    assert.exists(user.getRelated('profile'))
+  })
+
+  test('fetch deep nested relations with same root', async (assert) => {
+    class Part extends Model {
+    }
+
+    class Car extends Model {
+      parts () {
+        return this.hasMany(Part)
+      }
+    }
+
+    class Profile extends Model {
+    }
+
+    class User extends Model {
+      car () {
+        return this.hasOne(Car)
+      }
+
+      profile () {
+        return this.hasOne(Profile)
+      }
+    }
+
+    class Identity extends Model {
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    [Car, Profile, User, Identity, Part].forEach(model => {
+      model._bootIfNotBooted()
+    })
+
+    const resultUser = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    await ioc.use('Database').collection('profiles').insert({ user_id: resultUser.insertedIds[0], profile_name: 'virk', likes: 3 })
+    const resultCar = await ioc.use('Database').collection('cars').insert({ user_id: resultUser.insertedIds[0], name: 'Peugeot', model: '307' })
+    await ioc.use('Database').collection('identities').insert({ user_id: resultUser.insertedIds[0], is_active: true })
+    await ioc.use('Database').collection('parts').insert({ car_id: resultCar.insertedIds[0], part_name: 'Wheel drive' })
+
+    const identities = await Identity.query().with('user.car').with('user.profile').with('user.car.parts').fetch()
+    const user = identities.first().getRelated('user')
+
+    assert.exists(user.getRelated('car'))
+    assert.exists(user.getRelated('profile'))
+    assert.exists(user.getRelated('car').getRelated('parts').first())
   })
 })

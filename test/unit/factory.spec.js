@@ -506,6 +506,6 @@ test.group('Factory', (group) => {
     ])
 
     const users = await ioc.use('Database').collection('users').find()
-    assert.deepEqual(users.map((user) => user.username), ['virk', 'nikk'])
+    assert.deepEqual(users.map((user) => user.username).sort(), ['nikk', 'virk'])
   })
 })

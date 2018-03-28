@@ -169,7 +169,7 @@ class ReferMany extends BaseRelation {
    * @return {Promise}
    */
   attach (references) {
-    const rows = references instanceof Array === false ? [references] : references
+    const rows = !Array.isArray(references) ? [references] : references
     const relates = this.parentInstance[this.foreignKey] || []
     this.parentInstance.$attributes[this.foreignKey] = _.unionBy(relates, rows, String)
     return this.parentInstance.save()
@@ -211,7 +211,7 @@ class ReferMany extends BaseRelation {
    */
   detach (references) {
     if (references) {
-      const rows = references instanceof Array === false ? [references] : references
+      const rows = !Array.isArray(references) ? [references] : references
       let relates = this.parentInstance[this.foreignKey]
       for (let row of rows) {
         relates = _.remove(relates, relate => String(relate) === String(row))
@@ -264,7 +264,7 @@ class ReferMany extends BaseRelation {
    * @return {void}
    */
   async saveMany (arrayOfRelatedInstances) {
-    if (arrayOfRelatedInstances instanceof Array === false) {
+    if (!Array.isArray(arrayOfRelatedInstances)) {
       throw GE
         .InvalidArgumentException
         .invalidParameter('referMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)
@@ -307,7 +307,7 @@ class ReferMany extends BaseRelation {
    * @return {Array}
    */
   async createMany (rows) {
-    if (rows instanceof Array === false) {
+    if (!Array.isArray(rows)) {
       throw GE
         .InvalidArgumentException
         .invalidParameter('referMany.createMany expects an array of related model instances', rows)

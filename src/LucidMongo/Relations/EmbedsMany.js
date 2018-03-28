@@ -109,20 +109,36 @@ class EmbedsMany extends BaseRelation {
 
     await this._persistParentIfRequired()
 
-    let embeds = this.parentInstance.$attributes[this.foreignKey] ? _.cloneDeep(this.parentInstance.$attributes[this.foreignKey]) : []
+    let embeds = this.parentInstance.$attributes[this.foreignKey]
+      ? _.cloneDeep(this.parentInstance.$attributes[this.foreignKey])
+      : []
+
     if (!Array.isArray(embeds)) {
       embeds = [embeds]
     }
+
     if (!relatedInstance.primaryKeyValue) {
+      await this.RelatedModel.$hooks.before.exec('create', relatedInstance)
       relatedInstance.primaryKeyValue = new ObjectID()
-      embeds.push(relatedInstance.$attributes)
+      relatedInstance._setCreatedAt(relatedInstance.$attributes)
+      relatedInstance._setUpdatedAt(relatedInstance.$attributes)
+      embeds.push(relatedInstance._formatFields(relatedInstance.$attributes))
+      this.parentInstance[this.foreignKey] = embeds
+      await this.parentInstance.save()
+      relatedInstance._syncOriginals()
+      await this.RelatedModel.$hooks.after.exec('create', relatedInstance)
     } else {
+      await this.RelatedModel.$hooks.before.exec('update', relatedInstance)
+      relatedInstance._setUpdatedAt(relatedInstance.$attributes)
       embeds = embeds.map(embed => {
-        return String(embed.primaryKeyValue) === String(relatedInstance.primaryKeyValue) ? relatedInstance.$attributes : embed
+        return String(embed[this.primaryKey]) === String(relatedInstance.primaryKeyValue)
+          ? relatedInstance._formatFields(relatedInstance.$attributes) : embed
       })
+      this.parentInstance[this.foreignKey] = embeds
+      await this.parentInstance.save()
+      relatedInstance._syncOriginals()
+      await this.RelatedModel.$hooks.after.exec('update', relatedInstance)
     }
-    this.parentInstance[this.foreignKey] = embeds
-    await this.parentInstance.save()
     return relatedInstance
   }
 

@@ -1207,7 +1207,7 @@ test.group('Relations | Belongs To Many', (group) => {
     try {
       await user.posts().saveMany(post)
     } catch ({ message }) {
-      assert.equal(message, 'E_INVALID_PARAMETER: belongsToMany.saveMany expects an array of related model instances instead received object')
+      assert.match(message, /E_INVALID_PARAMETER: belongsToMany.saveMany expects an array of related model instances instead received object/)
     }
   })
 
@@ -1232,7 +1232,7 @@ test.group('Relations | Belongs To Many', (group) => {
     try {
       await user.posts().createMany({})
     } catch ({ message }) {
-      assert.equal(message, 'E_INVALID_PARAMETER: belongsToMany.createMany expects an array of related model instances instead received object')
+      assert.match(message, /E_INVALID_PARAMETER: belongsToMany.createMany expects an array of related model instances instead received object/)
     }
   })
 

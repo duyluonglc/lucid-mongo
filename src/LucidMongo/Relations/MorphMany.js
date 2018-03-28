@@ -114,8 +114,8 @@ class MorphMany extends BaseRelation {
    */
   async eagerLoad (rows) {
     const relatedInstances = await this.relatedQuery
-    .where(this.determiner, this.parentInstance.constructor.name)
-    .whereIn(this.localKey, this.mapValues(rows)).fetch()
+      .where(this.determiner, this.parentInstance.constructor.name)
+      .whereIn(this.localKey, this.mapValues(rows)).fetch()
     return this.group(relatedInstances.rows)
   }
 
@@ -168,7 +168,7 @@ class MorphMany extends BaseRelation {
    * @return {Array}
    */
   async createMany (arrayOfPayload) {
-    if (arrayOfPayload instanceof Array === false) {
+    if (!Array.isArray(arrayOfPayload)) {
       throw GE
         .InvalidArgumentException
         .invalidParameter('morphMany.createMany expects an array of values', arrayOfPayload)
@@ -188,7 +188,7 @@ class MorphMany extends BaseRelation {
    * @return {Array}
    */
   async saveMany (arrayOfRelatedInstances) {
-    if (arrayOfRelatedInstances instanceof Array === false) {
+    if (!Array.isArray(arrayOfRelatedInstances)) {
       throw GE
         .InvalidArgumentException
         .invalidParameter('morphMany.saveMany expects an array of related model instances', arrayOfRelatedInstances)

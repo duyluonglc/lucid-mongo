@@ -119,7 +119,7 @@ test.group('Relations | MorphOne', (group) => {
     try {
       await user.profile().fetch()
     } catch ({ message }) {
-      assert.equal(message, 'E_UNSAVED_MODEL_INSTANCE: Cannot process relation, since User model is not persisted to database or relational value is undefined')
+      assert.match(message, /E_UNSAVED_MODEL_INSTANCE: Cannot process relation, since User model is not persisted to database or relational value is undefined/)
     }
   })
 
@@ -468,7 +468,7 @@ test.group('Relations | MorphOne', (group) => {
       { parent_id: rs.insertedIds[1], determiner: 'User', profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with('profile', { where: { likes: { gt: 2 } } }).fetch()
+    const result = await User.query().with('profile', { where: { likes: { $gt: 2 } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
@@ -539,7 +539,7 @@ test.group('Relations | MorphOne', (group) => {
       { parent_id: rs.insertedIds[1], determiner: 'User', profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with({ 'profile': { where: { likes: { gt: 2 } } } }).fetch()
+    const result = await User.query().with({ 'profile': { where: { likes: { $gt: 2 } } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))
@@ -747,7 +747,7 @@ test.group('Relations | MorphOne', (group) => {
     try {
       await user.load('cars')
     } catch ({ message }) {
-      assert.equal(message, 'E_CANNOT_OVERRIDE_RELATION: Trying to eagerload cars relationship twice')
+      assert.match(message, /E_CANNOT_OVERRIDE_RELATION: Trying to eagerload cars relationship twice/)
     }
   })
 

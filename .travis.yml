@@ -15,8 +15,6 @@ install:
   - npm install --no-optional
 script:
   - DB=mongodb DB_NAME=test_lucid DB_USER=test DB_PASSWORD=test npm test
-after_success:
-  - npm run semantic-release
 branches:
   except:
     - /^v\d+\.\d+\.\d+$/

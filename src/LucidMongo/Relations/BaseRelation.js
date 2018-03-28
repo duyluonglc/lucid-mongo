@@ -11,6 +11,7 @@
 
 const CE = require('../../Exceptions')
 const proxyGet = require('../../../lib/proxyGet')
+const _ = require('lodash')
 
 const methodsList = [
   'increment',
@@ -196,6 +197,23 @@ class BaseRelation {
    */
   load () {
     return this.fetch()
+  }
+
+  /**
+   *
+   * @param {object} params
+   */
+  query (params) {
+    if (_.isObject(params)) {
+      if (params.select) { this.relatedQuery.select(params.select) }
+      if (params.where) { this.relatedQuery.where(params.where) }
+      if (params.with) { this.relatedQuery.with(params.with) }
+      if (params.limit) { this.relatedQuery.limit(params.limit) }
+      if (params.skip) { this.relatedQuery.skip(params.skip) }
+      if (params.sort) { this.relatedQuery.sort(params.sort) }
+    }
+
+    return this
   }
 }
 

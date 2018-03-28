@@ -11,10 +11,11 @@
 
 const _ = require('lodash')
 const moment = require('moment')
-const GeoPoint = require('geopoint')
+const GeoPoint = require('geo-point')
 const ObjectID = require('mongodb').ObjectID
 const VanillaSerializer = require('../Serializers/Vanilla')
 const { ioc } = require('../../../lib/iocResolver')
+const GE = require('@adonisjs/generic-exceptions')
 const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 /**
@@ -190,14 +191,12 @@ class BaseModel {
    * @return {String}
    */
   static formatObjectID (key, value) {
-    if (value instanceof ObjectID) {
-      return value
-    } else if (_.isString(value)) {
+    if (_.isString(value) && ObjectID.isValid(value)) {
       return ObjectID(value)
-    } else if (Array.isArray(value) || _.isPlainObject(value)) {
+    } else if (Array.isArray(value)) {
       return _.map(value, item => this.formatObjectID(key, item))
     }
-    return null
+    return value
   }
 
   /**
@@ -211,7 +210,11 @@ class BaseModel {
    * @return {String}
    */
   static formatBoolean (key, value) {
-    return !!value
+    if (_.isObject(value)) {
+      return value
+    } else {
+      return !!value
+    }
   }
 
   /**
@@ -225,13 +228,7 @@ class BaseModel {
    * @return {String}
    */
   static formatGeometry (key, value) {
-    return value instanceof GeoPoint ? {
-      type: 'Point',
-      coordinates: [
-        value.longitude(),
-        value.latitude()
-      ]
-    } : value
+    return value instanceof GeoPoint ? value.toGeoJSON() : value
   }
 
   /**
@@ -302,10 +299,7 @@ class BaseModel {
    * @static
    */
   static castGeometry (key, value) {
-    return value instanceof GeoPoint ? {
-      latitude: value.latitude(),
-      longitude: value.longitude()
-    } : value
+    return value instanceof GeoPoint ? value.toObject() : value
   }
 
   /**
@@ -361,7 +355,16 @@ class BaseModel {
    * @static
    */
   static parseObjectID (key, value) {
-    return value instanceof ObjectID || !value ? value : ObjectID(value)
+    if (value instanceof ObjectID) {
+      return value
+    } else if (_.isString(value)) {
+      return ObjectID(value)
+    } else if (Array.isArray(value) || _.isPlainObject(value)) {
+      return _.map(value, item => this.parseObjectID(key, item))
+    }
+    throw GE
+      .InvalidArgumentException
+      .invalidParameter(`Can not convert ${JSON.stringify(value)} to mongo ObjectID`)
   }
 
   /**
@@ -382,11 +385,11 @@ class BaseModel {
     }
 
     if (typeof value === 'object' && value.latitude !== undefined && value.longitude !== undefined) {
-      return new GeoPoint(value.latitude, value.longitude)
+      return GeoPoint.fromObject(value)
     }
 
     if (typeof value === 'object' && value.type === 'Point' && value.coordinates !== undefined) {
-      return new GeoPoint(value.coordinates[1], value.coordinates[0])
+      return GeoPoint.fromGeoJSON(value)
     }
 
     return value
