@@ -200,6 +200,35 @@ test.group('Relations | Embeds one', (group) => {
     assert.isNotNull(user.$attributes.email)
   })
 
+  test('call hooks when save relation', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      email () {
+        return this.embedsOne(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    const fn = async function (instance) {
+      assert.instanceOf(instance, Email)
+    }
+
+    Email.addHook('beforeUpdate', fn)
+    Email.addHook('afterUpdate', fn)
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    const email = await user.email().create({ address: 'example@gmail.com' })
+    email.address = 'example2@gmail.com'
+    await user.email().save(email)
+  })
+
   test('create new relation', async (assert) => {
     class User extends Model {
       email () {
@@ -221,6 +250,33 @@ test.group('Relations | Embeds one', (group) => {
     assert.equal(email.address, 'example@gmail.com')
     await user.reload()
     assert.isNotNull(user.$attributes.email)
+  })
+
+  test('call hooks when create new relation', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      email () {
+        return this.embedsOne(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    const fn = async function (instance) {
+      assert.instanceOf(instance, Email)
+    }
+
+    Email.addHook('beforeCreate', fn)
+    Email.addHook('afterCreate', fn)
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    await user.email().create({ address: 'example@gmail.com' })
   })
 
   test('delete a relation', async (assert) => {

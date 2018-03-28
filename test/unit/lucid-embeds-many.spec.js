@@ -254,6 +254,33 @@ test.group('Relations | Embeds many', (group) => {
     assert.lengthOf(user.$attributes.emails, 1)
   })
 
+  test('call hooks when create new relation', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      emails () {
+        return this.embedsMany(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    const fn = async function (instance) {
+      assert.instanceOf(instance, Email)
+    }
+
+    Email.addHook('beforeCreate', fn)
+    Email.addHook('afterCreate', fn)
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    await user.emails().create({ address: 'example@gmail.com' })
+  })
+
   test('update existing relation', async (assert) => {
     class User extends Model {
       emails () {
@@ -280,6 +307,37 @@ test.group('Relations | Embeds many', (group) => {
     const emails = await user.emails().fetch()
     assert.equal(emails.first().enabled, true)
     assert.equal(emails.last().enabled, undefined)
+  })
+
+  test('call hooks when create new relation', async (assert) => {
+    assert.plan(2)
+    class User extends Model {
+      emails () {
+        return this.embedsMany(Email)
+      }
+    }
+
+    class Email extends Model {
+
+    }
+
+    User._bootIfNotBooted()
+    Email._bootIfNotBooted()
+
+    const fn = async function (instance) {
+      assert.instanceOf(instance, Email)
+    }
+
+    Email.addHook('beforeUpdate', fn)
+    Email.addHook('afterUpdate', fn)
+
+    await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const user = await User.first()
+    await user.emails().create({ address: 'example@gmail1.com' })
+    await user.emails().create({ address: 'example@gmail2.com' })
+    const email = await user.emails().first()
+    email.merge({ enabled: true })
+    await user.emails().save(email)
   })
 
   test('delete a relation', async (assert) => {
