@@ -1,3 +1,10 @@
+<a name="3.0.1"></a>
+## [3.0.1](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.0...v3.0.1) (2018-03-28)
+
+
+### Bug Fixes
+* **embeds:** execute hooks when save embeds ([d9a3b46](https://github.com/duyluonglc/lucid-mongo/commit/d9a3b46))
+
 <a name="3.0.0"></a>
 # [3.0.0](https://github.com/duyluonglc/lucid-mongo/compare/v2.2.3...v3.0.0) (2018-03-23)
 
