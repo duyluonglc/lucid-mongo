@@ -177,7 +177,7 @@ class BaseModel {
    * @return {String}
    */
   static formatDates (key, value) {
-    return moment.isMoment(value) ? value.toDate() : moment(value).toDate()
+    return moment.isMoment(value) ? value.toDate() : moment.utc(value).toDate()
   }
 
   /**
@@ -339,7 +339,7 @@ class BaseModel {
    * @static
    */
   static parseDates (key, value) {
-    return moment.isMoment(value) || !value ? value : moment(value)
+    return (moment.isMoment(value) || !value) ? value : moment.utc(value)
   }
 
   /**
