@@ -16,7 +16,7 @@ const ObjectID = require('mongodb').ObjectID
 const VanillaSerializer = require('../Serializers/Vanilla')
 const { ioc } = require('../../../lib/iocResolver')
 const GE = require('@adonisjs/generic-exceptions')
-const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+// const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 /**
  * The base model to share attributes with Lucid
@@ -265,7 +265,7 @@ class BaseModel {
    * @static
    */
   static castDates (key, value) {
-    return value.format(DATE_FORMAT)
+    return value.toISOString()
   }
 
   /**
