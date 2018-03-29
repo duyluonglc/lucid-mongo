@@ -1450,7 +1450,7 @@ test.group('Model', (group) => {
 
   test('should update sub attribute', async (assert) => {
     class User extends Model {
-      static get dates () { return [...super.dates, 'birthDate', 'joinDate'] }
+      static get dates () { return super.dates.concat(['birthDate', 'joinDate']) }
     }
 
     User._bootIfNotBooted()
@@ -1475,7 +1475,7 @@ test.group('Model', (group) => {
         city: 'hnn'
       },
       age: 20,
-      birthDate: moment('2001-12-12')
+      birthDate: moment.utc('2001-12-12')
     })
   })
 })

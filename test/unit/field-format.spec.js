@@ -67,7 +67,7 @@ test.group('Field date format', (group) => {
     const user = new User()
     user.last_login = '2018-01-01'
     assert.equal(moment.isMoment(user.$attributes.last_login), true)
-    assert.equal(moment('2018-01-01').isSame(user.last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(user.last_login), true)
   })
 
   test('Should parse the date field when assign by constructor', async (assert) => {
@@ -81,7 +81,7 @@ test.group('Field date format', (group) => {
       last_login: '2018-01-01'
     })
     assert.equal(moment.isMoment(user.$attributes.last_login), true)
-    assert.equal(moment('2018-01-01').isSame(user.last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(user.last_login), true)
   })
 
   test('Should parse the date field when fill', async (assert) => {
@@ -96,7 +96,7 @@ test.group('Field date format', (group) => {
       last_login: '2018-01-01'
     })
     assert.equal(moment.isMoment(user.$attributes.last_login), true)
-    assert.equal(moment('2018-01-01').isSame(user.last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(user.last_login), true)
   })
 
   test('Should store date field as date', async (assert) => {
@@ -110,10 +110,10 @@ test.group('Field date format', (group) => {
       last_login: '2018-01-01'
     })
     assert.equal(moment.isMoment(user.$attributes.last_login), true)
-    assert.equal(moment('2018-01-01').isSame(user.last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(user.last_login), true)
     const newUser = await ioc.use('Database').collection('users').findOne()
     assert.instanceOf(newUser.last_login, Date)
-    assert.equal(moment('2018-01-01').isSame(newUser.last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(newUser.last_login), true)
   })
 
   test('Should update date field as date', async (assert) => {
@@ -130,10 +130,10 @@ test.group('Field date format', (group) => {
     user.last_login = '2018-01-02'
     await user.save()
     assert.equal(moment.isMoment(user.$attributes.last_login), true)
-    assert.equal(moment('2018-01-02').isSame(user.last_login), true)
+    assert.equal(moment.utc('2018-01-02').isSame(user.last_login), true)
     const newUser = await ioc.use('Database').collection('users').findOne()
     assert.instanceOf(newUser.last_login, Date)
-    assert.equal(moment('2018-01-02').isSame(newUser.last_login), true)
+    assert.equal(moment.utc('2018-01-02').isSame(newUser.last_login), true)
   })
 
   test('Should convert date field as moment after fetch from database', async (assert) => {
@@ -153,10 +153,10 @@ test.group('Field date format', (group) => {
     ])
     const users = await User.all()
     assert.equal(moment.isMoment(users.first().$attributes.last_login), true)
-    assert.equal(moment('2018-01-01').isSame(users.first().last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(users.first().last_login), true)
   })
 
-  test('Should convert date params as date when build query', async (assert) => {
+  test('Should convert string params as date when build query 2 params', async (assert) => {
     class User extends Model {
       static get dates () {
         return ['last_login']
@@ -165,7 +165,55 @@ test.group('Field date format', (group) => {
     User._bootIfNotBooted()
     const query = User.where('last_login', '2018-01-01')
     assert.instanceOf(query.query._conditions.last_login, Date)
-    assert.equal(moment('2018-01-01').isSame(query.query._conditions.last_login), true)
+    assert.equal(moment.utc('2018-01-01').isSame(query.query._conditions.last_login), true)
+  })
+
+  test('Should convert string params as date when build query object', async (assert) => {
+    class User extends Model {
+      static get dates () {
+        return ['last_login']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({ 'last_login': { $lt: '2018-01-01' } })
+    assert.instanceOf(query.query._conditions.last_login.$lt, Date)
+    assert.equal(moment.utc('2018-01-01').isSame(query.query._conditions.last_login.$lt), true)
+  })
+
+  test('Should convert string params as date when build query with chain method', async (assert) => {
+    class User extends Model {
+      static get dates () {
+        return ['last_login']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where('last_login').lt('2018-01-01')
+    assert.instanceOf(query.query._conditions.last_login.$lt, Date)
+    assert.equal(moment.utc('2018-01-01').isSame(query.query._conditions.last_login.$lt), true)
+  })
+
+  test('Should convert moment params as date when build query', async (assert) => {
+    class User extends Model {
+      static get dates () {
+        return ['last_login']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({ 'last_login': { $gte: moment('2018-01-01') } })
+    assert.instanceOf(query.query._conditions.last_login.$gte, Date)
+    assert.equal(moment('2018-01-01').isSame(query.query._conditions.last_login.$gte), true)
+  })
+
+  test('Should keep date params when build query', async (assert) => {
+    class User extends Model {
+      static get dates () {
+        return ['last_login']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({ 'last_login': { $gte: new Date('2018-01-01') } })
+    assert.instanceOf(query.query._conditions.last_login.$gte, Date)
+    assert.equal(moment.utc('2018-01-01').isSame(query.query._conditions.last_login.$gte), true)
   })
 })
 
@@ -685,6 +733,20 @@ test.group('Field ObjectID format', (group) => {
     }
     User._bootIfNotBooted()
     const query = User.where('group_id').in(['5a40077430f075256427a147', '5a40077430f075256427a148'])
+    assert.instanceOf(query.query._conditions.group_id.$in[0], ObjectID)
+    assert.instanceOf(query.query._conditions.group_id.$in[1], ObjectID)
+    assert.equal(String(query.query._conditions.group_id.$in[0]), '5a40077430f075256427a147')
+    assert.equal(String(query.query._conditions.group_id.$in[1]), '5a40077430f075256427a148')
+  })
+
+  test('Should convert array of string params as ObjectID when build query object', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({ 'group_id': { $in: ['5a40077430f075256427a147', '5a40077430f075256427a148'] } })
     assert.instanceOf(query.query._conditions.group_id.$in[0], ObjectID)
     assert.instanceOf(query.query._conditions.group_id.$in[1], ObjectID)
     assert.equal(String(query.query._conditions.group_id.$in[0]), '5a40077430f075256427a147')

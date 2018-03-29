@@ -696,8 +696,9 @@ class QueryBuilder {
               queryObject[key][subKey] = this.Model.formatField(key, queryObject[key][subKey])
             }
           }
+        } else {
+          queryObject[key] = this.Model.formatField(key, queryObject[key])
         }
-        queryObject[key] = this.Model.formatField(key, queryObject[key])
       }
       this.query.where(queryObject)
     } else if (_.isFunction(arguments[0])) {

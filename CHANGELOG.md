@@ -1,3 +1,18 @@
+<a name="3.0.2"></a>
+## [3.0.2](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.1...v3.0.2) (2018-03-29)
+
+
+### Bug Fixes
+
+* **Date:** fix convert date ([6b96828](https://github.com/duyluonglc/lucid-mongo/commit/6b96828))
+
+
+### Features
+
+* **date:** use toISOString instead FORMAT_DATE ([f2f7fe3](https://github.com/duyluonglc/lucid-mongo/commit/f2f7fe3))
+
+
+
 <a name="3.0.1"></a>
 ## [3.0.1](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.0...v3.0.1) (2018-03-28)
 
