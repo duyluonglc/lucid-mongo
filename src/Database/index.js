@@ -558,6 +558,13 @@ class Database {
       'in',
       'nin',
       'all',
+      'near',
+      'maxDistance',
+      'mod',
+      'includes',
+      'polygon',
+      'elemMatch',
+      'geometry',
       'intersects'
     ]
   }
@@ -578,101 +585,39 @@ class Database {
   }
 
   /**
-   * Support Methods
-   *
-   * @readonly
-   * @static
-   * @memberof QueryBuilder
-   */
-  static get supportMethods () {
-    return [
-      'all',
-      'exists',
-      'elemMatch',
-      'eq',
-      'gt',
-      'gte',
-      'lt',
-      'lte',
-      'in',
-      'ne',
-      'nin',
-      'nor',
-      'regex',
-      'size',
-      'mod',
-      'slice',
-      'intersects',
-      'regex',
-      'maxDistance',
-      'minDistance'
-    ]
-  }
-
-  /**
    * Replace where method
    *
    * @returns {this}
    * @memberof QueryBuilder
    */
   where () {
-    if (_.isPlainObject(arguments[0])) {
-      _.forEach(arguments[0], (conditions, key) => {
-        if (key === 'and' || key === 'or' || key === 'nor') {
-          if (!Array.isArray(conditions)) {
-            throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
-          }
-          let queries = []
-          _.forEach(conditions, (condition) => {
-            queries.push(_.clone(this.queryBuilder).where(condition)._conditions)
-          })
-          this.queryBuilder[key](queries)
-        } else if (_.isPlainObject(conditions)) {
-          _.forEach(conditions, (c, k) => {
-            if (this.constructor.supportMethods.includes(k)) {
-              if (k !== 'maxDistance' && k !== 'minDistance') {
-                this.queryBuilder.where(key)[k](c)
-              }
-            } else {
-              throw new CE.InvalidArgumentException(`Method "$${k}" is not support by query builder`)
-            }
-          })
-        } else {
-          this.queryBuilder.where(key, conditions)
-        }
-      })
-    } else if (_.isFunction(arguments[0])) {
-      arguments[0].bind(this).call()
-    } else {
-      if (arguments.length === 2) {
-        const key = arguments[0]
-        this.queryBuilder.where(key, arguments[1])
-      } else if (arguments.length === 3) {
-        switch (arguments[1]) {
-          case '=':
-            this.queryBuilder.where(arguments[0]).eq(arguments[2])
-            break
-          case '>':
-            this.queryBuilder.where(arguments[0]).gt(arguments[2])
-            break
-          case '>=':
-            this.queryBuilder.where(arguments[0]).gte(arguments[2])
-            break
-          case '<':
-            this.queryBuilder.where(arguments[0]).lt(arguments[2])
-            break
-          case '<=':
-            this.queryBuilder.where(arguments[0]).lte(arguments[2])
-            break
-          case '<>':
-            this.queryBuilder.where(arguments[0]).ne(arguments[2])
-            break
-          default:
-            throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
-        }
-      } else {
-        return this.queryBuilder.where(arguments[0])
+    if (arguments.length === 3) {
+      switch (arguments[1]) {
+        case '=':
+          this.queryBuilder.where(arguments[0]).eq(arguments[2])
+          break
+        case '>':
+          this.queryBuilder.where(arguments[0]).gt(arguments[2])
+          break
+        case '>=':
+          this.queryBuilder.where(arguments[0]).gte(arguments[2])
+          break
+        case '<':
+          this.queryBuilder.where(arguments[0]).lt(arguments[2])
+          break
+        case '<=':
+          this.queryBuilder.where(arguments[0]).lte(arguments[2])
+          break
+        case '<>':
+          this.queryBuilder.where(arguments[0]).ne(arguments[2])
+          break
+        default:
+          throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
       }
+    } else if (arguments.length === 2 || _.isPlainObject(arguments[0])) {
+      this.queryBuilder.where(...arguments)
+    } else {
+      return this.queryBuilder.where(...arguments)
     }
     return this
   }

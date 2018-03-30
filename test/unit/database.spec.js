@@ -27,6 +27,7 @@ test.group('Database | QueryBuilder', (group) => {
   })
 
   group.after(async () => {
+    await this.database.collection('users').delete()
     await helpers.dropCollections(this.database)
     this.database.close()
     try {
@@ -50,7 +51,7 @@ test.group('Database | QueryBuilder', (group) => {
   })
 
   test('query with where conditions is object', (assert) => {
-    this.database.collection('users').where({ name: 'vik' }).where({ age: { gt: 30 } })
+    this.database.collection('users').where({ name: 'vik' }).where({ age: { $gt: 30 } })
     assert.deepEqual(this.database.queryBuilder._conditions, { name: 'vik', age: { $gt: 30 } })
   })
 
