@@ -22,6 +22,7 @@ const helpers = require('./helpers')
 const Model = require('../../src/LucidMongo/Model')
 const DatabaseManager = require('../../src/Database/Manager')
 const VanillaSerializer = require('../../src/LucidMongo/Serializers/Vanilla')
+const _ = require('lodash')
 
 test.group('Model', (group) => {
   group.before(async () => {
@@ -1808,9 +1809,9 @@ test.group('Lucid | Aggregate', (group) => {
     const count = await User.count()
     assert.equal(count, 4)
     const count2 = await User.count('name')
-    assert.deepEqual(count2, [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
+    assert.deepEqual(_.sortBy(count2, '_id'), [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
     const count3 = await User.count({ name: '$name', value: '$value' })
-    assert.deepEqual(count3, [
+    assert.deepEqual(_.sortBy(count3, '_id'), [
       { _id: { name: 'nik', value: 10 }, count: 1 },
       { _id: { name: 'nik', value: 20 }, count: 1 },
       { _id: { name: 'vik', value: 10 }, count: 2 }
@@ -1830,9 +1831,9 @@ test.group('Lucid | Aggregate', (group) => {
     const sum = await User.sum('value')
     assert.equal(sum, 50)
     const sum2 = await User.sum('value', 'name')
-    assert.deepEqual(sum2, [{ _id: 'nik', sum: 30 }, { _id: 'vik', sum: 20 }])
+    assert.deepEqual(_.sortBy(sum2, '_id'), [{ _id: 'nik', sum: 30 }, { _id: 'vik', sum: 20 }])
     const sum3 = await User.sum('value', { name: '$name', scope: '$scope' })
-    assert.deepEqual(sum3, [
+    assert.deepEqual(_.sortBy(sum3, '_id'), [
       { _id: { name: 'nik', scope: 2 }, sum: 30 },
       { _id: { name: 'vik', scope: 2 }, sum: 10 },
       { _id: { name: 'vik', scope: 1 }, sum: 10 }
@@ -1852,9 +1853,9 @@ test.group('Lucid | Aggregate', (group) => {
     const avg = await User.avg('value')
     assert.equal(avg, 12.5)
     const avg2 = await User.avg('value', 'name')
-    assert.deepEqual(avg2, [{ _id: 'nik', avg: 15 }, { _id: 'vik', avg: 10 }])
-    const sum3 = await User.avg('value', { name: '$name', scope: '$scope' })
-    assert.deepEqual(sum3, [
+    assert.deepEqual(_.sortBy(avg2, '_id'), [{ _id: 'nik', avg: 15 }, { _id: 'vik', avg: 10 }])
+    const avg3 = await User.avg('value', { name: '$name', scope: '$scope' })
+    assert.deepEqual(_.sortBy(avg3, '_id'), [
       { _id: { name: 'nik', scope: 2 }, avg: 15 },
       { _id: { name: 'vik', scope: 2 }, avg: 10 },
       { _id: { name: 'vik', scope: 1 }, avg: 10 }
@@ -1874,9 +1875,9 @@ test.group('Lucid | Aggregate', (group) => {
     const max = await User.max('value')
     assert.equal(max, 40)
     const max2 = await User.max('value', 'name')
-    assert.deepEqual(max2, [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
+    assert.deepEqual(_.sortBy(max2, '_id'), [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
     const max3 = await User.max('value', { name: '$name', scope: '$scope' })
-    assert.deepEqual(max3, [
+    assert.deepEqual(_.sortBy(max3, '_id'), [
       { _id: { name: 'nik', scope: 2 }, max: 40 },
       { _id: { name: 'vik', scope: 2 }, max: 30 },
       { _id: { name: 'vik', scope: 1 }, max: 10 }
@@ -1896,9 +1897,9 @@ test.group('Lucid | Aggregate', (group) => {
     const min = await User.min('value')
     assert.equal(min, 10)
     const min2 = await User.min('value', 'name')
-    assert.deepEqual(min2, [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
+    assert.deepEqual(_.sortBy(min2, '_id'), [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
     const min3 = await User.min('value', { name: '$name', scope: '$scope' })
-    assert.deepEqual(min3, [
+    assert.deepEqual(_.sortBy(min3, '_id'), [
       { _id: { name: 'nik', scope: 2 }, min: 30 },
       { _id: { name: 'vik', scope: 2 }, min: 30 },
       { _id: { name: 'vik', scope: 1 }, min: 10 }
