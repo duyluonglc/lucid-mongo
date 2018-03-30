@@ -13,7 +13,7 @@ const moment = require('moment')
 const _ = require('lodash')
 const BaseModel = require('./Base')
 const QueryBuilder = require('../QueryBuilder')
-const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
+// const DATE_FORMAT = 'YYYY-MM-DD HH:mm:ss'
 
 /**
  * Pivot model is used when a pivot relationship
@@ -152,8 +152,8 @@ class PivotModel extends BaseModel {
      * relationship via `withTimestamps` method.
      */
     if (this.$withTimestamps) {
-      this.$attributes['created_at'] = moment().format(DATE_FORMAT)
-      this.$attributes['updated_at'] = moment().format(DATE_FORMAT)
+      this.$attributes['created_at'] = moment().toISOString()
+      this.$attributes['updated_at'] = moment().toISOString()
     }
 
     const result = await this

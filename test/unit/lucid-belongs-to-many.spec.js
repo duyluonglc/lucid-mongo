@@ -524,8 +524,8 @@ test.group('Relations | Belongs To Many', (group) => {
 
     const user = await User.query().with('posts').first()
     const json = user.toJSON()
-    assert.isTrue(moment(json.posts[0].pivot.created_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
-    assert.isTrue(moment(json.posts[0].pivot.updated_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    assert.isTrue(moment(json.posts[0].pivot.created_at).isValid())
+    assert.isTrue(moment(json.posts[0].pivot.updated_at).isValid())
   })
 
   test('call pivotModel getters when casting timestamps', async (assert) => {
@@ -568,8 +568,8 @@ test.group('Relations | Belongs To Many', (group) => {
 
     const user = await User.query().with('posts').first()
     const json = user.toJSON()
-    assert.isTrue(moment(json.posts[0].pivot.created_at, 'YYYY-MM-DD', true).isValid())
-    assert.isTrue(moment(json.posts[0].pivot.updated_at, 'YYYY-MM-DD', true).isValid())
+    assert.isTrue(moment(json.posts[0].pivot.created_at).isValid())
+    assert.isTrue(moment(json.posts[0].pivot.updated_at).isValid())
   })
 
   test('save related model', async (assert) => {
@@ -632,8 +632,8 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.lengthOf(pivotValues, 1)
     assert.equal(String(pivotValues[0].post_id), String(post._id))
     assert.equal(String(pivotValues[0].user_id), String(user._id))
-    assert.isTrue(moment(pivotValues[0].created_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
-    assert.isTrue(moment(pivotValues[0].updated_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    assert.isTrue(moment(pivotValues[0].created_at).isValid())
+    assert.isTrue(moment(pivotValues[0].updated_at).isValid())
   })
 
   test('execute setters when pivotModel in play', async (assert) => {
@@ -675,8 +675,8 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.lengthOf(pivotValues, 1)
     assert.equal(String(pivotValues[0].post_id), String(post._id))
     assert.equal(String(pivotValues[0].user_id), String(user._id))
-    assert.isTrue(moment(pivotValues[0].created_at, 'YYYY-MM-DD', true).isValid())
-    assert.isTrue(moment(pivotValues[0].updated_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    assert.isTrue(moment(pivotValues[0].created_at).isValid())
+    assert.isTrue(moment(pivotValues[0].updated_at).isValid())
   })
 
   test('save pivot values to database', async (assert) => {

@@ -803,7 +803,7 @@ test.group('Model', (group) => {
     user.username = 'virk'
     await user.save()
     const keys = formatting.map((item) => item.key)
-    const values = formatting.map((item) => moment(item.value, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    const values = formatting.map((item) => moment(item.value).isValid())
     assert.deepEqual(keys, ['created_at', 'updated_at'])
     assert.deepEqual(values, [true, true])
   })
@@ -824,7 +824,7 @@ test.group('Model', (group) => {
     user.username = 'nikk'
     await user.save()
     const keys = formatting.map((item) => item.key)
-    const values = formatting.map((item) => moment(item.value, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    const values = formatting.map((item) => moment(item.value).isValid())
     assert.deepEqual(keys, ['updated_at'])
     assert.deepEqual(values, [true])
   })
@@ -843,7 +843,7 @@ test.group('Model', (group) => {
     await ioc.use('Database').collection('users').insert({ username: 'virk' })
     await User.query().where('username', 'virk').update({ username: 'nikk' })
     const keys = formatting.map((item) => item.key)
-    const values = formatting.map((item) => moment(item.value, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    const values = formatting.map((item) => moment(item.value).isValid())
     assert.deepEqual(keys, ['updated_at'])
     assert.deepEqual(values, [true])
   })
@@ -880,7 +880,7 @@ test.group('Model', (group) => {
     user.username = 'virk'
     await user.save()
     const keys = formatting.map((item) => item.key)
-    const values = formatting.map((item) => moment(item.value, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    const values = formatting.map((item) => moment(item.value).isValid())
     assert.deepEqual(keys, ['updated_at'])
     assert.deepEqual(values, [true])
     assert.isNull(user.created_at)
@@ -907,7 +907,7 @@ test.group('Model', (group) => {
     user.username = 'virk'
     await user.save()
     const keys = formatting.map((item) => item.key)
-    const values = formatting.map((item) => moment(item.value, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    const values = formatting.map((item) => moment(item.value).isValid())
     assert.deepEqual(keys, ['updated_at'])
     assert.deepEqual(values, [true])
     assert.isUndefined(user.created_at)
@@ -956,8 +956,8 @@ test.group('Model', (group) => {
 
     const user = await User.first()
     const json = user.toObject()
-    assert.isTrue(moment(json.created_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
-    assert.isTrue(moment(json.updated_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    assert.isTrue(moment(json.created_at).isValid())
+    assert.isTrue(moment(json.updated_at).isValid())
     assert.deepEqual(casting.map((field) => field.key), ['created_at', 'updated_at'])
   })
 
@@ -1041,9 +1041,9 @@ test.group('Model', (group) => {
 
     const user = await User.first()
     const json = user.toObject()
-    assert.isTrue(moment(json.created_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
-    assert.isTrue(moment(json.updated_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
-    assert.isTrue(moment(json.login_at, 'YYYY-MM-DD HH:mm:ss', true).isValid())
+    assert.isTrue(moment(json.created_at).isValid())
+    assert.isTrue(moment(json.updated_at).isValid())
+    assert.isTrue(moment(json.login_at).isValid())
     assert.deepEqual(casting.map((field) => field.key), ['created_at', 'updated_at', 'login_at'])
   })
 
