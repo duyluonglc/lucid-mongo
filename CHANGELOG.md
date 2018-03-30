@@ -1,3 +1,13 @@
+<a name="3.0.4"></a>
+## [3.0.4](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.3...v3.0.4) (2018-03-30)
+
+
+### Bug Fixes
+
+* **querybuilder:** fix querybuilder where of database ([647baff](https://github.com/duyluonglc/lucid-mongo/commit/647baff))
+
+
+
 <a name="3.0.2"></a>
 ## [3.0.2](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.1...v3.0.2) (2018-03-29)
 
