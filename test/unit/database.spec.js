@@ -27,6 +27,7 @@ test.group('Database | QueryBuilder', (group) => {
   })
 
   group.after(async () => {
+    await this.database.collection('users').delete()
     await helpers.dropCollections(this.database)
     this.database.close()
     try {
@@ -50,7 +51,7 @@ test.group('Database | QueryBuilder', (group) => {
   })
 
   test('query with where conditions is object', (assert) => {
-    this.database.collection('users').where({ name: 'vik' }).where({ age: { gt: 30 } })
+    this.database.collection('users').where({ name: 'vik' }).where({ age: { $gt: 30 } })
     assert.deepEqual(this.database.queryBuilder._conditions, { name: 'vik', age: { $gt: 30 } })
   })
 
@@ -123,7 +124,7 @@ test.group('Database | QueryBuilder', (group) => {
     const count = await this.database.collection('users').count()
     assert.equal(count, 4)
     const count2 = await this.database.collection('users').count('name')
-    assert.deepEqual(count2, [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
+    assert.deepEqual(_.sortBy(count2, '_id'), [{ _id: 'nik', count: 2 }, { _id: 'vik', count: 2 }])
     await this.database.collection('users').delete()
   })
 
@@ -133,7 +134,7 @@ test.group('Database | QueryBuilder', (group) => {
     const sum = await this.database.collection('users').sum('score')
     assert.equal(sum, 40)
     const sum2 = await this.database.collection('users').sum('score', 'name')
-    assert.deepEqual(sum2, [{ _id: 'nik', sum: 20 }, { _id: 'vik', sum: 20 }])
+    assert.deepEqual(_.sortBy(sum2, '_id'), [{ _id: 'nik', sum: 20 }, { _id: 'vik', sum: 20 }])
     await this.database.collection('users').delete()
   })
 
@@ -143,7 +144,7 @@ test.group('Database | QueryBuilder', (group) => {
     const avg = await this.database.collection('users').avg('score')
     assert.equal(avg, 10)
     const avg2 = await this.database.collection('users').avg('score', 'name')
-    assert.deepEqual(avg2, [{ _id: 'nik', avg: 10 }, { _id: 'vik', avg: 10 }])
+    assert.deepEqual(_.sortBy(avg2, '_id'), [{ _id: 'nik', avg: 10 }, { _id: 'vik', avg: 10 }])
     await this.database.collection('users').delete()
   })
 
@@ -153,7 +154,7 @@ test.group('Database | QueryBuilder', (group) => {
     const max = await this.database.collection('users').max('score')
     assert.equal(max, 40)
     const max2 = await this.database.collection('users').max('score', 'name')
-    assert.deepEqual(max2, [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
+    assert.deepEqual(_.sortBy(max2, '_id'), [{ _id: 'nik', max: 40 }, { _id: 'vik', max: 30 }])
     await this.database.collection('users').delete()
   })
 
@@ -163,7 +164,7 @@ test.group('Database | QueryBuilder', (group) => {
     const min = await this.database.collection('users').min('score')
     assert.equal(min, 10)
     const min2 = await this.database.collection('users').min('score', 'name')
-    assert.deepEqual(min2, [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
+    assert.deepEqual(_.sortBy(min2, '_id'), [{ _id: 'nik', min: 30 }, { _id: 'vik', min: 10 }])
     await this.database.collection('users').delete()
   })
 
@@ -171,8 +172,8 @@ test.group('Database | QueryBuilder', (group) => {
     const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
     await this.database.collection('users').insert(users)
     const names = await this.database.collection('users').distinct('name')
-    assert.deepEqual(names, ['vik', 'nik'])
-    const names2 = await this.database.collection('users').where({ score: { lt: 30 } }).distinct('name')
+    assert.deepEqual(names.sort(), ['nik', 'vik'])
+    const names2 = await this.database.collection('users').where({ score: { $lt: 30 } }).distinct('name')
     assert.deepEqual(names2, ['vik'])
     await this.database.collection('users').delete()
   })
