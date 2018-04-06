@@ -686,7 +686,9 @@ class QueryBuilder {
           }
           let formatedConditions = []
           for (const condition of conditions) {
-            formatedConditions.push(query().where(condition)._conditions)
+            const cloneQuery = _.clone(this)
+            cloneQuery.query = query()
+            formatedConditions.push(cloneQuery.where(condition).query._conditions)
           }
           queryObject[key] = formatedConditions
         } else if (_.isPlainObject(conditions)) {

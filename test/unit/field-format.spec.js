@@ -752,4 +752,21 @@ test.group('Field ObjectID format', (group) => {
     assert.equal(String(query.query._conditions.group_id.$in[0]), '5a40077430f075256427a147')
     assert.equal(String(query.query._conditions.group_id.$in[1]), '5a40077430f075256427a148')
   })
+
+  test('Should convert string params as ObjectID when build query or', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const query = User.where({
+      $or: [
+        { 'group_id': { $in: ['5a40077430f075256427a147', '5a40077430f075256427a148'] } },
+        { 'age': { $gt: 15 } }
+      ]
+    })
+    assert.instanceOf(query.query._conditions.$or[0].group_id.$in[0], ObjectID)
+    assert.equal(String(query.query._conditions.$or[0].group_id.$in[0]), '5a40077430f075256427a147')
+  })
 })
