@@ -1,3 +1,13 @@
+<a name="3.0.5"></a>
+## [3.0.5](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.4...v3.0.5) (2018-04-06)
+
+
+### Bug Fixes
+
+* **queryBuilder:** allow format field on query $and $or $nor ([c388dc0](https://github.com/duyluonglc/lucid-mongo/commit/c388dc0))
+
+
+
 <a name="3.0.4"></a>
 ## [3.0.4](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.3...v3.0.4) (2018-03-30)
 
