@@ -1,3 +1,13 @@
+<a name="3.0.6"></a>
+## [3.0.6](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.5...v3.0.6) (2018-04-24)
+
+
+### Bug Fixes
+
+* **referMany:** fix can not detach ([f8ad672](https://github.com/duyluonglc/lucid-mongo/commit/f8ad672))
+
+
+
 <a name="3.0.5"></a>
 ## [3.0.5](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.4...v3.0.5) (2018-04-06)
 
