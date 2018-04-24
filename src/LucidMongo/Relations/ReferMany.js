@@ -211,14 +211,12 @@ class ReferMany extends BaseRelation {
    */
   detach (references) {
     if (references) {
-      const rows = !Array.isArray(references) ? [references] : references
-      let relates = this.parentInstance[this.foreignKey]
-      for (let row of rows) {
-        relates = _.remove(relates, relate => String(relate) === String(row))
-      }
-      this.parentInstance[this.foreignKey] = relates
+      references = !Array.isArray(references) ? [String(references)] : _.map(references, String)
+      let relates = this.parentInstance.$attributes[this.foreignKey]
+      relates = _.filter(relates, relate => !references.includes(String(relate)))
+      this.parentInstance.$attributes[this.foreignKey] = relates
     } else {
-      this.parentInstance[this.foreignKey] = []
+      this.parentInstance.$attributes[this.foreignKey] = []
     }
     return this.parentInstance.save()
   }
