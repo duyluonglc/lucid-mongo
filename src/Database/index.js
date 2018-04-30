@@ -109,7 +109,7 @@ class Database {
       throw new CE.RuntimeException('invalid connection type')
     }
     this.databaseName = config.connection.database
-    this.connectionString = config.connection.connectionString || mongoUriBuilder(config.connection)
+    this.connectionString = config.connectionString || mongoUriBuilder(config.connection)
     this.connection = null
     this.db = null
     this._globalTrx = null
