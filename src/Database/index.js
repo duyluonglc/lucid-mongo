@@ -110,14 +110,11 @@ class Database {
       throw new CE.RuntimeException('invalid connection type')
     }
 
-    if(config.connectionString)
-    {
+    if(config.connectionString) {
       this.connectionString = config.connectionString
       const parsedUri = new URL(this.connectionString)
       this.databaseName = (parsedUri.pathname ? parsedUri.pathname.replace(/\//g, '') : config.connection.database)
-    }
-    else
-    {
+    } else {
       this.connectionString = mongoUriBuilder(config.connection)
       this.databaseName = config.connection.database
     }
