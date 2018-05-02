@@ -171,9 +171,9 @@ $ npm i --save lucid-mongo
 ```js
 const config = {
   connection: 'mongodb',
-  connectionString: 'mongo://username:password@localhost/my_database'
   mongodb: {
     client: 'mongodb',
+    connectionString: 'mongo://username:password@localhost/my_database',
     connection: {
       host: 'localhost',
       port: 27017,

@@ -15,6 +15,7 @@ const CE = require('../Exceptions')
 const util = require('../../lib/util')
 const _ = require('lodash')
 const mongoUriBuilder = require('mongo-uri-builder')
+const { URL } = require('url')
 // const debug = require('debug')('mquery')
 
 const proxyHandler = {
@@ -108,8 +109,16 @@ class Database {
     if (config.client !== 'mongodb') {
       throw new CE.RuntimeException('invalid connection type')
     }
-    this.databaseName = config.connection.database
-    this.connectionString = config.connection.connectionString || mongoUriBuilder(config.connection)
+
+    if (config.connectionString) {
+      this.connectionString = config.connectionString
+      const parsedUri = new URL(this.connectionString)
+      this.databaseName = (parsedUri.pathname ? parsedUri.pathname.replace(/\//g, '') : config.connection.database)
+    } else {
+      this.connectionString = mongoUriBuilder(config.connection)
+      this.databaseName = config.connection.database
+    }
+
     this.connection = null
     this.db = null
     this._globalTrx = null
