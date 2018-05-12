@@ -769,4 +769,20 @@ test.group('Field ObjectID format', (group) => {
     assert.instanceOf(query.query._conditions.$or[0].group_id.$in[0], ObjectID)
     assert.equal(String(query.query._conditions.$or[0].group_id.$in[0]), '5a40077430f075256427a147')
   })
+
+  test('Should accept null as value for the related primary key', async (assert) => {
+    class User extends Model {
+      static get objectIDs () {
+        return ['_id', 'group_id']
+      }
+    }
+    User._bootIfNotBooted()
+    const user = await User.create({
+      group_id: null
+    })
+
+    assert.equal(user.$attributes.group_id, null)
+    const newUser = await ioc.use('Database').collection('users').findOne()
+    assert.equal(newUser.group_id, null)
+  })
 })

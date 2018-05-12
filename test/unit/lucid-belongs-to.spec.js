@@ -377,6 +377,38 @@ test.group('Relations | Belongs To', (group) => {
     assert.equal(freshProfile.user_id, null)
   })
 
+  test('dissociate existing relationship when related objectId is referenced in static get objectIDs', async (assert) => {
+    class User extends Model {
+    }
+
+    class Profile extends Model {
+      static get objectIDs () {
+        return ['_id', 'user_id']
+      }
+
+      user () {
+        return this.belongsTo(User)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Profile._bootIfNotBooted()
+
+    const rs = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const rsProfile = await ioc.use('Database').collection('profiles').insert({ profile_name: 'virk', user_id: rs.insertedIds[0] })
+
+    const profile = await Profile.find(rsProfile.insertedIds[0])
+    assert.equal(String(profile.user_id), String(rs.insertedIds[0]))
+
+    await profile.user().dissociate()
+    assert.equal(profile.user_id, null)
+    assert.isFalse(profile.isNew)
+
+    const freshProfile = await ioc.use('Database').collection('profiles').findOne()
+    assert.equal(String(freshProfile._id), String(rsProfile.insertedIds[0]))
+    assert.equal(freshProfile.user_id, null)
+  })
+
   test('throw exception when trying to dissociate fresh models', async (assert) => {
     assert.plan(1)
     class User extends Model {
