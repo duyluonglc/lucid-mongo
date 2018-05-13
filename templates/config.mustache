@@ -30,6 +30,10 @@ module.exports = {
       username: Env.get('DB_USER', 'admin'),
       password: Env.get('DB_PASSWORD', ''),
       database: Env.get('DB_DATABASE', 'adonis'),
+      replicas: [
+        // {host: 'host2', port: 2222},
+        // {host: 'host3', port: 3333}
+      ],
       options: {
         // replicaSet: Env.get('DB_REPLICA_SET', '')
         // ssl: Env.get('DB_SSL, '')

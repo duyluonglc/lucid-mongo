@@ -707,6 +707,39 @@ test.group('Relations | Refer Many', (group) => {
     assert.lengthOf(users[1].post_ids, 2)
   })
 
+  test('detach related models', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.referMany(Post)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const post1 = await Post.create({ title: 'Adonis 101' })
+    const post2 = await Post.create({ title: 'Adonis 102' })
+    const user = await User.create({ username: 'virk', post_ids: [post1._id, post2._id] })
+
+    const posts = await user.posts().fetch()
+    assert.lengthOf(posts.rows, 2)
+
+    await user.posts().detach(post1._id)
+    await user.reload()
+    assert.lengthOf(user.post_ids, 1)
+
+    await user.posts().detach(post1._id)
+    await user.reload()
+    assert.lengthOf(user.post_ids, 1)
+
+    await user.posts().detach(post2._id)
+    await user.reload()
+    assert.lengthOf(user.post_ids, 0)
+  })
+
   test('eager load multiple parent has same children', async (assert) => {
     class Post extends Model {
     }
