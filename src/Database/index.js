@@ -15,7 +15,7 @@ const CE = require('../Exceptions')
 const util = require('../../lib/util')
 const _ = require('lodash')
 const mongoUriBuilder = require('mongo-uri-builder')
-const { URL } = require('url')
+const muri = require('muri')
 // const debug = require('debug')('mquery')
 
 const proxyHandler = {
@@ -112,8 +112,8 @@ class Database {
 
     if (config.connectionString) {
       this.connectionString = config.connectionString
-      const parsedUri = new URL(this.connectionString)
-      this.databaseName = (parsedUri.pathname ? parsedUri.pathname.replace(/\//g, '') : config.connection.database)
+      const parsedUri = muri(this.connectionString)
+      this.databaseName = parsedUri.db || config.connection.database
     } else {
       this.connectionString = mongoUriBuilder(config.connection)
       this.databaseName = config.connection.database
