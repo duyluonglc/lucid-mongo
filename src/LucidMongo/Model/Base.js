@@ -355,7 +355,7 @@ class BaseModel {
    * @static
    */
   static parseObjectID (key, value) {
-    if (value instanceof ObjectID) {
+    if (value instanceof ObjectID || value === null) {
       return value
     } else if (_.isString(value)) {
       return ObjectID(value)
