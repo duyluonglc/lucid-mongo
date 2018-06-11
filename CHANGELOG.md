@@ -1,3 +1,13 @@
+<a name="3.0.9"></a>
+## [3.0.9](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.7...v3.0.9) (2018-06-11)
+
+
+### Bug Fixes
+
+* **connection:** fix connectionString with cluster ([2e54be0](https://github.com/duyluonglc/lucid-mongo/commit/2e54be0))
+
+
+
 <a name="3.0.8"></a>
 ## [3.0.8](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.7...v3.0.8) (2018-05-13)
 
