@@ -1,3 +1,13 @@
+<a name="3.1.0"></a>
+# [3.1.0](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.9...v3.1.0) (2018-06-27)
+
+
+### Bug Fixes
+
+* **Serializer:** remove id to string convertion on login ([cddf1d3](https://github.com/duyluonglc/lucid-mongo/commit/cddf1d3)), closes [#106](https://github.com/duyluonglc/lucid-mongo/issues/106)
+
+
+
 <a name="3.0.9"></a>
 ## [3.0.9](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.7...v3.0.9) (2018-06-11)
 
