@@ -120,7 +120,7 @@ class Database {
     }
     this.connectionOptions = _.assign({
       useNewUrlParser: true
-    }, config.connectionOptions)
+    }, config.connectionOptions || {})
 
     this.connection = null
     this.db = null
