@@ -118,6 +118,9 @@ class Database {
       this.connectionString = mongoUriBuilder(config.connection)
       this.databaseName = config.connection.database
     }
+    this.connectionOptions = _.assign({
+      useNewUrlParser: true
+    }, config.connectionOptions || {})
 
     this.connection = null
     this.db = null
@@ -128,7 +131,7 @@ class Database {
 
   async connect (collectionName) {
     if (!this.db) {
-      this.connection = await MongoClient.connect(this.connectionString)
+      this.connection = await MongoClient.connect(this.connectionString, this.connectionOptions)
       this.db = this.connection.db(this.databaseName)
     }
     return Promise.resolve(this.db)
@@ -136,7 +139,7 @@ class Database {
 
   async getCollection (collectionName) {
     if (!this.db) {
-      this.connection = await MongoClient.connect(this.connectionString)
+      this.connection = await MongoClient.connect(this.connectionString, this.connectionOptions)
       this.db = this.connection.db(this.databaseName)
     }
     return Promise.resolve(this.db.collection(collectionName))
