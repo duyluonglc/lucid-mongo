@@ -1,3 +1,14 @@
+<a name="3.1.1"></a>
+## [3.1.1](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.0...v3.1.1) (2018-09-18)
+
+
+### Bug Fixes
+
+* **package:** update debug to version 4.0.0 ([8b866a5](https://github.com/duyluonglc/lucid-mongo/commit/8b866a5))
+* **package:** update require-all to version 3.0.0 ([89b2b07](https://github.com/duyluonglc/lucid-mongo/commit/89b2b07))
+
+
+
 <a name="3.1.0"></a>
 # [3.1.0](https://github.com/duyluonglc/lucid-mongo/compare/v3.0.9...v3.1.0) (2018-06-27)
 
