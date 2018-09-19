@@ -130,7 +130,7 @@ class VanillaSerializer {
   first () {
     return _.first(this.rows)
   }
-  
+
   /**
    * Returns the row for the given index
    *
