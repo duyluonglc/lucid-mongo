@@ -203,7 +203,7 @@ test.group('Relations | Morph To', (group) => {
     const picture = await Picture.find(rsPicture.insertedIds[0])
     try {
       await picture.pictureable().paginate(2, 1)
-    } catch ({message}) {
+    } catch ({ message }) {
       assert.equal(message, 'E_INVALID_RELATION_METHOD: paginate is not supported by MorphTo relation')
     }
   })
@@ -242,8 +242,8 @@ test.group('Relations | Morph To', (group) => {
 
     const picture = await Picture.find(rsPicture.insertedIds[0])
     try {
-      await picture.pictureable().save(new User({name: 'vik'}))
-    } catch ({message}) {
+      await picture.pictureable().save(new User({ name: 'vik' }))
+    } catch ({ message }) {
       assert.equal(message, 'E_INVALID_RELATION_METHOD: save is not supported by MorphTo relation')
     }
   })
