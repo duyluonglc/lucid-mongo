@@ -560,7 +560,7 @@ class BelongsToMany extends BaseRelation {
   async count (...args) {
     this._decorateQuery()
     const pivotInstances = await this.pivotQuery().fetch()
-    const foreignKeyValues = _.map(pivotInstances.rows, this.foreignKey)
+    const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
     return this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).count(...args)
   }
 
