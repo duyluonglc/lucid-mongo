@@ -10,6 +10,7 @@
 */
 
 require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
 const fs = require('fs-extra')
 const path = require('path')

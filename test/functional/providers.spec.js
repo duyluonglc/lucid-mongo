@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const path = require('path')
 const helpers = require('../unit/helpers')
 const { ioc, registrar } = require('@adonisjs/fold')
