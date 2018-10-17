@@ -12,9 +12,12 @@ init:
 install:
   - ps: Install-Product node $env:nodejs_version
   - npm install
-  - ps: mongo test_lucid --eval 'db.createUser({user:"test",pwd:"test",roles:["dbOwner"]});'
+
+before_test:
+  - mongo test_lucid --eval 'db.createUser({user:"test",pwd:"test",roles:["dbOwner"]});'
   - node --version
   - npm --version
+
 test_script:
   - npm run test:win
 
