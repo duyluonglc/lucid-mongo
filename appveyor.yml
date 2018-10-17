@@ -15,7 +15,7 @@ install:
 
 before_test:
   - SET PATH=C:\mongodb\bin;%PATH%
-  - mongo test_lucid --eval 'db.createUser({user:"test",pwd:"test",roles:["dbOwner"]});'
+  - mongo test_lucid --eval "db.createUser({user:\"test\",pwd:\"test\",roles:[\"dbOwner\"]});"
   - node --version
   - npm --version
 
