@@ -365,7 +365,8 @@ class QueryBuilder {
      */
     this._applyScopes()
     const collection = await this.db.getCollection(this.collection)
-    const countQuery = _.clone(this.query).select(null)
+    const countQuery = _.clone(this.query)
+    countQuery._fields = undefined
     const countByQuery = await countQuery.collection(collection).count()
     this.query.limit(limit).skip((page - 1) * limit)
     const rows = await this.query.collection(collection).find()
