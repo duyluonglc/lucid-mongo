@@ -26,7 +26,7 @@ You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](ht
 
 ## Node/OS Target
 
-This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=7.0`
+This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=8.0`
 
 ## <a name="getting-started"></a>Installation
 
