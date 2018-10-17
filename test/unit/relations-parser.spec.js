@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
 const RelationsParser = require('../../src/LucidMongo/Relations/Parser')
 
