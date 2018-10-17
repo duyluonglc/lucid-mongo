@@ -765,6 +765,19 @@ test.group('Model', (group) => {
     assert.equal(users.first().username, 'virk')
   })
 
+  test('paginate model with select clause', async (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+    await ioc.use('Database').collection('users').insert([{ username: 'virk', name: 'virk' }, { username: 'nikk', name: 'nikk' }])
+    const users = await User.query({select: 'username'}).paginate(1, 1)
+    assert.instanceOf(users, VanillaSerializer)
+    assert.deepEqual(users.pages, { perPage: 1, total: helpers.formatNumber(2), page: 1, lastPage: 2 })
+    assert.equal(users.first().username, 'virk')
+    assert.notEqual(users.first().name, 'virk')
+  })
+
   test('return first row from database on calling static method', async (assert) => {
     class User extends Model {
     }
