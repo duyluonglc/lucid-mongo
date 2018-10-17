@@ -775,7 +775,7 @@ test.group('Model', (group) => {
     assert.instanceOf(users, VanillaSerializer)
     assert.deepEqual(users.pages, { perPage: 1, total: helpers.formatNumber(2), page: 1, lastPage: 2 })
     assert.equal(users.first().username, 'virk')
-    assert.notEqual(users.first().name, 'virk')
+    assert.notExists(users.first().name)
   })
 
   test('return first row from database on calling static method', async (assert) => {
