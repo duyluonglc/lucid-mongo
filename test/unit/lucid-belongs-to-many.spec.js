@@ -1460,7 +1460,7 @@ test.group('Relations | Belongs To Many', (group) => {
       }
 
       teams () {
-        return this.belongsToMany(Team, 'user_party_id', 'team_party_id', 'party_id', 'party_id')
+        return this.belongsToMany(Team)
       }
     }
 
@@ -1474,13 +1474,11 @@ test.group('Relations | Belongs To Many', (group) => {
       name: 'nik'
     })
 
-    const team1 = await user1.teams().create({ name: 'draculas', party_id: 10 })
-    await user1.teams().create({ name: 'draculas', party_id: 10 })
+    const team1 = await user1.teams().create({ name: 'draculas' })
+    await user1.teams().create({ name: 'halloween' })
     await user2.teams().attach(team1._id)
-
     const count1 = await user1.teams().count()
     const count2 = await user2.teams().count()
-
     assert.equal(count1, 2)
     assert.equal(count2, 1)
   })
