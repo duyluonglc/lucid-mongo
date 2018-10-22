@@ -1,3 +1,15 @@
+<a name="3.1.3"></a>
+## [3.1.3](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.2...v3.1.3) (2018-10-22)
+
+
+### Bug Fixes
+
+* **model:** merge dirty attributes after the hooks ([1d298a4](https://github.com/duyluonglc/lucid-mongo/commit/1d298a4))
+* **package:** update dependencies ([98a6de6](https://github.com/duyluonglc/lucid-mongo/commit/98a6de6))
+* **property:** use proper foreign key ([c16e624](https://github.com/duyluonglc/lucid-mongo/commit/c16e624))
+
+
+
 <a name="3.1.2"></a>
 ## [3.1.2](https://github.com/duyluonglc/lucid-mongo/compare/3.1.1...3.1.2) (2018-09-24)
 
