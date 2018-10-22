@@ -1449,4 +1449,39 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(pivotValues[0].user_party_id, 20)
     assert.equal(pivotValues[0].team_party_id, 10)
   })
+
+  test('Aggregation count', async (assert) => {
+    class Team extends Model {
+    }
+
+    class User extends Model {
+      static get collection () {
+        return 'party_users'
+      }
+
+      teams () {
+        return this.belongsToMany(Team, 'user_party_id', 'team_party_id', 'party_id', 'party_id')
+      }
+    }
+
+    User._bootIfNotBooted()
+    Team._bootIfNotBooted()
+
+    const user1 = await User.create({
+      name: 'vik'
+    })
+    const user2 = await User.create({
+      name: 'nik'
+    })
+
+    const team1 = await user1.teams().create({ name: 'draculas', party_id: 10 })
+    await user1.teams().create({ name: 'draculas', party_id: 10 })
+    await user2.teams().attach(team1._id)
+
+    const count1 = await user1.teams().count()
+    const count2 = await user2.teams().count()
+
+    assert.equal(count1, 2)
+    assert.equal(count2, 1)
+  })
 })
