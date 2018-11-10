@@ -1,3 +1,13 @@
+<a name="3.1.4"></a>
+## [3.1.4](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.3...v3.1.4) (2018-11-10)
+
+
+### Bug Fixes
+
+* **objectId:** fix parse bjson object ([0f552be](https://github.com/duyluonglc/lucid-mongo/commit/0f552be)), closes [#158](https://github.com/duyluonglc/lucid-mongo/issues/158)
+
+
+
 <a name="3.1.3"></a>
 ## [3.1.3](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.2...v3.1.3) (2018-10-22)
 
