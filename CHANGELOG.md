@@ -1,3 +1,13 @@
+## [3.1.5](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.3...v3.1.5) (2018-11-15)
+
+
+### Bug Fixes
+
+* **belongsToMany:** fix attach and sync method ([87d8c2d](https://github.com/duyluonglc/lucid-mongo/commit/87d8c2d)), closes [#160](https://github.com/duyluonglc/lucid-mongo/issues/160)
+* **connection:** fix issue with connection begin with mongo+srv:// ([ec334bb](https://github.com/duyluonglc/lucid-mongo/commit/ec334bb)), closes [#121](https://github.com/duyluonglc/lucid-mongo/issues/121)
+
+
+
 <a name="3.1.4"></a>
 ## [3.1.4](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.3...v3.1.4) (2018-11-10)
 
