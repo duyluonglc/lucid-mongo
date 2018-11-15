@@ -736,13 +736,15 @@ class BelongsToMany extends BaseRelation {
    *
    * @return {Number}  The number of effected rows
    */
-  detach (references) {
+  async detach (references) {
+    await this._loadAndCachePivot()
     const query = this.pivotQuery(false)
+      .where(this.foreignKey, this.$primaryKeyValue)
     if (references) {
       const rows = !Array.isArray(references) ? [references] : references
       query.whereIn(this.relatedForeignKey, rows)
-      _.remove(this._existingPivotInstances, (pivotInstance) => {
-        return _.includes(rows, pivotInstance[this.relatedForeignKey])
+      this._existingPivotInstances = _.filter(this._existingPivotInstances, pivotInstance => {
+        return !_.find(rows, row => String(row) === String(pivotInstance[this.relatedForeignKey]))
       })
     } else {
       this._existingPivotInstances = []
@@ -761,7 +763,29 @@ class BelongsToMany extends BaseRelation {
    * @return {void}
    */
   async sync (references, pivotCallback) {
-    await this.detach()
+    await this._loadAndCachePivot()
+    const query = this.pivotQuery(false)
+    query.where(this.foreignKey, this.$primaryKeyValue)
+    if (references) {
+      const rows = !Array.isArray(references) ? [references] : references
+      query.whereNotIn(this.relatedForeignKey, rows)
+      references = _.filter(rows, row => {
+        return !_.find(this._existingPivotInstances, pivotInstance => {
+          return String(pivotInstance[this.relatedForeignKey]) === String(row)
+        })
+      })
+      this._existingPivotInstances = _.filter(this._existingPivotInstances, pivotInstance => {
+        return !_.find(rows, row => String(row) === String(pivotInstance[this.relatedForeignKey]))
+      })
+    } else {
+      this._existingPivotInstances = []
+    }
+
+    await query.delete()
+    if (!references || !references.length) {
+      return false
+    }
+
     return this.attach(references, pivotCallback)
   }
 

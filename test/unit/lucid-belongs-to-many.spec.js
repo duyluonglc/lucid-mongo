@@ -1128,6 +1128,60 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(String(userPost._existingPivotInstances[0].post_id), String(post2._id))
   })
 
+  test('detach only specific existing relations of related model', async (assert) => {
+    class Post extends Model {
+    }
+
+    class PostUser extends Model {
+      static get collection () {
+        return 'post_user'
+      }
+    }
+
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post).pivotModel(PostUser)
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+    PostUser._bootIfNotBooted()
+
+    const user1 = await User.create({ username: 'virk' })
+    const user2 = await User.create({ username: 'nirk' })
+    const post1 = await Post.create({ title: 'Adonis 101' })
+    const post2 = await Post.create({ title: 'Lucid 101' })
+    const user1Post = user1.posts()
+    const user2Post = user2.posts()
+
+    await user1Post.attach([post1._id, post2._id])
+    await user2Post.attach([post2._id, post1._id])
+
+    assert.lengthOf(user1Post._existingPivotInstances, 2)
+    assert.lengthOf(user2Post._existingPivotInstances, 2)
+
+    await user1Post.detach(post1._id)
+
+    assert.lengthOf(user1Post._existingPivotInstances, 1)
+    assert.lengthOf(user2Post._existingPivotInstances, 2)
+
+    let pivotCount1 = await ioc.use('Database').collection('post_user').where({ user_id: user1._id }).find()
+    assert.lengthOf(pivotCount1, 1)
+    assert.equal(String(user1Post._existingPivotInstances[0].post_id), String(post2._id))
+
+    let pivotCount2 = await ioc.use('Database').collection('post_user').where({ user_id: user2._id }).find()
+    assert.lengthOf(pivotCount2, 2)
+
+    await user2Post.detach()
+    assert.lengthOf(user2Post._existingPivotInstances, 0)
+
+    pivotCount1 = await ioc.use('Database').collection('post_user').where({ user_id: user1._id }).find()
+    pivotCount2 = await ioc.use('Database').collection('post_user').where({ user_id: user2._id }).find()
+    assert.lengthOf(pivotCount1, 1)
+    assert.lengthOf(pivotCount2, 0)
+  })
+
   test('delete existing relation', async (assert) => {
     class Post extends Model {
     }
@@ -1342,7 +1396,7 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.lengthOf(users.last().toJSON().posts, 2)
   })
 
-  test('sync pivot rows by dropping old and adding new', async (assert) => {
+  test('sync pivot rows by dropping old and adding new and keep intersection', async (assert) => {
     class Post extends Model {
     }
 
@@ -1355,17 +1409,25 @@ test.group('Relations | Belongs To Many', (group) => {
     User._bootIfNotBooted()
     Post._bootIfNotBooted()
 
-    const user = new User()
-    user.username = 'virk'
-    await user.save()
+    const user1 = await User.create({ name: 'virk' })
+    const user2 = await User.create({ name: 'nirk' })
     const postId1 = new ObjectID()
     const postId2 = new ObjectID()
-    await user.posts().attach([postId1])
-    await user.posts().sync([postId2])
-    const pivotValues = await ioc.use('Database').collection('post_user').find()
-    assert.lengthOf(pivotValues, 1)
-    assert.equal(String(pivotValues[0].user_id), String(user.primaryKeyValue))
-    assert.equal(String(pivotValues[0].post_id), String(postId2))
+    const postId3 = new ObjectID()
+
+    await user1.posts().attach([postId1, postId2])
+    await user2.posts().attach([postId1, postId3])
+    await user1.posts().sync([postId2, postId3])
+
+    const pivot1Values = await ioc.use('Database').collection('post_user').where({ user_id: user1._id }).find()
+    assert.lengthOf(pivot1Values, 2)
+    assert.equal(String(pivot1Values[0].post_id), String(postId2))
+    assert.equal(String(pivot1Values[1].post_id), String(postId3))
+
+    const pivot2Values = await ioc.use('Database').collection('post_user').where({ user_id: user2._id }).find()
+    assert.lengthOf(pivot1Values, 2)
+    assert.equal(String(pivot2Values[0].post_id), String(postId1))
+    assert.equal(String(pivot2Values[1].post_id), String(postId3))
   })
 
   test('define pivot model via ioc container string', (assert) => {
