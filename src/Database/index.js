@@ -456,8 +456,8 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  count (...args) {
-    return this.aggregate('count', null, ...args)
+  async count (...args) {
+    return (await this.aggregate('count', null, ...args)) || 0
   }
 
   /**
