@@ -491,7 +491,7 @@ After get from db it will be retransformed to
 ### Use mquery builder
 ```js
   const Database = use('Database')
-  const db = await Database.connection('mongodb')
+  const db = await Database.connect('mongodb')
 
   const users = await db.collection('users').find()
 
