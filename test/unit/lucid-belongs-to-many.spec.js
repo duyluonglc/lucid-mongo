@@ -295,6 +295,28 @@ test.group('Relations | Belongs To Many', (group) => {
     assert.equal(post.title, 'Adonis 101')
   })
 
+  test('fetch related rows to inexistant relation', async (assert) => {
+    class Post extends Model {
+    }
+
+    class User extends Model {
+      posts () {
+        return this.belongsToMany(Post).withPivot('is_published')
+      }
+    }
+
+    User._bootIfNotBooted()
+    Post._bootIfNotBooted()
+
+    const userResult = await ioc.use('Database').collection('users').insert({ username: 'virk' })
+    const postResult = await ioc.use('Database').collection('posts').insert([{ title: 'Adonis 101' }, { title: 'Lucid 101' }])
+    await ioc.use('Database').collection('post_user').insert({ post_id: postResult.insertedIds[0], user_id: 42 })
+
+    const user = await User.find(userResult.insertedIds[0])
+    const post = await user.posts().first()
+    assert.equal(post, null)
+  })
+
   test('add constraints on pivot collection', async (assert) => {
     class Post extends Model {
     }
