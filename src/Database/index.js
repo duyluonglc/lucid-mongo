@@ -63,6 +63,7 @@ class SchemaBuilder {
     this.defaultTo = () => this
     this.unsigned = () => this
     this.references = () => this
+    this.json = () => this
   }
 
   index (name, keys, options) {
