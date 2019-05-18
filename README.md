@@ -383,7 +383,7 @@ class Bill extends Model {
 
   const user = await User.with({
     emails: query => {
-      query.where(active, true)
+      query.where('active', true)
     }
   }).first()
 
