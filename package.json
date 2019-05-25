@@ -48,7 +48,7 @@
     "mongodb": "^3.1.8",
     "mongodb-url": "^3.0.2",
     "mquery": "^3.2.0",
-    "pluralize": "^7.0.0",
+    "pluralize": "^8.0.0",
     "pretty-hrtime": "^1.0.3",
     "require-all": "^3.0.0"
   },
