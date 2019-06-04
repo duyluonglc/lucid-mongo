@@ -16,7 +16,8 @@ const util = require('../../lib/util')
 const _ = require('lodash')
 const mongoUriBuilder = require('mongo-uri-builder')
 const mongoUrl = require('mongodb-url')
-// const debug = require('debug')('mquery')
+
+mquery.Promise = global.Promise;
 
 const proxyHandler = {
   get (target, name) {
