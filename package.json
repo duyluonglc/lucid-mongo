@@ -23,6 +23,16 @@
   ],
   "author": "LuongND",
   "license": "MIT",
+  "files": [
+    "commands",
+    "lib",
+    "providers",
+    "src",
+    "templates",
+    "index.js",
+    "instructions.js",
+    "instructions.md"
+  ],
   "dependencies": {
     "@adonisjs/generic-exceptions": "^3.0.1",
     "chance": "^1.0.18",
