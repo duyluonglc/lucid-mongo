@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /*
  * adonis-lucid
@@ -7,36 +7,36 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
-*/
+ */
 
-const _ = require('lodash')
-const query = require('mquery')
-const debug = require('debug')('mquery')
+const _ = require('lodash');
+const mquery = require('mquery');
+const debug = require('debug')('mquery');
 // const GeoPoint = require('geo-point')
-const EagerLoad = require('../EagerLoad')
+const EagerLoad = require('../EagerLoad');
 // const RelationsParser = require('../Relations/Parser')
-const CE = require('../../Exceptions')
+const CE = require('../../Exceptions');
 
-const proxyGet = require('../../../lib/proxyGet')
-const util = require('../../../lib/util')
-const { ioc } = require('../../../lib/iocResolver')
+const proxyGet = require('../../../lib/proxyGet');
+const util = require('../../../lib/util');
+const { ioc } = require('../../../lib/iocResolver');
 
 const proxyHandler = {
-  get: proxyGet('query', false, function (target, name) {
-    const queryScope = util.makeScopeName(name)
+  get: proxyGet('query', false, function(target, name) {
+    const queryScope = util.makeScopeName(name);
 
     /**
      * if value is a local query scope and a function, please
      * execute it
      */
-    if (typeof (target.Model[queryScope]) === 'function') {
-      return function (...args) {
-        target.Model[queryScope](this, ...args)
-        return this
-      }
+    if (typeof target.Model[queryScope] === 'function') {
+      return function(...args) {
+        target.Model[queryScope](this, ...args);
+        return this;
+      };
     }
   })
-}
+};
 
 /**
  * Query builder for the lucid models extended
@@ -46,19 +46,22 @@ const proxyHandler = {
  * @constructor
  */
 class QueryBuilder {
-  constructor (Model, connection) {
-    this.Model = Model
-    this.collection = this.Model.prefix ? `${this.Model.prefix}${this.Model.collection}` : this.Model.collection
+  constructor(Model, connection) {
+    this.Model = Model;
+    this.collection = this.Model.prefix
+      ? `${this.Model.prefix}${this.Model.collection}`
+      : this.Model.collection;
 
     /**
      * Reference to database provider
      */
-    this.db = ioc.use('Adonis/Src/Database').connection(connection)
+    this.db = ioc.use('Adonis/Src/Database').connection(connection);
 
     /**
      * mquery
      */
-    this.query = query()
+    this.query = mquery();
+    this.query.$useProjection = true;
 
     /**
      * Scopes to be ignored at runtime
@@ -67,42 +70,42 @@ class QueryBuilder {
      *
      * @private
      */
-    this._ignoreScopes = []
+    this._ignoreScopes = [];
 
     /**
      * Relations to be eagerloaded
      *
      * @type {Object}
      */
-    this._eagerLoads = {}
+    this._eagerLoads = {};
 
     /**
      * The sideloaded data for this query
      *
      * @type {Array}
      */
-    this._sideLoaded = []
+    this._sideLoaded = [];
 
     /**
      * Replace some methods
      */
-    this.replaceMethods()
+    this.replaceMethods();
 
     /**
      * Query level visible fields
      *
      * @type {Array}
      */
-    this._visibleFields = this.Model.visible
+    this._visibleFields = this.Model.visible;
 
     /**
      * Query level hidden fields
      *
      * @type {Array}
      */
-    this._hiddenFields = this.Model.hidden
+    this._hiddenFields = this.Model.hidden;
 
-    return new Proxy(this, proxyHandler)
+    return new Proxy(this, proxyHandler);
   }
 
   /**
@@ -111,9 +114,9 @@ class QueryBuilder {
    * @returns MongodbCollection
    * @memberof QueryBuilder
    */
-  async getCollection () {
-    const connection = await this.db.connect()
-    return connection.collection(this.collection)
+  async getCollection() {
+    const connection = await this.db.connect();
+    return connection.collection(this.collection);
   }
 
   /**
@@ -122,9 +125,7 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  on (event, callback) {
-
-  }
+  on(event, callback) {}
 
   /**
    * This method will apply all the global query scopes
@@ -134,18 +135,18 @@ class QueryBuilder {
    *
    * @private
    */
-  _applyScopes () {
+  _applyScopes() {
     if (this._ignoreScopes.indexOf('*') > -1) {
-      return this
+      return this;
     }
 
     _(this.Model.$globalScopes)
       .filter((scope) => this._ignoreScopes.indexOf(scope.name) <= -1)
       .each((scope) => {
-        scope.callback(this)
-      })
+        scope.callback(this);
+      });
 
-    return this
+    return this;
   }
 
   /**
@@ -159,8 +160,8 @@ class QueryBuilder {
    *
    * @private
    */
-  _mapRowsToInstances (rows) {
-    return rows.map((row) => this._mapRowToInstance(row))
+  _mapRowsToInstances(rows) {
+    return rows.map((row) => this._mapRowToInstance(row));
   }
 
   /**
@@ -172,25 +173,27 @@ class QueryBuilder {
    *
    * @return {Model}
    */
-  _mapRowToInstance (row) {
-    const modelInstance = new this.Model()
+  _mapRowToInstance(row) {
+    const modelInstance = new this.Model();
 
     /**
      * The omitBy function is used to remove sideLoaded data
      * from the actual values and set them as $sideLoaded
      * property on models
      */
-    modelInstance.newUp(_.omitBy(row, (value, field) => {
-      if (this._sideLoaded.indexOf(field) > -1) {
-        modelInstance.$sideLoaded[field] = value
-        return true
-      }
+    modelInstance.newUp(
+      _.omitBy(row, (value, field) => {
+        if (this._sideLoaded.indexOf(field) > -1) {
+          modelInstance.$sideLoaded[field] = value;
+          return true;
+        }
 
-      modelInstance.$visible = this._visibleFields
-      modelInstance.$hidden = this._hiddenFields
-    }))
+        modelInstance.$visible = this._visibleFields;
+        modelInstance.$hidden = this._hiddenFields;
+      })
+    );
 
-    return modelInstance
+    return modelInstance;
   }
 
   /**
@@ -204,9 +207,9 @@ class QueryBuilder {
    *
    * @private
    */
-  async _eagerLoad (modelInstances) {
+  async _eagerLoad(modelInstances) {
     if (_.size(modelInstances)) {
-      await new EagerLoad(this._eagerLoads).load(modelInstances)
+      await new EagerLoad(this._eagerLoads).load(modelInstances);
     }
   }
 
@@ -223,14 +226,14 @@ class QueryBuilder {
    *
    * @chainable
    */
-  ignoreScopes (scopes) {
+  ignoreScopes(scopes) {
     /**
      * Don't do anything when array is empty or value is not
      * an array
      */
-    const scopesToIgnore = Array.isArray(scopes) ? scopes : ['*']
-    this._ignoreScopes = this._ignoreScopes.concat(scopesToIgnore)
-    return this
+    const scopesToIgnore = Array.isArray(scopes) ? scopes : ['*'];
+    this._ignoreScopes = this._ignoreScopes.concat(scopesToIgnore);
+    return this;
   }
 
   /**
@@ -241,37 +244,37 @@ class QueryBuilder {
    *
    * @return {Serializer} Instance of model serializer
    */
-  async fetch () {
+  async fetch() {
     /**
      * Apply all the scopes before fetching
      * data
      */
-    this._applyScopes()
+    this._applyScopes();
 
     /**
      * Execute query
      */
-    const collection = await this.db.getCollection(this.collection)
-    const rows = await this.query.collection(collection).find()
+    const collection = await this.db.getCollection(this.collection);
+    const rows = await this.query.collection(collection).find();
 
     /**
      * Convert to an array of model instances
      */
-    const modelInstances = this._mapRowsToInstances(rows)
-    await this._eagerLoad(modelInstances)
+    const modelInstances = this._mapRowsToInstances(rows);
+    await this._eagerLoad(modelInstances);
 
     /**
      * Fire afterFetch event
      */
     if (this.Model.$hooks) {
-      await this.Model.$hooks.after.exec('fetch', modelInstances)
+      await this.Model.$hooks.after.exec('fetch', modelInstances);
     }
 
     /**
      * Return an instance of active model serializer
      */
-    const Serializer = this.Model.resolveSerializer()
-    return new Serializer(modelInstances)
+    const Serializer = this.Model.resolveSerializer();
+    return new Serializer(modelInstances);
   }
 
   /**
@@ -282,34 +285,34 @@ class QueryBuilder {
    *
    * @return {Model|Null}
    */
-  async first () {
+  async first() {
     /**
      * Apply all the scopes before fetching
      * data
      */
-    this._applyScopes()
+    this._applyScopes();
 
-    const collection = await this.db.getCollection(this.collection)
-    const row = await this.query.collection(collection).findOne()
+    const collection = await this.db.getCollection(this.collection);
+    const row = await this.query.collection(collection).findOne();
 
     if (!row) {
-      return null
+      return null;
     }
 
-    const modelInstance = this._mapRowToInstance(row)
+    const modelInstance = this._mapRowToInstance(row);
     // await this._eagerLoad([modelInstance])
     /**
      * Eagerload relations when defined on query
      */
     if (_.size(this._eagerLoads)) {
-      await modelInstance.loadMany(this._eagerLoads)
+      await modelInstance.loadMany(this._eagerLoads);
     }
 
     if (this.Model.$hooks) {
-      await this.Model.$hooks.after.exec('find', modelInstance)
+      await this.Model.$hooks.after.exec('find', modelInstance);
     }
 
-    return modelInstance
+    return modelInstance;
   }
 
   /**
@@ -323,13 +326,13 @@ class QueryBuilder {
    *
    * @throws {ModelNotFoundException} If unable to find first row
    */
-  async firstOrFail () {
-    const returnValue = await this.first()
+  async firstOrFail() {
+    const returnValue = await this.first();
     if (!returnValue) {
-      throw CE.ModelNotFoundException.raise(this.Model.name)
+      throw CE.ModelNotFoundException.raise(this.Model.name);
     }
 
-    return returnValue
+    return returnValue;
   }
 
   /**
@@ -342,8 +345,8 @@ class QueryBuilder {
    *
    * @return {Model|null}
    */
-  find (id) {
-    return this.where(this.Model.primaryKey, id).first()
+  find(id) {
+    return this.where(this.Model.primaryKey, id).first();
   }
 
   /**
@@ -358,44 +361,44 @@ class QueryBuilder {
    *
    * @return {Serializer}
    */
-  async paginate (page = 1, limit = 20) {
+  async paginate(page = 1, limit = 20) {
     /**
      * Apply all the scopes before fetching
      * data
      */
-    this._applyScopes()
-    const collection = await this.db.getCollection(this.collection)
-    const countQuery = _.clone(this.query)
-    countQuery._fields = undefined
-    const countByQuery = await countQuery.collection(collection).count()
-    this.query.limit(limit).skip((page - 1) * limit)
-    const rows = await this.query.collection(collection).find()
+    this._applyScopes();
+    const collection = await this.db.getCollection(this.collection);
+    const countQuery = _.clone(this.query);
+    countQuery._fields = undefined;
+    const countByQuery = await countQuery.collection(collection).count();
+    this.query.limit(limit).skip((page - 1) * limit);
+    const rows = await this.query.collection(collection).find();
 
-    const result = util.makePaginateMeta(countByQuery || 0, page, limit)
+    const result = util.makePaginateMeta(countByQuery || 0, page, limit);
 
     /**
      * Convert to an array of model instances
      */
-    const modelInstances = this._mapRowsToInstances(rows)
-    await this._eagerLoad(modelInstances)
+    const modelInstances = this._mapRowsToInstances(rows);
+    await this._eagerLoad(modelInstances);
 
     /**
      * Pagination meta data
      */
-    const pages = _.omit(result, ['data'])
+    const pages = _.omit(result, ['data']);
 
     /**
      * Fire afterPaginate event
      */
     if (this.Model.$hooks) {
-      await this.Model.$hooks.after.exec('paginate', modelInstances, pages)
+      await this.Model.$hooks.after.exec('paginate', modelInstances, pages);
     }
 
     /**
      * Return an instance of active model serializer
      */
-    const Serializer = this.Model.resolveSerializer()
-    return new Serializer(modelInstances, pages)
+    const Serializer = this.Model.resolveSerializer();
+    return new Serializer(modelInstances, pages);
   }
 
   /**
@@ -409,18 +412,21 @@ class QueryBuilder {
    *
    * @return {Promise}
    */
-  async update (values) {
-    const valuesCopy = _.clone(values)
-    const fakeModel = new this.Model()
-    fakeModel._setUpdatedAt(valuesCopy)
-    fakeModel._formatFields(valuesCopy)
+  async update(values) {
+    const valuesCopy = _.clone(values);
+    const fakeModel = new this.Model();
+    fakeModel._setUpdatedAt(valuesCopy);
+    fakeModel._formatFields(valuesCopy);
 
     /**
      * Apply all the scopes before update
      */
-    this._applyScopes()
-    const collection = await this.db.getCollection(this.collection)
-    return this.query.collection(collection).setOptions({ multi: true }).update(valuesCopy)
+    this._applyScopes();
+    const collection = await this.db.getCollection(this.collection);
+    return this.query
+      .collection(collection)
+      .setOptions({ multi: true })
+      .update(valuesCopy);
   }
 
   /**
@@ -431,10 +437,13 @@ class QueryBuilder {
    *
    * @return {Promise}
    */
-  async delete () {
-    this._applyScopes()
-    const collection = await this.db.getCollection(this.collection)
-    return this.query.collection(collection).setOptions({ multi: true }).remove()
+  async delete() {
+    this._applyScopes();
+    const collection = await this.db.getCollection(this.collection);
+    return this.query
+      .collection(collection)
+      .setOptions({ multi: true })
+      .remove();
   }
 
   /**
@@ -445,10 +454,10 @@ class QueryBuilder {
    * @param {object} attributes
    * @returns {Promise}
    */
-  async insert (attributes) {
-    debug('insert', this.collection, attributes)
-    const collection = await this.db.getCollection(this.collection)
-    return collection.insert(attributes)
+  async insert(attributes) {
+    debug('insert', this.collection, attributes);
+    const collection = await this.db.getCollection(this.collection);
+    return collection.insert(attributes);
   }
 
   /**
@@ -459,23 +468,23 @@ class QueryBuilder {
    *
    * @return {Array}
    */
-  ids () {
-    return this.pluck(this.Model.primaryKey)
+  ids() {
+    return this.pluck(this.Model.primaryKey);
   }
 
   /**
- * Returns an array of selected field
- *
- * @method pluck
- * @param {String} field
- * @async
- *
- * @return {Array}
- */
-  async pluck (field) {
-    this._applyScopes()
-    const rows = await this.select(field).fetch()
-    return rows.rows.map((row) => row[field])
+   * Returns an array of selected field
+   *
+   * @method pluck
+   * @param {String} field
+   * @async
+   *
+   * @return {Array}
+   */
+  async pluck(field) {
+    this._applyScopes();
+    const rows = await this.select(field).fetch();
+    return rows.rows.map((row) => row[field]);
   }
 
   /**
@@ -490,12 +499,16 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async pair (lhs, rhs) {
-    const collection = await this.fetch()
-    return _.transform(collection.rows, (result, row) => {
-      result[row[lhs]] = row[rhs]
-      return result
-    }, {})
+  async pair(lhs, rhs) {
+    const collection = await this.fetch();
+    return _.transform(
+      collection.rows,
+      (result, row) => {
+        result[row[lhs]] = row[rhs];
+        return result;
+      },
+      {}
+    );
   }
 
   /**
@@ -508,9 +521,9 @@ class QueryBuilder {
    *
    * @return {Collection}
    */
-  pickInverse (limit = 1) {
-    this.query.sort(`-${this.Model.primaryKey}`).limit(limit)
-    return this.fetch()
+  pickInverse(limit = 1) {
+    this.query.sort(`-${this.Model.primaryKey}`).limit(limit);
+    return this.fetch();
   }
 
   /**
@@ -523,9 +536,9 @@ class QueryBuilder {
    *
    * @return {Collection}
    */
-  pick (limit = 1) {
-    this.query.sort(this.Model.primaryKey).limit(limit)
-    return this.fetch()
+  pick(limit = 1) {
+    this.query.sort(this.Model.primaryKey).limit(limit);
+    return this.fetch();
   }
 
   /**
@@ -539,21 +552,21 @@ class QueryBuilder {
    *
    * @chainable
    */
-  with (...args) {
+  with(...args) {
     if (args[1] && _.isFunction(args[1])) {
-      this._eagerLoads[args[0]] = args[1]
+      this._eagerLoads[args[0]] = args[1];
     } else if (args[1] && _.isObject(args[1])) {
       this._eagerLoads[args[0]] = (builder) => {
-        _.forEach(args[1], (value, key) => builder[key](value))
-      }
+        _.forEach(args[1], (value, key) => builder[key](value));
+      };
     } else if (Array.isArray(args[0])) {
-      _.forEach(args[0], related => this.with(related))
+      _.forEach(args[0], (related) => this.with(related));
     } else if (_.isObject(args[0])) {
-      _.forEach(args[0], (scope, key) => this.with(key, scope))
+      _.forEach(args[0], (scope, key) => this.with(key, scope));
     } else {
-      this._eagerLoads[args[0]] = (builder) => { }
+      this._eagerLoads[args[0]] = (builder) => {};
     }
-    return this
+    return this;
   }
 
   /**
@@ -632,7 +645,7 @@ class QueryBuilder {
    * @static
    * @memberof QueryBuilder
    */
-  static get conditionMethods () {
+  static get conditionMethods() {
     return [
       'eq',
       'ne',
@@ -651,7 +664,7 @@ class QueryBuilder {
       'elemMatch',
       'geometry',
       'intersects'
-    ]
+    ];
   }
 
   /**
@@ -659,15 +672,15 @@ class QueryBuilder {
    *
    * @memberof QueryBuilder
    */
-  replaceMethods () {
+  replaceMethods() {
     for (let name of this.constructor.conditionMethods) {
-      let originMethod = this.query[name]
+      let originMethod = this.query[name];
       this.query[name] = (param) => {
-        const key = this.query._path
-        param = this.Model.formatField(key, param)
-        originMethod.apply(this.query, [param])
-        return this
-      }
+        const key = this.query._path;
+        param = this.Model.formatField(key, param);
+        originMethod.apply(this.query, [param]);
+        return this;
+      };
     }
   }
 
@@ -677,67 +690,77 @@ class QueryBuilder {
    * @returns {this}
    * @memberof QueryBuilder
    */
-  where () {
+  where() {
     if (_.isPlainObject(arguments[0])) {
-      let queryObject = arguments[0]
+      let queryObject = arguments[0];
       for (const key in queryObject) {
-        const conditions = queryObject[key]
+        const conditions = queryObject[key];
         if (key === '$and' || key === '$or' || key === '$nor') {
           if (!Array.isArray(conditions)) {
-            throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
+            throw new CE.InvalidArgumentException(
+              `Method "$${key}"'s param must be an array`
+            );
           }
-          let formatedConditions = []
+          let formatedConditions = [];
           for (const condition of conditions) {
-            const cloneQuery = _.clone(this)
-            cloneQuery.query = query()
-            formatedConditions.push(cloneQuery.where(condition).query._conditions)
+            const cloneQuery = _.clone(this);
+            cloneQuery.query = mquery();
+            cloneQuery.$useProjection = true;
+            formatedConditions.push(
+              cloneQuery.where(condition).query._conditions
+            );
           }
-          queryObject[key] = formatedConditions
+          queryObject[key] = formatedConditions;
         } else if (_.isPlainObject(conditions)) {
           for (const subKey in conditions) {
-            const reg = /^\$(eq|ne|gt|gte|lt|lte|in|nin|all|near|intersects|elemMatch|includes)$/
+            const reg = /^\$(eq|ne|gt|gte|lt|lte|in|nin|all|near|intersects|elemMatch|includes)$/;
             if (reg.test(subKey)) {
-              queryObject[key][subKey] = this.Model.formatField(key, queryObject[key][subKey])
+              queryObject[key][subKey] = this.Model.formatField(
+                key,
+                queryObject[key][subKey]
+              );
             }
           }
         } else {
-          queryObject[key] = this.Model.formatField(key, queryObject[key])
+          queryObject[key] = this.Model.formatField(key, queryObject[key]);
         }
       }
-      this.query.where(queryObject)
+      this.query.where(queryObject);
     } else if (_.isFunction(arguments[0])) {
-      arguments[0].bind(this).call()
+      arguments[0].bind(this).call();
     } else {
       if (arguments.length === 2) {
-        this.query.where(arguments[0]).eq(arguments[1])
+        this.query.where(arguments[0]).eq(arguments[1]);
       } else if (arguments.length === 3) {
         switch (arguments[1]) {
           case '=':
-            this.query.where(arguments[0]).eq(arguments[2])
-            break
+            this.query.where(arguments[0]).eq(arguments[2]);
+            break;
           case '>':
-            this.query.where(arguments[0]).gt(arguments[2])
-            break
+            this.query.where(arguments[0]).gt(arguments[2]);
+            break;
           case '>=':
-            this.query.where(arguments[0]).gte(arguments[2])
-            break
+            this.query.where(arguments[0]).gte(arguments[2]);
+            break;
           case '<':
-            this.query.where(arguments[0]).lt(arguments[2])
-            break
+            this.query.where(arguments[0]).lt(arguments[2]);
+            break;
           case '<=':
-            this.query.where(arguments[0]).lte(arguments[2])
-            break
+            this.query.where(arguments[0]).lte(arguments[2]);
+            break;
           case '<>':
-            this.query.where(arguments[0]).ne(arguments[2])
-            break
+            this.query.where(arguments[0]).ne(arguments[2]);
+            break;
           default:
-            throw new CE.RuntimeException(`Method "$${arguments[1]}" is not support by query builder`)
+            throw new CE.RuntimeException(
+              `Method "$${arguments[1]}" is not support by query builder`
+            );
         }
       } else {
-        return this.query.where(arguments[0])
+        return this.query.where(arguments[0]);
       }
     }
-    return this
+    return this;
   }
 
   /**
@@ -748,9 +771,9 @@ class QueryBuilder {
    *
    * @chainable
    */
-  whereNull (key) {
-    this.query.where(key).exists(false)
-    return this
+  whereNull(key) {
+    this.query.where(key).exists(false);
+    return this;
   }
 
   /**
@@ -761,9 +784,9 @@ class QueryBuilder {
    *
    * @chainable
    */
-  whereNotNull (key) {
-    this.query.where(key).exists()
-    return this
+  whereNotNull(key) {
+    this.query.where(key).exists();
+    return this;
   }
 
   /**
@@ -774,9 +797,9 @@ class QueryBuilder {
    *
    * @chainable
    */
-  whereIn (key, values) {
-    this.query.where(key).in(values)
-    return this
+  whereIn(key, values) {
+    this.query.where(key).in(values);
+    return this;
   }
 
   /**
@@ -787,9 +810,9 @@ class QueryBuilder {
    *
    * @chainable
    */
-  whereNotIn (key, values) {
-    this.query.where(key).nin(values)
-    return this
+  whereNotIn(key, values) {
+    this.query.where(key).nin(values);
+    return this;
   }
 
   /**
@@ -797,15 +820,15 @@ class QueryBuilder {
    *
    * @public
    */
-  select () {
-    let arg = null
+  select() {
+    let arg = null;
     if (arguments.length > 1) {
-      arg = _.values(arguments).join(' ')
+      arg = _.values(arguments).join(' ');
     } else {
-      arg = arguments[0]
+      arg = arguments[0];
     }
-    this.query.select(arg)
-    return this
+    this.query.select(arg);
+    return this;
   }
 
   /**
@@ -814,15 +837,15 @@ class QueryBuilder {
    * @returns {this}
    * @memberof QueryBuilder
    */
-  orderBy () {
-    let arg = null
+  orderBy() {
+    let arg = null;
     if (arguments.length > 1) {
-      arg = _.set({}, arguments[0], arguments[1])
+      arg = _.set({}, arguments[0], arguments[1]);
     } else {
-      arg = arguments[0]
+      arg = arguments[0];
     }
-    this.query.sort(arg)
-    return this
+    this.query.sort(arg);
+    return this;
   }
 
   /**
@@ -832,8 +855,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  count (groupBy) {
-    return this._aggregate('count', null, groupBy)
+  count(groupBy) {
+    return this._aggregate('count', null, groupBy);
   }
 
   /**
@@ -843,8 +866,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  max (key, groupBy) {
-    return this._aggregate('max', key, groupBy)
+  max(key, groupBy) {
+    return this._aggregate('max', key, groupBy);
   }
 
   /**
@@ -854,8 +877,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  min (key, groupBy) {
-    return this._aggregate('min', key, groupBy)
+  min(key, groupBy) {
+    return this._aggregate('min', key, groupBy);
   }
 
   /**
@@ -865,8 +888,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  sum (key, groupBy) {
-    return this._aggregate('sum', key, groupBy)
+  sum(key, groupBy) {
+    return this._aggregate('sum', key, groupBy);
   }
 
   /**
@@ -876,8 +899,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  avg (key, groupBy) {
-    return this._aggregate('avg', key, groupBy)
+  avg(key, groupBy) {
+    return this._aggregate('avg', key, groupBy);
   }
 
   /**
@@ -887,45 +910,47 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async _aggregate (aggregator, key, groupBy) {
-    this._applyScopes()
-    const $match = this.query._conditions
-    const $group = {}
+  async _aggregate(aggregator, key, groupBy) {
+    this._applyScopes();
+    const $match = this.query._conditions;
+    const $group = {};
     if (_.isString(groupBy)) {
-      $group._id = '$' + groupBy
+      $group._id = '$' + groupBy;
     } else if (_.isObject) {
-      $group._id = groupBy
+      $group._id = groupBy;
     }
 
     switch (aggregator) {
       case 'count':
-        $group[aggregator] = { $sum: 1 }
-        break
+        $group[aggregator] = { $sum: 1 };
+        break;
       case 'max':
-        $group[aggregator] = { $max: '$' + key }
-        break
+        $group[aggregator] = { $max: '$' + key };
+        break;
       case 'min':
-        $group[aggregator] = { $min: '$' + key }
-        break
+        $group[aggregator] = { $min: '$' + key };
+        break;
       case 'sum':
-        $group[aggregator] = { $sum: '$' + key }
-        break
+        $group[aggregator] = { $sum: '$' + key };
+        break;
       case 'avg':
-        $group[aggregator] = { $avg: '$' + key }
-        break
+        $group[aggregator] = { $avg: '$' + key };
+        break;
       default:
-        break
+        break;
     }
-    const collection = await this.getCollection()
-    debug(aggregator, this.collection, $match, $group)
-    const result = await collection.aggregate([{ $match }, { $group }]).toArray()
-    return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null
+    const collection = await this.getCollection();
+    debug(aggregator, this.collection, $match, $group);
+    const result = await collection
+      .aggregate([{ $match }, { $group }])
+      .toArray();
+    return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null;
   }
 
-  async aggregate (...args) {
-    const collection = await this.getCollection()
-    debug(...args, this.collection)
-    return collection.aggregate(...args).toArray()
+  async aggregate(...args) {
+    const collection = await this.getCollection();
+    debug(...args, this.collection);
+    return collection.aggregate(...args).toArray();
   }
 
   /**
@@ -935,10 +960,10 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  async distinct (field) {
-    this._applyScopes()
-    const collection = await this.getCollection()
-    return this.query.collection(collection).distinct(...arguments)
+  async distinct(field) {
+    this._applyScopes();
+    const collection = await this.getCollection();
+    return this.query.collection(collection).distinct(...arguments);
   }
 
   /**
@@ -948,8 +973,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  toSQL () {
-    return JSON.stringify(this.query)
+  toSQL() {
+    return JSON.stringify(this.query);
   }
 
   /**
@@ -959,8 +984,8 @@ class QueryBuilder {
    *
    * @return {String}
    */
-  toString () {
-    return this.query.toString()
+  toString() {
+    return this.query.toString();
   }
 
   /**
@@ -975,9 +1000,9 @@ class QueryBuilder {
    *
    * @chainable
    */
-  setVisible (fields) {
-    this._visibleFields = fields
-    return this
+  setVisible(fields) {
+    this._visibleFields = fields;
+    return this;
   }
 
   /**
@@ -992,10 +1017,10 @@ class QueryBuilder {
    *
    * @chainable
    */
-  setHidden (fields) {
-    this._hiddenFields = fields
-    return this
+  setHidden(fields) {
+    this._hiddenFields = fields;
+    return this;
   }
 }
 
-module.exports = QueryBuilder
+module.exports = QueryBuilder;

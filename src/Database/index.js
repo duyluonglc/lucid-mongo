@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 /**
  * adonis-lucid
@@ -7,31 +7,31 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
-*/
+ */
 
-const { MongoClient } = require('mongodb')
-const mquery = require('mquery')
-const CE = require('../Exceptions')
-const util = require('../../lib/util')
-const _ = require('lodash')
-const mongoUriBuilder = require('mongo-uri-builder')
-const mongoUrl = require('mongodb-url')
+const { MongoClient } = require('mongodb');
+const mquery = require('mquery');
+const CE = require('../Exceptions');
+const util = require('../../lib/util');
+const _ = require('lodash');
+const mongoUriBuilder = require('mongo-uri-builder');
+const mongoUrl = require('mongodb-url');
 
 mquery.Promise = global.Promise;
 
 const proxyHandler = {
-  get (target, name) {
-    if (typeof (name) === 'symbol' || name === 'inspect') {
-      return target[name]
+  get(target, name) {
+    if (typeof name === 'symbol' || name === 'inspect') {
+      return target[name];
     }
 
-    if (typeof (target[name]) !== 'undefined') {
-      return target[name]
+    if (typeof target[name] !== 'undefined') {
+      return target[name];
     }
 
-    const queryBuilder = target.query()
-    if (typeof (queryBuilder[name]) !== 'function') {
-      throw new Error(`Database.${name} is not a function`)
+    const queryBuilder = target.query();
+    if (typeof queryBuilder[name] !== 'function') {
+      throw new Error(`Database.${name} is not a function`);
     }
 
     /**
@@ -39,57 +39,61 @@ const proxyHandler = {
      * queries if global transactions are on
      */
     if (target._globalTrx) {
-      queryBuilder.transacting(target._globalTrx)
+      queryBuilder.transacting(target._globalTrx);
     }
 
-    return queryBuilder[name].bind(queryBuilder)
+    return queryBuilder[name].bind(queryBuilder);
   }
-}
+};
 
 class SchemaBuilder {
-  constructor (collection) {
-    this.collection = collection
-    this.createIndexes = []
-    this.dropIndexes = []
+  constructor(collection) {
+    this.collection = collection;
+    this.createIndexes = [];
+    this.dropIndexes = [];
 
-    this.increments = () => this
-    this.timestamps = () => this
-    this.softDeletes = () => this
-    this.string = () => this
-    this.timestamp = () => this
-    this.boolean = () => this
-    this.integer = () => this
-    this.double = () => this
-    this.nullable = () => this
-    this.defaultTo = () => this
-    this.unsigned = () => this
-    this.references = () => this
+    this.increments = () => this;
+    this.timestamps = () => this;
+    this.softDeletes = () => this;
+    this.string = () => this;
+    this.timestamp = () => this;
+    this.boolean = () => this;
+    this.integer = () => this;
+    this.double = () => this;
+    this.nullable = () => this;
+    this.defaultTo = () => this;
+    this.unsigned = () => this;
+    this.references = () => this;
   }
 
-  index (name, keys, options) {
+  index(name, keys, options) {
     if (!name) {
-      throw new CE.InvalidArgumentException(`param name is required to create index`)
+      throw new CE.InvalidArgumentException(
+        `param name is required to create index`
+      );
     }
     if (!keys || !_.size(keys)) {
-      throw new CE.InvalidArgumentException(`param keys is required to create index`)
+      throw new CE.InvalidArgumentException(
+        `param keys is required to create index`
+      );
     }
-    options = options || {}
-    options['name'] = name
-    this.createIndexes.push({ keys, options })
+    options = options || {};
+    options['name'] = name;
+    this.createIndexes.push({ keys, options });
   }
 
-  dropIndex (name) {
-    this.dropIndexes.push(name)
+  dropIndex(name) {
+    this.dropIndexes.push(name);
   }
 
-  async build () {
+  async build() {
     for (var i in this.createIndexes) {
-      var createIndex = this.createIndexes[i]
-      await this.collection.createIndex(createIndex.keys, createIndex.options)
+      var createIndex = this.createIndexes[i];
+      await this.collection.createIndex(createIndex.keys, createIndex.options);
     }
     for (var j in this.dropIndexes) {
-      var dropIndex = this.dropIndexes[j]
-      await this.collection.dropIndex(dropIndex)
+      var dropIndex = this.dropIndexes[j];
+      await this.collection.dropIndex(dropIndex);
     }
   }
 }
@@ -106,51 +110,60 @@ class SchemaBuilder {
  * @group Database
  */
 class Database {
-  constructor (config) {
+  constructor(config) {
     if (config.client !== 'mongodb') {
-      throw new CE.RuntimeException('invalid connection type')
+      throw new CE.RuntimeException('invalid connection type');
     }
 
     if (config.connectionString) {
-      this.connectionString = config.connectionString
-      const parsedUri = mongoUrl(this.connectionString)
-      this.databaseName = parsedUri.dbName || config.connection.database
+      this.connectionString = config.connectionString;
+      const parsedUri = mongoUrl(this.connectionString);
+      this.databaseName = parsedUri.dbName || config.connection.database;
     } else {
-      this.connectionString = mongoUriBuilder(config.connection)
-      this.databaseName = config.connection.database
+      this.connectionString = mongoUriBuilder(config.connection);
+      this.databaseName = config.connection.database;
     }
 
-    this.connectionOptions = _.assign({
-      useNewUrlParser: true
-    }, config.connectionOptions || {})
+    this.connectionOptions = _.assign(
+      {
+        useNewUrlParser: true
+      },
+      config.connectionOptions || {}
+    );
 
-    this.connection = null
-    this.db = null
-    this._globalTrx = null
-    this.query()
-    return new Proxy(this, proxyHandler)
+    this.connection = null;
+    this.db = null;
+    this._globalTrx = null;
+    this.query();
+    return new Proxy(this, proxyHandler);
   }
 
-  async connect (collectionName) {
+  async connect(collectionName) {
     if (!this.db) {
-      this.connection = await MongoClient.connect(this.connectionString, this.connectionOptions)
-      this.db = this.connection.db(this.databaseName)
+      this.connection = await MongoClient.connect(
+        this.connectionString,
+        this.connectionOptions
+      );
+      this.db = this.connection.db(this.databaseName);
     }
-    return Promise.resolve(this.db)
+    return Promise.resolve(this.db);
   }
 
-  async getCollection (collectionName) {
+  async getCollection(collectionName) {
     if (!this.db) {
-      this.connection = await MongoClient.connect(this.connectionString, this.connectionOptions)
-      this.db = this.connection.db(this.databaseName)
+      this.connection = await MongoClient.connect(
+        this.connectionString,
+        this.connectionOptions
+      );
+      this.db = this.connection.db(this.databaseName);
     }
-    return Promise.resolve(this.db.collection(collectionName))
+    return Promise.resolve(this.db.collection(collectionName));
   }
 
-  collection (collectionName) {
-    this.collectionName = collectionName
-    this.query()
-    return this
+  collection(collectionName) {
+    this.collectionName = collectionName;
+    this.query();
+    return this;
   }
 
   /**
@@ -179,63 +192,81 @@ class Database {
    *
    * @return {Object}
    */
-  get schema () {
+  get schema() {
     return {
       collection: async (collectionName, callback) => {
         // debug('create collection', { collectionName })
-        const db = await this.connect()
-        const collection = await db.collection(collectionName)
-        const schemaBuilder = new SchemaBuilder(collection)
-        callback(schemaBuilder)
-        return schemaBuilder.build()
+        const db = await this.connect();
+        const collection = await db.collection(collectionName);
+        const schemaBuilder = new SchemaBuilder(collection);
+        callback(schemaBuilder);
+        return schemaBuilder.build();
       },
       createCollection: async (collectionName, callback) => {
         // debug('create collection', {collectionName})
-        const db = await this.connect()
-        const collections = await db.listCollections().toArray()
-        if (_.find(collections, collection => collection.name === collectionName)) {
-          throw new Error('already exists')
+        const db = await this.connect();
+        const collections = await db.listCollections().toArray();
+        if (
+          _.find(
+            collections,
+            (collection) => collection.name === collectionName
+          )
+        ) {
+          throw new Error('already exists');
         }
-        const collection = await db.createCollection(collectionName)
-        const schemaBuilder = new SchemaBuilder(collection)
-        callback(schemaBuilder)
-        return schemaBuilder.build()
+        const collection = await db.createCollection(collectionName);
+        const schemaBuilder = new SchemaBuilder(collection);
+        callback(schemaBuilder);
+        return schemaBuilder.build();
       },
       createCollectionIfNotExists: async (collectionName, callback) => {
         // debug('create collection if not exists', { collectionName })
-        const db = await this.connect()
-        const collections = await db.listCollections().toArray()
-        if (!_.find(collections, collection => collection.name === collectionName)) {
-          const collection = await db.createCollection(collectionName)
-          const schemaBuilder = new SchemaBuilder(collection)
-          callback(schemaBuilder)
-          return schemaBuilder.build()
+        const db = await this.connect();
+        const collections = await db.listCollections().toArray();
+        if (
+          !_.find(
+            collections,
+            (collection) => collection.name === collectionName
+          )
+        ) {
+          const collection = await db.createCollection(collectionName);
+          const schemaBuilder = new SchemaBuilder(collection);
+          callback(schemaBuilder);
+          return schemaBuilder.build();
         }
       },
       dropCollection: async (collectionName) => {
         // debug('drop collection', { collectionName })
-        const db = await this.connect()
-        return db.dropCollection(collectionName)
+        const db = await this.connect();
+        return db.dropCollection(collectionName);
       },
       dropCollectionIfExists: async (collectionName) => {
         // debug('drop collection if not exists', { collectionName })
-        const db = await this.connect()
-        const collections = await db.listCollections().toArray()
-        if (_.find(collections, collection => collection.name === collectionName)) {
-          return db.dropCollection(collectionName)
+        const db = await this.connect();
+        const collections = await db.listCollections().toArray();
+        if (
+          _.find(
+            collections,
+            (collection) => collection.name === collectionName
+          )
+        ) {
+          return db.dropCollection(collectionName);
         }
       },
       renameCollection: async (collectionName, target) => {
         // debug('rename collection', { collectionName, target })
-        const db = await this.connect()
-        return db.collection(collectionName).rename(target)
+        const db = await this.connect();
+        return db.collection(collectionName).rename(target);
       },
       hasCollection: async (collectionName) => {
-        const db = await this.connect()
-        const collections = await db.listCollections().toArray()
-        return !!_.find(collections, collection => collection.name === collectionName)
+        const db = await this.connect();
+        const collections = await db.listCollections().toArray();
+        return !!_.find(
+          collections,
+          (collection) => collection.name === collectionName
+        );
       }
-    }
+    };
   }
 
   /**
@@ -245,9 +276,9 @@ class Database {
    * @returns
    * @memberof Database
    */
-  sort (...arg) {
-    this.queryBuilder.sort(...arg)
-    return this
+  sort(...arg) {
+    this.queryBuilder.sort(...arg);
+    return this;
   }
 
   /**
@@ -257,9 +288,9 @@ class Database {
    * @returns
    * @memberof Database
    */
-  limit (...arg) {
-    this.queryBuilder.limit(...arg)
-    return this
+  limit(...arg) {
+    this.queryBuilder.limit(...arg);
+    return this;
   }
 
   /**
@@ -269,9 +300,9 @@ class Database {
    * @returns
    * @memberof Database
    */
-  skip (...arg) {
-    this.queryBuilder.skip(...arg)
-    return this
+  skip(...arg) {
+    this.queryBuilder.skip(...arg);
+    return this;
   }
 
   /**
@@ -281,9 +312,9 @@ class Database {
    * @returns
    * @memberof Database
    */
-  select (...arg) {
-    this.queryBuilder.select(...arg)
-    return this
+  select(...arg) {
+    this.queryBuilder.select(...arg);
+    return this;
   }
 
   /**
@@ -293,10 +324,11 @@ class Database {
    *
    * @return {Object}
    */
-  query () {
-    this.queryBuilder = mquery()
-    this.replaceMethods()
-    return this.queryBuilder
+  query() {
+    this.queryBuilder = mquery();
+    this.queryBuilder.$useProjection = true;
+    this.replaceMethods();
+    return this.queryBuilder;
   }
 
   /**
@@ -306,11 +338,11 @@ class Database {
    *
    * @return {Object}
    */
-  get fn () {
+  get fn() {
     return {
       remove: (path) => console.log('remove', path),
       now: () => new Date()
-    }
+    };
   }
 
   /**
@@ -319,8 +351,8 @@ class Database {
    * @readonly
    * @memberof Database
    */
-  get conditions () {
-    return this.queryBuilder._conditions
+  get conditions() {
+    return this.queryBuilder._conditions;
   }
 
   /**
@@ -328,8 +360,8 @@ class Database {
    *
    * @memberof Database
    */
-  clone () {
-    return _.cloneDeep(this.queryBuilder)
+  clone() {
+    return _.cloneDeep(this.queryBuilder);
   }
 
   /**
@@ -340,8 +372,8 @@ class Database {
    *
    * @return {Promise}
    */
-  close () {
-    return this.connection.close()
+  close() {
+    return this.connection.close();
   }
 
   /**
@@ -351,10 +383,10 @@ class Database {
    *
    * @return {Object}
    */
-  async find () {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return this.queryBuilder.collection(collection).find()
+  async find() {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    return this.queryBuilder.collection(collection).find();
   }
 
   /**
@@ -364,10 +396,10 @@ class Database {
    *
    * @return {Object}
    */
-  async findOne () {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return this.queryBuilder.collection(collection).findOne()
+  async findOne() {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    return this.queryBuilder.collection(collection).findOne();
   }
 
   /**
@@ -377,8 +409,8 @@ class Database {
    *
    * @return {Object}
    */
-  async first () {
-    return this.findOne()
+  async first() {
+    return this.findOne();
   }
 
   /**
@@ -388,10 +420,10 @@ class Database {
    *
    * @return {Object}
    */
-  async pluck (field) {
-    this.queryBuilder.select(field)
-    const result = await this.find()
-    return _.map(result, field)
+  async pluck(field) {
+    this.queryBuilder.select(field);
+    const result = await this.find();
+    return _.map(result, field);
   }
 
   /**
@@ -401,10 +433,10 @@ class Database {
    *
    * @return {Object}
    */
-  async update () {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return this.queryBuilder.collection(collection).update(...arguments)
+  async update() {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    return this.queryBuilder.collection(collection).update(...arguments);
   }
 
   /**
@@ -414,10 +446,10 @@ class Database {
    *
    * @return {Object}
    */
-  async delete () {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return this.queryBuilder.collection(collection).remove(...arguments)
+  async delete() {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    return this.queryBuilder.collection(collection).remove(...arguments);
   }
 
   /**
@@ -427,14 +459,18 @@ class Database {
    *
    * @return {Object}
    */
-  async paginate (page, limit) {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    const countByQuery = await this.aggregate('count')
-    const rows = await this.queryBuilder.collection(collection).limit(limit).skip((page || 1) * limit).find()
-    const result = util.makePaginateMeta(countByQuery || 0, page, limit)
-    result.data = rows
-    return result
+  async paginate(page, limit) {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    const countByQuery = await this.aggregate('count');
+    const rows = await this.queryBuilder
+      .collection(collection)
+      .limit(limit)
+      .skip((page || 1) * limit)
+      .find();
+    const result = util.makePaginateMeta(countByQuery || 0, page, limit);
+    result.data = rows;
+    return result;
   }
 
   /**
@@ -444,10 +480,10 @@ class Database {
    *
    * @return {Object}
    */
-  async insert (row) {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return collection.insert(row)
+  async insert(row) {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    return collection.insert(row);
   }
 
   /**
@@ -457,8 +493,8 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  count (...args) {
-    return this.aggregate('count', null, ...args)
+  count(...args) {
+    return this.aggregate('count', null, ...args);
   }
 
   /**
@@ -468,8 +504,8 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  sum (...args) {
-    return this.aggregate('sum', ...args)
+  sum(...args) {
+    return this.aggregate('sum', ...args);
   }
 
   /**
@@ -479,8 +515,8 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  avg (...args) {
-    return this.aggregate('avg', ...args)
+  avg(...args) {
+    return this.aggregate('avg', ...args);
   }
 
   /**
@@ -490,8 +526,8 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  max (...args) {
-    return this.aggregate('max', ...args)
+  max(...args) {
+    return this.aggregate('max', ...args);
   }
 
   /**
@@ -501,8 +537,8 @@ class Database {
    * @returns {Number|Array}
    * @memberof Database
    */
-  min (...args) {
-    return this.aggregate('min', ...args)
+  min(...args) {
+    return this.aggregate('min', ...args);
   }
 
   /**
@@ -512,33 +548,35 @@ class Database {
    *
    * @return {Object}
    */
-  async aggregate (aggregator, key, groupBy) {
-    const $match = this.conditions
-    const $group = { _id: '$' + groupBy }
+  async aggregate(aggregator, key, groupBy) {
+    const $match = this.conditions;
+    const $group = { _id: '$' + groupBy };
     switch (aggregator) {
       case 'count':
-        $group[aggregator] = { $sum: 1 }
-        break
+        $group[aggregator] = { $sum: 1 };
+        break;
       case 'max':
-        $group[aggregator] = { $max: '$' + key }
-        break
+        $group[aggregator] = { $max: '$' + key };
+        break;
       case 'min':
-        $group[aggregator] = { $min: '$' + key }
-        break
+        $group[aggregator] = { $min: '$' + key };
+        break;
       case 'sum':
-        $group[aggregator] = { $sum: '$' + key }
-        break
+        $group[aggregator] = { $sum: '$' + key };
+        break;
       case 'avg':
-        $group[aggregator] = { $avg: '$' + key }
-        break
+        $group[aggregator] = { $avg: '$' + key };
+        break;
       default:
-        break
+        break;
     }
     // debug('count', this.collectionName, $match, $group)
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    const result = await collection.aggregate([{ $match }, { $group }]).toArray()
-    return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    const result = await collection
+      .aggregate([{ $match }, { $group }])
+      .toArray();
+    return groupBy ? result : !_.isEmpty(result) ? result[0][aggregator] : null;
   }
 
   /**
@@ -548,10 +586,10 @@ class Database {
    *
    * @return {Object}
    */
-  async distinct () {
-    const connection = await this.connect()
-    const collection = connection.collection(this.collectionName)
-    return this.queryBuilder.collection(collection).distinct(...arguments)
+  async distinct() {
+    const connection = await this.connect();
+    const collection = connection.collection(this.collectionName);
+    return this.queryBuilder.collection(collection).distinct(...arguments);
   }
 
   /**
@@ -561,7 +599,7 @@ class Database {
    * @static
    * @memberof QueryBuilder
    */
-  static get conditionMethods () {
+  static get conditionMethods() {
     return [
       'eq',
       'ne',
@@ -580,7 +618,7 @@ class Database {
       'elemMatch',
       'geometry',
       'intersects'
-    ]
+    ];
   }
 
   /**
@@ -588,13 +626,13 @@ class Database {
    *
    * @memberof QueryBuilder
    */
-  replaceMethods () {
+  replaceMethods() {
     for (let name of this.constructor.conditionMethods) {
-      let originMethod = this.queryBuilder[name]
+      let originMethod = this.queryBuilder[name];
       this.queryBuilder[name] = (param) => {
-        originMethod.apply(this.queryBuilder, [param])
-        return this
-      }
+        originMethod.apply(this.queryBuilder, [param]);
+        return this;
+      };
     }
   }
 
@@ -604,37 +642,39 @@ class Database {
    * @returns {this}
    * @memberof QueryBuilder
    */
-  where () {
+  where() {
     if (arguments.length === 3) {
       switch (arguments[1]) {
         case '=':
-          this.queryBuilder.where(arguments[0]).eq(arguments[2])
-          break
+          this.queryBuilder.where(arguments[0]).eq(arguments[2]);
+          break;
         case '>':
-          this.queryBuilder.where(arguments[0]).gt(arguments[2])
-          break
+          this.queryBuilder.where(arguments[0]).gt(arguments[2]);
+          break;
         case '>=':
-          this.queryBuilder.where(arguments[0]).gte(arguments[2])
-          break
+          this.queryBuilder.where(arguments[0]).gte(arguments[2]);
+          break;
         case '<':
-          this.queryBuilder.where(arguments[0]).lt(arguments[2])
-          break
+          this.queryBuilder.where(arguments[0]).lt(arguments[2]);
+          break;
         case '<=':
-          this.queryBuilder.where(arguments[0]).lte(arguments[2])
-          break
+          this.queryBuilder.where(arguments[0]).lte(arguments[2]);
+          break;
         case '<>':
-          this.queryBuilder.where(arguments[0]).ne(arguments[2])
-          break
+          this.queryBuilder.where(arguments[0]).ne(arguments[2]);
+          break;
         default:
-          throw new CE.InvalidArgumentException(`Method "$${arguments[1]}" is not support by query builder`)
+          throw new CE.InvalidArgumentException(
+            `Method "$${arguments[1]}" is not support by query builder`
+          );
       }
     } else if (arguments.length === 2 || _.isPlainObject(arguments[0])) {
-      this.queryBuilder.where(...arguments)
+      this.queryBuilder.where(...arguments);
     } else {
-      return this.queryBuilder.where(...arguments)
+      return this.queryBuilder.where(...arguments);
     }
-    return this
+    return this;
   }
 }
 
-module.exports = Database
+module.exports = Database;
