@@ -1,22 +1,10 @@
 language: node_js
-cache:
-  directories:
-    - ~/.npm
-notifications:
-  email: false
 node_js:
-  - node
-  - 8.0.0
+  - 12
+  - 10
+  - 8
 services: mongodb
 before_script:
   - mongo test_lucid --eval 'db.createUser({user:"test",pwd:"test",roles:["dbOwner"]});'
-sudo: false
-install:
-  - npm install --no-optional
 script:
   - DB=mongodb DB_NAME=test_lucid DB_USER=test DB_PASSWORD=test npm test
-branches:
-  except:
-    - /^v\d+\.\d+\.\d+$/
-
-
