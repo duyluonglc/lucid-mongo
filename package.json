@@ -2,7 +2,7 @@
   "name": "@zakodium/lucid-mongo",
   "description": "A Mongodb ODM",
   "main": "index.js",
-  "version": "4.0.0-1",
+  "version": "4.0.0-2",
   "scripts": {
     "pretest": "npm run test:cleanup && npm run lint",
     "test:cleanup": "rm -rf test/functional/database && rm -rf test/unit/tmp",
