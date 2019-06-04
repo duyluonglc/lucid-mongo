@@ -2,14 +2,12 @@
 
 lucid-mongo is a mongo query builder and ORM. It also has support for database migrations, seeds and factories as @adonis/lucid.
 
-[![Version](https://img.shields.io/npm/v/lucid-mongo.svg)](https://www.npmjs.com/package/lucid-mongo)
-[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
-[![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=develop)](https://travis-ci.org/duyluonglc/lucid-mongo)
-[![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/develop.svg)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=develop)
-[![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/lucid-mongo.svg)](https://greenkeeper.io/)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo?ref=badge_shield)
-> :pray: This repository is base on @adonis/lucid and only work with mongodb.
-## Features?
+[![NPM version][npm-image]][npm-url]
+[![build status][travis-image]][travis-url]
+[![Test coverage][codecov-image]][codecov-url]
+[![npm download][download-image]][download-url]
+
+## Features
 
 Apart from being just a query builder, lucid-mongo has following features.
 
@@ -20,7 +18,7 @@ Apart from being just a query builder, lucid-mongo has following features.
 5. Migrations
 6. Factories and Seeds
 
-Lucid-mongo version 2.0 now can be used as standalone or used with AdonisJS 
+Lucid-mongo can be used as standalone or used with AdonisJS.
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
 You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
@@ -36,32 +34,7 @@ This repo/branch is supposed to run fine on all major OS platforms and targets `
 Install npm using `adonis` command.
 
 ```js
-adonis install lucid-mongo
-```
-
-### Breaking update
-| Adonis version | Lucid Mongo version |
-| -------------- | ------------------- |
-| 3.x.x          | 1.x.x               |
-| 4.x.x          | 2.x.x               |
-| 4.x.x          | 3.x.x               |
-
-- From version 2 lucid-mongo use async, await instead generator function which used in version 1
-[See the doc of v1.x here](https://github.com/duyluonglc/lucid-mongo/blob/1.x/README.md)
-
-- From version 3 change pattern of the condition object when passing to where method
-```js
-  // version 2 style
-  const users =  await User
-    .where({ or: [{ age: { gte: 18, lte: 30 }}, { is_blocked: { exists: false } }] })
-    .sort({ age: -1 })
-    .fetch()
-    
-  // version 3 style
-  const users =  await User
-    .where({ $or: [{ age: { $gte: 18, $lte: 30 }}, { is_blocked: { $exists: false } }] })
-    .sort({ age: -1 })
-    .fetch()
+adonis install @zakodium/lucid-mongo
 ```
 
 Make sure to register the lucid provider to make use of `Database` and `LucidMongo` models. The providers are registered inside `start/app.js`
@@ -69,19 +42,19 @@ Make sure to register the lucid provider to make use of `Database` and `LucidMon
 ```js
 const providers = [
   // ...
-  'lucid-mongo/providers/LucidMongoProvider'
-]
+  '@zakodium/lucid-mongo/providers/LucidMongoProvider'
+];
 
 const aceProviders = [
   // ...
-  'lucid-mongo/providers/MigrationsProvider'
-]
+  '@zakodium/lucid-mongo/providers/MigrationsProvider'
+];
 ```
+
 the config automatic create to `config/database.js` file
 
 ```js
 module.exports = {
-
   /*
   |--------------------------------------------------------------------------
   | Default Connection
@@ -116,11 +89,13 @@ module.exports = {
       }
     }
   }
-}
+};
 ```
 
 ### Configuring Auth serializer
+
 Edit the config/auth.js file for including the serializer. For example on the api schema
+
 ```js
   session: {
     serializer: 'LucidMongo',
@@ -129,7 +104,7 @@ Edit the config/auth.js file for including the serializer. For example on the ap
     uid: 'email',
     password: 'password'
   },
-  
+
   basic: {
     serializer: 'LucidMongo',
     model: 'App/Models/User',
@@ -163,10 +138,11 @@ Edit the config/auth.js file for including the serializer. For example on the ap
 ```
 
 ## Use standalone (still in development)
+
 To setup this package as standalone package
 
 ```bash
-$ npm i --save lucid-mongo
+$ npm i @zakodium/lucid-mongo
 ```
 
 ```js
@@ -182,119 +158,121 @@ const config = {
       password: 'my_password',
       database: 'my_database'
       options: {
-      
+
       }
     }
   }
 }
 ```
+
 ```js
 // Models/User.js
-const { Models, Model } = require('./')(config)
+const { Models, Model } = require('./')(config);
 
-class User extends Model {
+class User extends Model {}
 
-}
+Models.add('App/Model/User', User);
 
-Models.add('App/Model/User', User)
-
-module.exports = User
+module.exports = User;
 ```
+
 ```js
 // index.js
-async function test () {
+async function test() {
+  const users = await User.where({ isActive: false }).fetch();
 
-  const users = await User.where({ isActive: false }).fetch()
-
-  console.log(users.toJSON())
+  console.log(users.toJSON());
 }
 
-test()
-
+test();
 ```
 
 ### Query
 
 ```js
-const users =  await User.all()
+const users = await User.all();
 
-const users =  await User.where('name', 'peter').fetch()
+const users = await User.where('name', 'peter').fetch();
 
-const users =  await User.where({ name: 'peter' })
-  .limit(10).skip(20).fetch()
+const users = await User.where({ name: 'peter' })
+  .limit(10)
+  .skip(20)
+  .fetch();
 
-const users =  await User.where({
+const users = await User.where({
   $or: [
-    { gender: 'female', age: { $gte: 20 } }, 
+    { gender: 'female', age: { $gte: 20 } },
     { gender: 'male', age: { $gte: 22 } }
   ]
-}).fetch()
+}).fetch();
 
-const user =  await User
-  .where('name').eq('peter')
-  .where('age').gt(18).lte(60)
+const user = await User.where('name')
+  .eq('peter')
+  .where('age')
+  .gt(18)
+  .lte(60)
   .sort('-age')
-  .first()
+  .first();
 
-const users =  await User
-  .where({ age: { $gte: 18 } })
+const users = await User.where({ age: { $gte: 18 } })
   .sort({ age: -1 })
-  .fetch()
+  .fetch();
 
-const users =  await User
-  .where('age', '>=', 18)
-  .fetch()
+const users = await User.where('age', '>=', 18).fetch();
 
-const users =  await User
-  .where('age').gt(18)
-  .paginate(2, 100)
+const users = await User.where('age')
+  .gt(18)
+  .paginate(2, 100);
 
-const users =  await User.where(function() {
-  this.where('age', '>=', 18)
-}).fetch()
-
+const users = await User.where(function() {
+  this.where('age', '>=', 18);
+}).fetch();
 
 // to query geo near you need add 2d or 2dsphere index in migration file
-const images = await Image
-  .where(location)
+const images = await Image.where(location)
   .near({ center: [1, 1] })
   .maxDistance(5000)
-  .fetch()
+  .fetch();
 
-const images = await Image
-  .where(location)
+const images = await Image.where(location)
   .near({ center: [1, 1], sphere: true })
   .maxDistance(5000)
-  .fetch()
+  .fetch();
 ```
+
 [More Documentation of mquery](https://github.com/aheckmann/mquery)
 
 ### Aggregation
+
 ```js
-  // count without group by
-  const count = await Customer.count()
+// count without group by
+const count = await Customer.count();
 
-  // count group by `position`
-  const count_rows = await Customer
-    .where({ invited: { $exist: true } })
-    .count('position')
+// count group by `position`
+const count_rows = await Customer.where({ invited: { $exist: true } }).count(
+  'position'
+);
 
-  // max age without group by
-  const max = await Employee.max('age')
+// max age without group by
+const max = await Employee.max('age');
 
-  // sum `salary` group by `department_id`
-  const total_rows = await Employee
-    .where(active, true)
-    .sum('salary', 'department_id')
+// sum `salary` group by `department_id`
+const total_rows = await Employee.where(active, true).sum(
+  'salary',
+  'department_id'
+);
 
-  // average group by `department_id` and `role_id`
-  const avg_rows = await Employee
-    .where(active, true)
-    .avg('salary', { department: '$department_id', role: '$role_id' })
+// average group by `department_id` and `role_id`
+const avg_rows = await Employee.where(active, true).avg('salary', {
+  department: '$department_id',
+  role: '$role_id'
+});
 ```
 
 ### Relations
+
 This package support relations like adonis-lucid:
+
 - hasOne
 - belongsTo
 - hasMany
@@ -306,96 +284,103 @@ This package support relations like adonis-lucid:
 mongodb has no join query so this package has no query like: `has`, `whereHas`, `doesntHave`, `whereDoesntHave`
 
 ### Addition relations
+
 1. `morphMany:` A model can belong to more than one other model, on a single association. For example, you might have a Picture model that belongs to either an Author model or a Reader model
+
 ```js
 class Author extends Model {
-
-  pictures () {
-    return this.morphMany('App/Model/Picture', 'pictureableType', 'pictureableId')
+  pictures() {
+    return this.morphMany(
+      'App/Model/Picture',
+      'pictureableType',
+      'pictureableId'
+    );
   }
-
 }
 
 class Reader extends Model {
-
-  pictures () {
-    return this.morphMany('App/Model/Picture', 'pictureableType', 'pictureableId')
+  pictures() {
+    return this.morphMany(
+      'App/Model/Picture',
+      'pictureableType',
+      'pictureableId'
+    );
   }
-
 }
 
 class Picture extends Model {
-
-  imageable () {
-    return this.morphTo('App/Model', 'pictureable_type', 'pictureable_id')
+  imageable() {
+    return this.morphTo('App/Model', 'pictureable_type', 'pictureable_id');
   }
-
 }
 ```
+
 2. `embedsOne:` EmbedsOne is used to represent a model that embeds another model, for example, a Customer embeds one billingAddress.
+
 ```js
 class Customer extends Model {
-
-  billingAddress () {
-    return this.embedsOne('App/Model/Address', '_id', 'billingAddress')
+  billingAddress() {
+    return this.embedsOne('App/Model/Address', '_id', 'billingAddress');
   }
-
 }
 ```
+
 3. `embedsMany:` Use an embedsMany relation to indicate that a model can embed many instances of another model. For example, a Customer can have multiple email addresses and each email address is a complex object that contains label and address.
+
 ```js
 class Customer extends Model {
-
-  emails () {
-    return this.embedsMany('App/Model/Email', '_id', 'emails')
+  emails() {
+    return this.embedsMany('App/Model/Email', '_id', 'emails');
   }
-
 }
 ```
+
 4. `referMany:` Population is the process of automatically replacing the specified paths in the document with document(s) from other collection(s)
+
 ```js
 class Bill extends Model {
-
-  items () {
-    return this.referMany('App/Model/Item', '_id', 'items')
+  items() {
+    return this.referMany('App/Model/Item', '_id', 'items');
   }
-
 }
 ```
 
 ### Query relationships
 
 ```js
-  const users = await User.with('emails').fetch()
+const users = await User.with('emails').fetch();
 
-  const user = await User.with('emails', query => {
-    query.where({ status: 'verified' })
-  }).first()
+const user = await User.with('emails', (query) => {
+  query.where({ status: 'verified' });
+}).first();
 
-  const user = await User.with(['emails', 'phones']).first()
+const user = await User.with(['emails', 'phones']).first();
 
-  const user = await User.with({ 
-    emails: { 
-      where: { verified: true }, 
-      sort: '-created_at' 
-    }
-  }).first()
+const user = await User.with({
+  emails: {
+    where: { verified: true },
+    sort: '-created_at'
+  }
+}).first();
 
-  const user = await User.with({
-    emails: query => {
-      query.where('active', true)
-    }
-  }).first()
-
+const user = await User.with({
+  emails: (query) => {
+    query.where('active', true);
+  }
+}).first();
 ```
 
 ### Query logging
+
 To show query logs run this command:
+
 - Linux, MacOS `DEBUG=mquery npm run dev`
 - Windows `setx DEBUG mquery && npm run dev`
 
 ### Migration
+
 Current only support create, drop, rename collection and index
+
 ```js
 up () {
 
@@ -422,49 +407,68 @@ up () {
 ```
 
 ### Field type
+
 > Type of `mongodb.ObjectID`
-The objectId fields will be converted to mongodb.ObjectID before save to db.
+> The objectId fields will be converted to mongodb.ObjectID before save to db.
+
 ```js
 class Article extends LucidMongo {
-  static get objectIDs() { return ['_id', 'categoryId'] } //default return ['_id']
+  static get objectIDs() {
+    return ['_id', 'categoryId'];
+  } //default return ['_id']
 }
 ```
+
 The where query conditions will be converted to objectId too
+
 ```js
-const article = await Article.find('58ccb403f895502b84582c63')
-const articles = await Article
-  .where({ department_id: '58ccb403f895502b84582c63' })
-  .fetch()
+const article = await Article.find('58ccb403f895502b84582c63');
+const articles = await Article.where({
+  department_id: '58ccb403f895502b84582c63'
+}).fetch();
 ```
 
 > Type of `date`
+
 ```js
 class Staff extends LucidMongo {
-  static get dates() { return ['dob'] }
+  static get dates() {
+    return ['dob'];
+  }
 }
 ```
+
 The field declare as date will be converted to moment js object after get from db
+
 ```js
-const staff = await Staff.first()
-const yearAgo = staff.dob.fromNow()
+const staff = await Staff.first();
+const yearAgo = staff.dob.fromNow();
 ```
+
 You can set attribute of model as moment|Date|string, this field will be converted to date before save to db
+
 ```js
-staff.dob = moment(request.input('dob'))
+staff.dob = moment(request.input('dob'));
 ```
+
 The where query conditions will be converted to date too
+
 ```js
-const user = await User
-  .where({ created_at: { $gte: '2017-01-01' } })
-  .fetch()
+const user = await User.where({ created_at: { $gte: '2017-01-01' } }).fetch();
 ```
+
 Date type is UTC timezone
+
 > Type of `geometry`
+
 ```js
 class Image extends LucidMongo {
-  static get geometries() { return ['location'] }
+  static get geometries() {
+    return ['location'];
+  }
 }
 ```
+
 When declare field type as geometry the field will be transformed to geoJSON type
 
 ```js
@@ -474,13 +478,17 @@ const image = await Image.create({
     latitude: 1,
     longitude: 2
   }
-})
+});
 ```
+
 Result:
+
 ```json
-{ "type" : "Point", "coordinates" : [ 2, 1 ] }
+{ "type": "Point", "coordinates": [2, 1] }
 ```
-After get from db it will be retransformed to 
+
+After get from db it will be retransformed to
+
 ```js
 {
   latitude: 1,
@@ -489,31 +497,50 @@ After get from db it will be retransformed to
 ```
 
 ### Use mquery builder
+
 ```js
-  const Database = use('Database')
-  const db = await Database.connect('mongodb')
+const Database = use('Database');
+const db = await Database.connect('mongodb');
 
-  const users = await db.collection('users').find()
+const users = await db.collection('users').find();
 
-  const phone = await db.collection('phones')
-    .where({userId: ObjectID('58ccb403f895502b84582c63')}).findOne()
-    
-  const count = await db.collection('user')
-    .where({active: true}).count()
+const phone = await db
+  .collection('phones')
+  .where({ userId: ObjectID('58ccb403f895502b84582c63') })
+  .findOne();
+
+const count = await db
+  .collection('user')
+  .where({ active: true })
+  .count();
 ```
 
 ### Get mongodb client object
+
 In case the query builder does not match your requirement you can get mongodbClient to do your custom query
+
 ```js
-  const Database = use('Database')
-  const mongoClient = await Database.connect()
-  const result = await mongoClient.collection('inventory').find( { size: { h: 14, w: 21, uom: "cm" } } ).toArray()
+const Database = use('Database');
+const mongoClient = await Database.connect();
+const result = await mongoClient
+  .collection('inventory')
+  .find({ size: { h: 14, w: 21, uom: 'cm' } })
+  .toArray();
 ```
 
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
 
 In favor of active development we accept contributions for everyone. You can contribute by submitting a bug, creating pull requests or even improving documentation.
 
-
 ## License
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo?ref=badge_large)
+
+[MIT](./LICENSE.md)
+
+[npm-image]: https://img.shields.io/npm/v/@zakodium/lucid-mongo.svg?style=flat-square
+[npm-url]: https://npmjs.org/package/@zakodium/lucid-mongo
+[travis-image]: https://img.shields.io/travis/zakodium/lucid-mongo/master.svg?style=flat-square
+[travis-url]: https://travis-ci.org/zakodium/lucid-mongo
+[codecov-image]: https://img.shields.io/codecov/c/github/zakodium/lucid-mongo.svg?style=flat-square
+[codecov-url]: https://codecov.io/github/zakodium/lucid-mongo
+[download-image]: https://img.shields.io/npm/dm/@zakodium/lucid-mongo.svg?style=flat-square
+[download-url]: https://npmjs.org/package/@zakodium/lucid-mongo
