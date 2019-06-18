@@ -436,6 +436,19 @@ class QueryBuilder {
     const collection = await this.db.getCollection(this.collection)
     return this.query.collection(collection).setOptions({ multi: true }).remove()
   }
+  
+   /**
+   * Remove everything from table
+   *
+   * @method truncate
+   *
+   * @return {Number}
+   */
+  async truncate () {
+    const collection = await this.db.getCollection(this.collection)
+    const response = await this.query.collection(collection).deleteMany({})
+    return response.deletedCount
+  }
 
   /**
    * Insert row.
