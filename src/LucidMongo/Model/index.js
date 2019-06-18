@@ -882,6 +882,18 @@ class Model extends BaseModel {
     await this.constructor.$hooks.after.exec('delete', this)
     return !!response.result.ok
   }
+  
+  /**
+   * Deletes all rows of this model (truncate table).
+   *
+   * @method truncate
+   *
+   * @return {Promise<void>}
+   */
+  static truncate () {
+    const query = this.query()
+    return query.truncate()
+  }
 
   /**
    * Perform required actions to newUp the model instance. This
