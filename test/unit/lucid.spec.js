@@ -360,6 +360,23 @@ test.group('Model', (group) => {
     assert.isDefined(user.updated_at)
   })
 
+  test('set timestamps automatically in existing instance', async (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+    const originalCreatedAt = user.created_at
+    const originalUpdatedAt = user.updated_at
+
+    user.username = 'zizaco'
+    await user.save()
+    assert.strictEqual(user.created_at, originalCreatedAt, 'created_at should NOT be replaced upon update')
+    assert.notStrictEqual(user.updated_at, originalUpdatedAt, 'updated_at of instance SHOULD be replaced upon update')
+  })
+
   test('do not set timestamps when columns are not defined', async (assert) => {
     class User extends Model {
       static get createdAtColumn () {
