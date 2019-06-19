@@ -716,6 +716,8 @@ class Model extends BaseModel {
       /**
        * Set proper timestamps
        */
+      this._setUpdatedAt(this.$attributes)
+
       affected = await this.constructor
         .query()
         .where(this.constructor.primaryKey, this.primaryKeyValue)
