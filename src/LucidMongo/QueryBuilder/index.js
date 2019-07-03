@@ -436,7 +436,7 @@ class QueryBuilder {
     const collection = await this.db.getCollection(this.collection)
     return this.query.collection(collection).setOptions({ multi: true }).remove()
   }
-  
+
    /**
    * Remove everything from table
    *
