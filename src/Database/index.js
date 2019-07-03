@@ -418,7 +418,7 @@ class Database {
     const collection = connection.collection(this.collectionName)
     return this.queryBuilder.collection(collection).remove(...arguments)
   }
-  
+
    /**
    * Remove everything from table
    *
@@ -429,7 +429,7 @@ class Database {
   async truncate () {
     const connection = await this.connect()
     const collection = connection.collection(this.collectionName)
-    const response =  await this.queryBuilder.collection(collection).deleteMany({})
+    const response = await this.queryBuilder.collection(collection).deleteMany({})
     return response.deletedCount
   }
 
