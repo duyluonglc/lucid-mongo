@@ -882,7 +882,7 @@ class Model extends BaseModel {
     await this.constructor.$hooks.after.exec('delete', this)
     return !!response.result.ok
   }
-  
+
   /**
    * Deletes all rows of this model (truncate table).
    *
@@ -890,7 +890,7 @@ class Model extends BaseModel {
    *
    * @return {Promise<void>}
    */
-  static truncate () {
+  static truncate() {
     const query = this.query()
     return query.truncate()
   }
