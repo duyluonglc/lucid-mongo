@@ -13,7 +13,9 @@
     "test:win": "set DB=mongodb&& node japaFile.js",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "adonis",
@@ -50,7 +52,8 @@
     "mquery": "^3.2.0",
     "pluralize": "^7.0.0",
     "pretty-hrtime": "^1.0.3",
-    "require-all": "^3.0.0"
+    "require-all": "^3.0.0",
+    "snyk": "^1.189.0"
   },
   "devDependencies": {
     "@adonisjs/ace": "^5.0.8",
@@ -80,5 +83,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/duyluonglc/lucid-mongo.git"
-  }
+  },
+  "snyk": true
 }
