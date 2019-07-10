@@ -53,7 +53,7 @@
     "pluralize": "^8.0.0",
     "pretty-hrtime": "^1.0.3",
     "require-all": "^3.0.0",
-    "snyk": "^1.189.0"
+    "snyk": "^1.192.4"
   },
   "devDependencies": {
     "@adonisjs/ace": "^5.0.8",
