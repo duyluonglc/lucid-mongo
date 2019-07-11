@@ -251,7 +251,7 @@ class Migration {
    * @private
    */
   async _execute (schemas, direction, batch, toSQL) {
-    for (let schema in schemas) {
+    for (const schema in schemas) {
       await this._executeSchema(new schemas[schema](this.db), direction)
       direction === 'up' ? await this._addForBatch(schema, batch) : await this._remove(schema)
     }

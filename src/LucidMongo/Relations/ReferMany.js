@@ -46,6 +46,7 @@ class ReferMany extends BaseRelation {
   _decorateQuery () {
     this.relatedQuery.whereIn(this.primaryKey, this.parentInstance[this.foreignKey] || [])
   }
+
   /**
      * Persists the parent model instance if it's not
      * persisted already. This is done before saving
@@ -79,7 +80,7 @@ class ReferMany extends BaseRelation {
       return this.group([])
     }
     const relatedInstances = await this.relatedQuery.whereIn(this.primaryKey, mappedRows).fetch()
-    let result = []
+    const result = []
     rows.map(modelInstance => {
       relatedInstances.rows.map(related => {
         const foreignKeys = modelInstance[this.foreignKey] || []

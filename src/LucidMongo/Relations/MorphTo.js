@@ -48,13 +48,13 @@ class MorphTo {
    */
   async eagerLoad (rows) {
     const groups = _.groupBy(rows, row => row.$attributes[this.determiner])
-    let result = []
-    for (let determiner in groups) {
+    const result = []
+    for (const determiner in groups) {
       const groupRows = groups[determiner]
       const RelatedModel = ioc.use(`${this.modelPath}/${determiner}`)
       const relatedIds = _(groupRows).map(row => row.$attributes[this.foreignKey]).uniq().value()
-      let relates = await RelatedModel.whereIn(this.primaryKey, relatedIds).fetch()
-      for (let row of groupRows) {
+      const relates = await RelatedModel.whereIn(this.primaryKey, relatedIds).fetch()
+      for (const row of groupRows) {
         const related = _.find(relates.rows, related => {
           return row.$attributes[this.foreignKey] && String(related.primaryKeyValue) === String(row.$attributes[this.foreignKey])
         })

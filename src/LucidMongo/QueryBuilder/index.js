@@ -660,8 +660,8 @@ class QueryBuilder {
    * @memberof QueryBuilder
    */
   replaceMethods () {
-    for (let name of this.constructor.conditionMethods) {
-      let originMethod = this.query[name]
+    for (const name of this.constructor.conditionMethods) {
+      const originMethod = this.query[name]
       this.query[name] = (param) => {
         const key = this.query._path
         param = this.Model.formatField(key, param)
@@ -679,14 +679,14 @@ class QueryBuilder {
    */
   where () {
     if (_.isPlainObject(arguments[0])) {
-      let queryObject = arguments[0]
+      const queryObject = arguments[0]
       for (const key in queryObject) {
         const conditions = queryObject[key]
         if (key === '$and' || key === '$or' || key === '$nor') {
           if (!Array.isArray(conditions)) {
             throw new CE.InvalidArgumentException(`Method "$${key}"'s param must be an array`)
           }
-          let formatedConditions = []
+          const formatedConditions = []
           for (const condition of conditions) {
             const cloneQuery = _.clone(this)
             cloneQuery.query = query()

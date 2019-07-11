@@ -540,7 +540,7 @@ test.group('Relations | MorphOne', (group) => {
       { parent_id: rs.insertedIds[1], determiner: 'User', profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with({ 'profile': { where: { likes: { $gt: 2 } } } }).fetch()
+    const result = await User.query().with({ profile: { where: { likes: { $gt: 2 } } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))

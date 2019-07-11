@@ -433,7 +433,7 @@ class BelongsToMany extends BaseRelation {
     const pivotInstances = await this.pivotQuery().fetch()
     const foreignKeyValues = _.map(pivotInstances.rows, this.relatedForeignKey)
     const relatedInstances = await this.relatedQuery.whereIn(this.relatedPrimaryKey, foreignKeyValues).fetch()
-    let result = []
+    const result = []
     rows.map(modelInstance => {
       const modelPivots = _.filter(pivotInstances.rows, pivot => {
         return String(pivot[this.foreignKey]) === String(modelInstance.primaryKeyValue)

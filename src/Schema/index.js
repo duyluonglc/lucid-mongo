@@ -270,7 +270,7 @@ class Schema {
       })
     }
 
-    for (let action of this._deferredActions) {
+    for (const action of this._deferredActions) {
       await this.schema[action.name](...action.args)
     }
     this._deferredActions = []
