@@ -65,7 +65,7 @@
     "japa": "^2.0.10",
     "japa-cli": "^1.0.1",
     "nyc": "^13.3.0",
-    "standard": "^13.0.0"
+    "standard": "13.0.0"
   },
   "config": {
     "commitizen": {
