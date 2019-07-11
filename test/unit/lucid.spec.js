@@ -360,6 +360,23 @@ test.group('Model', (group) => {
     assert.isDefined(user.updated_at)
   })
 
+  test('set timestamps automatically in existing instance', async (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+    const user = new User()
+    user.username = 'virk'
+    await user.save()
+    const originalCreatedAt = user.created_at
+    const originalUpdatedAt = user.updated_at
+
+    user.username = 'zizaco'
+    await user.save()
+    assert.strictEqual(user.created_at, originalCreatedAt, 'created_at should NOT be replaced upon update')
+    assert.notStrictEqual(user.updated_at, originalUpdatedAt, 'updated_at of instance SHOULD be replaced upon update')
+  })
+
   test('do not set timestamps when columns are not defined', async (assert) => {
     class User extends Model {
       static get createdAtColumn () {
@@ -580,7 +597,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk')._applyScopes()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'deleted_at': null })
+    assert.deepEqual(query.query._conditions, { username: 'virk', deleted_at: null })
   })
 
   test('instruct query builder to ignore all query scopes', async (assert) => {
@@ -592,7 +609,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk').ignoreScopes()._applyScopes()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk' })
+    assert.deepEqual(query.query._conditions, { username: 'virk' })
   })
 
   test('instruct query builder to ignore selected scopes', async (assert) => {
@@ -608,7 +625,7 @@ test.group('Model', (group) => {
     }, 'loggedOnce')
 
     const query = User.query().where('username', 'virk').ignoreScopes(['softDeletes'])._applyScopes()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gte': '2017' } })
+    assert.deepEqual(query.query._conditions, { username: 'virk', login_at: { $gte: '2017' } })
   })
 
   test('define local scopes', async (assert) => {
@@ -621,7 +638,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     const query = User.query().where('username', 'virk').isLogged()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$exists': true } })
+    assert.deepEqual(query.query._conditions, { username: 'virk', login_at: { $exists: true } })
   })
 
   test('pass arguments to local scopes', async (assert) => {
@@ -635,7 +652,7 @@ test.group('Model', (group) => {
 
     const date = new Date()
     const query = User.query().where('username', 'virk').isLogged(date)
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gt': moment(date).toDate() } })
+    assert.deepEqual(query.query._conditions, { username: 'virk', login_at: { $gt: moment(date).toDate() } })
   })
 
   test('find model instance using find method', async (assert) => {
@@ -763,6 +780,19 @@ test.group('Model', (group) => {
     assert.instanceOf(users, VanillaSerializer)
     assert.deepEqual(users.pages, { perPage: 1, total: helpers.formatNumber(2), page: 1, lastPage: 2 })
     assert.equal(users.first().username, 'virk')
+  })
+
+  test('paginate model with select clause', async (assert) => {
+    class User extends Model {
+    }
+
+    User._bootIfNotBooted()
+    await ioc.use('Database').collection('users').insert([{ username: 'virk', name: 'virk' }, { username: 'nikk', name: 'nikk' }])
+    const users = await User.query({ select: 'username' }).paginate(1, 1)
+    assert.instanceOf(users, VanillaSerializer)
+    assert.deepEqual(users.pages, { perPage: 1, total: helpers.formatNumber(2), page: 1, lastPage: 2 })
+    assert.equal(users.first().username, 'virk')
+    assert.notExists(users.first().name)
   })
 
   test('return first row from database on calling static method', async (assert) => {
@@ -1549,24 +1579,24 @@ test.group('Lucid | Query builder', (group) => {
     const query = User.where({
       location: {
         $near: {
-          '$geometry': {
-            'type': 'Point',
-            'coordinates': [2, 1],
-            'spherical': true
+          $geometry: {
+            type: 'Point',
+            coordinates: [2, 1],
+            spherical: true
           },
           $maxDistance: 1000
         }
       }
     })
     assert.deepEqual(query.query._conditions, {
-      'location': {
-        '$near': {
-          '$geometry': {
-            'type': 'Point',
-            'coordinates': [2, 1],
-            'spherical': true
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [2, 1],
+            spherical: true
           },
-          '$maxDistance': 1000
+          $maxDistance: 1000
         }
       }
     })

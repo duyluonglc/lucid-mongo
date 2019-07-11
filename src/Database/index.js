@@ -15,7 +15,7 @@ const CE = require('../Exceptions')
 const util = require('../../lib/util')
 const _ = require('lodash')
 const mongoUriBuilder = require('mongo-uri-builder')
-const muri = require('muri')
+const mongoUrl = require('mongodb-url')
 // const debug = require('debug')('mquery')
 
 const proxyHandler = {
@@ -112,8 +112,8 @@ class Database {
 
     if (config.connectionString) {
       this.connectionString = config.connectionString
-      const parsedUri = muri(this.connectionString)
-      this.databaseName = parsedUri.db || config.connection.database
+      const parsedUri = mongoUrl(this.connectionString)
+      this.databaseName = parsedUri.dbName || config.connection.database
     } else {
       this.connectionString = mongoUriBuilder(config.connection)
       this.databaseName = config.connection.database
@@ -588,8 +588,8 @@ class Database {
    * @memberof QueryBuilder
    */
   replaceMethods () {
-    for (let name of this.constructor.conditionMethods) {
-      let originMethod = this.queryBuilder[name]
+    for (const name of this.constructor.conditionMethods) {
+      const originMethod = this.queryBuilder[name]
       this.queryBuilder[name] = (param) => {
         originMethod.apply(this.queryBuilder, [param])
         return this

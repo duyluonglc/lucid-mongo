@@ -1,3 +1,50 @@
+## [3.1.6](https://github.com/duyluonglc/lucid-mongo/compare/3.1.5...3.1.6) (2019-07-11)
+
+
+### Bug Fixes
+
+* **package:** update pluralize to version 8.0.0 ([277f3a5](https://github.com/duyluonglc/lucid-mongo/commit/277f3a5))
+* **updated_at:** lucid `Model._update` now set updated_at field properly. Fixes [#186](https://github.com/duyluonglc/lucid-mongo/issues/186) ([4582630](https://github.com/duyluonglc/lucid-mongo/commit/4582630))
+
+
+
+## [3.1.5](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.3...v3.1.5) (2018-11-15)
+
+
+### Bug Fixes
+
+* **belongsToMany:** fix attach and sync method ([87d8c2d](https://github.com/duyluonglc/lucid-mongo/commit/87d8c2d)), closes [#160](https://github.com/duyluonglc/lucid-mongo/issues/160)
+* **connection:** fix issue with connection begin with mongo+srv:// ([ec334bb](https://github.com/duyluonglc/lucid-mongo/commit/ec334bb)), closes [#121](https://github.com/duyluonglc/lucid-mongo/issues/121)
+
+
+
+<a name="3.1.4"></a>
+## [3.1.4](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.3...v3.1.4) (2018-11-10)
+
+
+### Bug Fixes
+
+* **objectId:** fix parse bjson object ([0f552be](https://github.com/duyluonglc/lucid-mongo/commit/0f552be)), closes [#158](https://github.com/duyluonglc/lucid-mongo/issues/158)
+
+
+
+<a name="3.1.3"></a>
+## [3.1.3](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.2...v3.1.3) (2018-10-22)
+
+
+### Bug Fixes
+
+* **model:** merge dirty attributes after the hooks ([1d298a4](https://github.com/duyluonglc/lucid-mongo/commit/1d298a4))
+* **package:** update dependencies ([98a6de6](https://github.com/duyluonglc/lucid-mongo/commit/98a6de6))
+* **property:** use proper foreign key ([c16e624](https://github.com/duyluonglc/lucid-mongo/commit/c16e624))
+
+
+
+<a name="3.1.2"></a>
+## [3.1.2](https://github.com/duyluonglc/lucid-mongo/compare/3.1.1...3.1.2) (2018-09-24)
+
+
+
 <a name="3.1.1"></a>
 ## [3.1.1](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.0...v3.1.1) (2018-09-18)
 

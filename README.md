@@ -7,6 +7,7 @@ lucid-mongo is a mongo query builder and ORM. It also has support for database m
 [![Build Status](https://travis-ci.org/duyluonglc/lucid-mongo.svg?branch=develop)](https://travis-ci.org/duyluonglc/lucid-mongo)
 [![Coverage Status](https://img.shields.io/coveralls/duyluonglc/lucid-mongo/develop.svg)](https://coveralls.io/github/duyluonglc/lucid-mongo?branch=develop)
 [![Greenkeeper badge](https://badges.greenkeeper.io/duyluonglc/lucid-mongo.svg)](https://greenkeeper.io/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo?ref=badge_shield)
 > :pray: This repository is base on @adonis/lucid and only work with mongodb.
 ## Features?
 
@@ -26,7 +27,7 @@ You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](ht
 
 ## Node/OS Target
 
-This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=7.0`
+This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=8.0`
 
 ## <a name="getting-started"></a>Installation
 
@@ -382,7 +383,7 @@ class Bill extends Model {
 
   const user = await User.with({
     emails: query => {
-      query.where(active, true)
+      query.where('active', true)
     }
   }).first()
 
@@ -490,7 +491,7 @@ After get from db it will be retransformed to
 ### Use mquery builder
 ```js
   const Database = use('Database')
-  const db = await Database.connection('mongodb')
+  const db = await Database.connect('mongodb')
 
   const users = await db.collection('users').find()
 
@@ -512,3 +513,7 @@ In case the query builder does not match your requirement you can get mongodbCli
 ### <a name="contribution-guidelines"></a>Contribution Guidelines
 
 In favor of active development we accept contributions for everyone. You can contribute by submitting a bug, creating pull requests or even improving documentation.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fduyluonglc%2Flucid-mongo?ref=badge_large)

@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
 const fs = require('fs-extra')
 const path = require('path')
@@ -546,7 +547,7 @@ test.group('Relations | HasOne', (group) => {
       { user_id: rs.insertedIds[1], profile_name: 'nikk', likes: 2 }
     ])
 
-    const result = await User.query().with({ 'profile': { where: { likes: { $gt: 2 } } } }).fetch()
+    const result = await User.query().with({ profile: { where: { likes: { $gt: 2 } } } }).fetch()
     assert.equal(result.size(), 2)
     assert.instanceOf(result.rows[0].getRelated('profile'), Profile)
     assert.isNull(result.rows[1].getRelated('profile'))

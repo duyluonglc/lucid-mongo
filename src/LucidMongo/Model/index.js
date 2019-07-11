@@ -716,21 +716,25 @@ class Model extends BaseModel {
       /**
        * Set proper timestamps
        */
+      this._setUpdatedAt(this.$attributes)
+
       affected = await this.constructor
         .query()
         .where(this.constructor.primaryKey, this.primaryKeyValue)
         .ignoreScopes()
         .update(dirty)
-      /**
-       * Sync originals to find a diff when updating for next time
-       */
-      this._syncOriginals()
     }
 
     /**
      * Executing after hooks
      */
     await this.constructor.$hooks.after.exec('update', this)
+    if (this.isDirty || _.size(this.$unsetAttributes)) {
+      /**
+       * Sync originals to find a diff when updating for next time
+       */
+      this._syncOriginals()
+    }
     return !!affected
   }
 

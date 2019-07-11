@@ -191,11 +191,13 @@ class BaseModel {
    * @return {String}
    */
   static formatObjectID (key, value) {
-    if (_.isString(value) && ObjectID.isValid(value)) {
-      return ObjectID(value)
-    } else if (Array.isArray(value)) {
-      return _.map(value, item => this.formatObjectID(key, item))
-    }
+    try {
+      if (Array.isArray(value)) {
+        return _.map(value, item => this.formatObjectID(key, item))
+      } else {
+        return ObjectID(value)
+      }
+    } catch (_) {}
     return value
   }
 

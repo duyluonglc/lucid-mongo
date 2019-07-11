@@ -9,6 +9,7 @@
  * file that was distributed with this source code.
 */
 
+require('../../lib/iocResolver').setFold(require('@adonisjs/fold'))
 const test = require('japa')
 const chance = require('chance').Chance()
 const _ = require('lodash')
@@ -38,6 +39,39 @@ test.group('Database | QueryBuilder', (group) => {
       }
     }
   }).timeout(0)
+
+  test('connection string mongo://', async assert => {
+    const config = {
+      client: 'mongodb',
+      connectionString: 'mongo://username:password@localhost/my_database'
+    }
+
+    const db = new Database(config)
+    assert.isNotNull(db)
+    assert.equal(db.databaseName, 'my_database')
+  })
+
+  test('connection string with begin srv+mongo://', async assert => {
+    const config = {
+      client: 'mongodb',
+      connectionString: 'srv+mongo://username:password@localhost/my_database'
+    }
+
+    const db = new Database(config)
+    assert.isNotNull(db)
+    assert.equal(db.databaseName, 'my_database')
+  })
+
+  test('connection string cluster', async assert => {
+    const config = {
+      client: 'mongodb',
+      connectionString: 'mongodb://r1.example.net:27017,r2.example.net:27017/my_database'
+    }
+
+    const db = new Database(config)
+    assert.isNotNull(db)
+    assert.equal(db.databaseName, 'my_database')
+  })
 
   test('destroy database connection', async (assert) => {
     await this.database.close()
