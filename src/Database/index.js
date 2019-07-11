@@ -588,8 +588,8 @@ class Database {
    * @memberof QueryBuilder
    */
   replaceMethods () {
-    for (let name of this.constructor.conditionMethods) {
-      let originMethod = this.queryBuilder[name]
+    for (const name of this.constructor.conditionMethods) {
+      const originMethod = this.queryBuilder[name]
       this.queryBuilder[name] = (param) => {
         originMethod.apply(this.queryBuilder, [param])
         return this

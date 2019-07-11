@@ -175,7 +175,7 @@ test.group('Field date format', (group) => {
       }
     }
     User._bootIfNotBooted()
-    const query = User.where({ 'last_login': { $lt: '2018-01-01' } })
+    const query = User.where({ last_login: { $lt: '2018-01-01' } })
     assert.instanceOf(query.query._conditions.last_login.$lt, Date)
     assert.equal(moment.utc('2018-01-01').isSame(query.query._conditions.last_login.$lt), true)
   })
@@ -199,7 +199,7 @@ test.group('Field date format', (group) => {
       }
     }
     User._bootIfNotBooted()
-    const query = User.where({ 'last_login': { $gte: moment('2018-01-01') } })
+    const query = User.where({ last_login: { $gte: moment('2018-01-01') } })
     assert.instanceOf(query.query._conditions.last_login.$gte, Date)
     assert.equal(moment('2018-01-01').isSame(query.query._conditions.last_login.$gte), true)
   })
@@ -211,7 +211,7 @@ test.group('Field date format', (group) => {
       }
     }
     User._bootIfNotBooted()
-    const query = User.where({ 'last_login': { $gte: new Date('2018-01-01') } })
+    const query = User.where({ last_login: { $gte: new Date('2018-01-01') } })
     assert.instanceOf(query.query._conditions.last_login.$gte, Date)
     assert.equal(moment.utc('2018-01-01').isSame(query.query._conditions.last_login.$gte), true)
   })
@@ -746,7 +746,7 @@ test.group('Field ObjectID format', (group) => {
       }
     }
     User._bootIfNotBooted()
-    const query = User.where({ 'group_id': { $in: ['5a40077430f075256427a147', '5a40077430f075256427a148'] } })
+    const query = User.where({ group_id: { $in: ['5a40077430f075256427a147', '5a40077430f075256427a148'] } })
     assert.instanceOf(query.query._conditions.group_id.$in[0], ObjectID)
     assert.instanceOf(query.query._conditions.group_id.$in[1], ObjectID)
     assert.equal(String(query.query._conditions.group_id.$in[0]), '5a40077430f075256427a147')
@@ -762,8 +762,8 @@ test.group('Field ObjectID format', (group) => {
     User._bootIfNotBooted()
     const query = User.where({
       $or: [
-        { 'group_id': { $in: ['5a40077430f075256427a147', '5a40077430f075256427a148'] } },
-        { 'age': { $gt: 15 } }
+        { group_id: { $in: ['5a40077430f075256427a147', '5a40077430f075256427a148'] } },
+        { age: { $gt: 15 } }
       ]
     })
     assert.instanceOf(query.query._conditions.$or[0].group_id.$in[0], ObjectID)

@@ -597,7 +597,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk')._applyScopes()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'deleted_at': null })
+    assert.deepEqual(query.query._conditions, { username: 'virk', deleted_at: null })
   })
 
   test('instruct query builder to ignore all query scopes', async (assert) => {
@@ -609,7 +609,7 @@ test.group('Model', (group) => {
     })
 
     const query = User.query().where('username', 'virk').ignoreScopes()._applyScopes()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk' })
+    assert.deepEqual(query.query._conditions, { username: 'virk' })
   })
 
   test('instruct query builder to ignore selected scopes', async (assert) => {
@@ -625,7 +625,7 @@ test.group('Model', (group) => {
     }, 'loggedOnce')
 
     const query = User.query().where('username', 'virk').ignoreScopes(['softDeletes'])._applyScopes()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gte': '2017' } })
+    assert.deepEqual(query.query._conditions, { username: 'virk', login_at: { $gte: '2017' } })
   })
 
   test('define local scopes', async (assert) => {
@@ -638,7 +638,7 @@ test.group('Model', (group) => {
     User._bootIfNotBooted()
 
     const query = User.query().where('username', 'virk').isLogged()
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$exists': true } })
+    assert.deepEqual(query.query._conditions, { username: 'virk', login_at: { $exists: true } })
   })
 
   test('pass arguments to local scopes', async (assert) => {
@@ -652,7 +652,7 @@ test.group('Model', (group) => {
 
     const date = new Date()
     const query = User.query().where('username', 'virk').isLogged(date)
-    assert.deepEqual(query.query._conditions, { 'username': 'virk', 'login_at': { '$gt': moment(date).toDate() } })
+    assert.deepEqual(query.query._conditions, { username: 'virk', login_at: { $gt: moment(date).toDate() } })
   })
 
   test('find model instance using find method', async (assert) => {
@@ -1579,24 +1579,24 @@ test.group('Lucid | Query builder', (group) => {
     const query = User.where({
       location: {
         $near: {
-          '$geometry': {
-            'type': 'Point',
-            'coordinates': [2, 1],
-            'spherical': true
+          $geometry: {
+            type: 'Point',
+            coordinates: [2, 1],
+            spherical: true
           },
           $maxDistance: 1000
         }
       }
     })
     assert.deepEqual(query.query._conditions, {
-      'location': {
-        '$near': {
-          '$geometry': {
-            'type': 'Point',
-            'coordinates': [2, 1],
-            'spherical': true
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [2, 1],
+            spherical: true
           },
-          '$maxDistance': 1000
+          $maxDistance: 1000
         }
       }
     })

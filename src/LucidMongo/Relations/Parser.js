@@ -86,6 +86,7 @@ class RelationParser {
    * @return {Object}
    */
   parseRelation (relation, callback = null) {
+    // eslint-disable-next-line
     let [name, nested] = relation.split(/\.(.+)/)
 
     /**
