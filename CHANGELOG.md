@@ -1,3 +1,13 @@
+## [3.1.6](https://github.com/duyluonglc/lucid-mongo/compare/3.1.5...3.1.6) (2019-07-11)
+
+
+### Bug Fixes
+
+* **package:** update pluralize to version 8.0.0 ([277f3a5](https://github.com/duyluonglc/lucid-mongo/commit/277f3a5))
+* **updated_at:** lucid `Model._update` now set updated_at field properly. Fixes [#186](https://github.com/duyluonglc/lucid-mongo/issues/186) ([4582630](https://github.com/duyluonglc/lucid-mongo/commit/4582630))
+
+
+
 ## [3.1.5](https://github.com/duyluonglc/lucid-mongo/compare/v3.1.3...v3.1.5) (2018-11-15)
 
 
