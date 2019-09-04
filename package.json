@@ -62,7 +62,7 @@
     "coveralls": "^3.0.4",
     "cz-conventional-changelog": "^3.0.0",
     "fs-extra": "^8.1.0",
-    "japa": "^2.0.10",
+    "japa": "^3.0.1",
     "japa-cli": "^1.0.1",
     "nyc": "^13.3.0",
     "standard": "^13.0.0"
