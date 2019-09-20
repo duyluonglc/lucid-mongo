@@ -63,16 +63,25 @@ class ValidatorRules {
       /**
        * Base query to select where key=value
        */
-      const query = this.Database.collection(collection).where(fieldName || field, value)
+      const whereConditions = {
+        [fieldName || field]: value
+      }
 
       /**
        * If a ignore key and value is defined, then add a whereNot clause
        */
       if (ignoreKey && ignoreValue) {
-        query.where(ignoreKey, '>', ignoreValue)
+        if (ignoreKey == '_id') {
+          const { ObjectId } = require('mongodb')
+          whereConditions[ignoreKey] = { '$ne': new ObjectId(ignoreValue) }
+        } else {
+          whereConditions[ignoreKey] = { '$ne': ignoreValue }
+        }
       }
 
-      query
+      this.Database
+        .collection(collection)
+        .where(whereConditions)
         .find()
         .then((rows) => {
           /**
