@@ -71,11 +71,11 @@ class ValidatorRules {
        * If a ignore key and value is defined, then add a whereNot clause
        */
       if (ignoreKey && ignoreValue) {
-        if (ignoreKey == '_id') {
+        if (ignoreKey === '_id') {
           const { ObjectId } = require('mongodb')
-          whereConditions[ignoreKey] = { '$ne': new ObjectId(ignoreValue) }
+          whereConditions[ignoreKey] = { $ne: new ObjectId(ignoreValue) }
         } else {
-          whereConditions[ignoreKey] = { '$ne': ignoreValue }
+          whereConditions[ignoreKey] = { $ne: ignoreValue }
         }
       }
 
