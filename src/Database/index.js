@@ -15,7 +15,6 @@ const CE = require('../Exceptions');
 const util = require('../../lib/util');
 const _ = require('lodash');
 const mongoUriBuilder = require('mongo-uri-builder');
-const mongoUrl = require('mongodb-url');
 
 mquery.Promise = global.Promise;
 
@@ -117,8 +116,10 @@ class Database {
 
     if (config.connectionString) {
       this.connectionString = config.connectionString;
-      const parsedUri = mongoUrl(this.connectionString);
-      this.databaseName = parsedUri.dbName || config.connection.database;
+      const parsedUri = new URL(this.connectionString);
+      this.databaseName = parsedUri.pathname.length > 1 ?
+        parsedUri.pathname.slice(1) :
+        config.connection.database;
     } else {
       this.connectionString = mongoUriBuilder(config.connection);
       this.databaseName = config.connection.database;
