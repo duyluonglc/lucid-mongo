@@ -457,7 +457,7 @@ class QueryBuilder {
   async insert(attributes) {
     debug('insert', this.collection, attributes);
     const collection = await this.db.getCollection(this.collection);
-    return collection.insert(attributes);
+    return collection.insertOne(attributes);
   }
 
   /**

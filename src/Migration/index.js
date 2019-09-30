@@ -78,7 +78,7 @@ class Migration {
    * @private
    */
   _addLock () {
-    return this.db.collection(this._lockCollection).insert({ is_locked: true })
+    return this.db.collection(this._lockCollection).insertOne({ is_locked: true })
   }
 
   /**
@@ -150,7 +150,7 @@ class Migration {
    * @private
    */
   _addForBatch (name, batch) {
-    return this.db.collection(this._migrationsCollection).insert({ name, batch })
+    return this.db.collection(this._migrationsCollection).insertOne({ name, batch })
   }
 
   /**
@@ -167,7 +167,7 @@ class Migration {
    * @private
    */
   _remove (name) {
-    return this.db.collection(this._migrationsCollection).delete({ name })
+    return this.db.collection(this._migrationsCollection).deleteOne({ name })
   }
 
   /**

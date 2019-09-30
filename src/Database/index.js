@@ -126,7 +126,8 @@ class Database {
 
     this.connectionOptions = _.assign(
       {
-        useNewUrlParser: true
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
       },
       config.connectionOptions || {}
     );
@@ -483,7 +484,7 @@ class Database {
   async insert(row) {
     const connection = await this.connect();
     const collection = connection.collection(this.collectionName);
-    return collection.insert(row);
+    return collection.insertOne(row);
   }
 
   /**
