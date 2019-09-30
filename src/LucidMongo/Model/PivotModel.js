@@ -160,7 +160,7 @@ class PivotModel extends BaseModel {
       .query(this.$collection, this.$connection)
       .insert(this.$attributes)
 
-    this.primaryKeyValue = result.insertedIds[0]
+    this.primaryKeyValue = result.insertedIds
     this.$persisted = true
     this.$frozen = true
   }
