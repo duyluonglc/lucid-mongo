@@ -58,7 +58,7 @@
     "@adonisjs/fold": "^4.0.9",
     "@adonisjs/sink": "^1.0.17",
     "clear-require": "^3.0.0",
-    "conventional-changelog-cli": "^2.0.21",
+    "conventional-changelog-cli": "^2.0.25",
     "coveralls": "^3.0.4",
     "cz-conventional-changelog": "^3.0.0",
     "fs-extra": "^8.1.0",
