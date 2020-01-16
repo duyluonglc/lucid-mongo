@@ -46,7 +46,7 @@
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
     "mongo-uri-builder": "^2.0.0",
-    "mongodb": "^3.2.7",
+    "mongodb": "^3.5.0",
     "mongodb-url": "^3.0.2",
     "mquery": "^3.2.1",
     "pluralize": "^8.0.0",
