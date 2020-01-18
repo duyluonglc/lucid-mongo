@@ -147,7 +147,7 @@ Edit the config/auth.js file for including the serializer. For example on the ap
     password: 'password',
     expiry: '20m',
     options: {
-      secret: 'self::app.appKey'
+      secret: Env.get('APP_KEY')
     }
   },
 
