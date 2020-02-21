@@ -832,8 +832,8 @@ class QueryBuilder {
    *
    * @return {Object}
    */
-  count (groupBy) {
-    return this._aggregate('count', null, groupBy)
+  async count (groupBy) {
+    return (await this._aggregate('count', null, groupBy)) || 0
   }
 
   /**
