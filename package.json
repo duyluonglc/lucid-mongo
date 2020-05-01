@@ -14,7 +14,9 @@
     "test:win": "set DB=mongodb&& node japaFile.js",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "adonis",
@@ -51,7 +53,8 @@
     "mquery": "^3.2.1",
     "pluralize": "^8.0.0",
     "pretty-hrtime": "^1.0.3",
-    "require-all": "^3.0.0"
+    "require-all": "^3.0.0",
+    "snyk": "^1.316.1"
   },
   "devDependencies": {
     "@adonisjs/ace": "^5.0.8",
