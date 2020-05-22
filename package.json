@@ -45,7 +45,7 @@
     "geo-point": "^1.2.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
-    "mongo-uri-builder": "^2.0.0",
+    "mongo-uri-builder": "^3.2.1",
     "mongodb": "^3.2.7",
     "mongodb-url": "^3.0.2",
     "mquery": "^3.2.1",
