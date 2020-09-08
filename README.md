@@ -20,14 +20,14 @@ Apart from being just a query builder, lucid-mongo has following features.
 5. Migrations
 6. Factories and Seeds
 
-Lucid-mongo version 2.0 now can be used as standalone or used with AdonisJS 
+Lucid-mongo version 2.0 now can be used as standalone or used with AdonisJS
 You can learn more about AdonisJS and all of its awesomeness on http://adonisjs.com :evergreen_tree:
 
 You can see example with AdonisJS framework here [adonis-mongodb-boilerplate](https://github.com/duyluonglc/adonis-mongodb-boilerplate)
 
 ## Node/OS Target
 
-This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=8.0`
+This repo/branch is supposed to run fine on all major OS platforms and targets `Node.js >=12.0`
 
 ## <a name="getting-started"></a>Installation
 
@@ -56,7 +56,7 @@ adonis install lucid-mongo
     .where({ or: [{ age: { gte: 18, lte: 30 }}, { is_blocked: { exists: false } }] })
     .sort({ age: -1 })
     .fetch()
-    
+
   // version 3 style
   const users =  await User
     .where({ $or: [{ age: { $gte: 18, $lte: 30 }}, { is_blocked: { $exists: false } }] })
@@ -129,7 +129,7 @@ Edit the config/auth.js file for including the serializer. For example on the ap
     uid: 'email',
     password: 'password'
   },
-  
+
   basic: {
     serializer: 'LucidMongo',
     model: 'App/Models/User',
@@ -182,7 +182,7 @@ const config = {
       password: 'my_password',
       database: 'my_database'
       options: {
-      
+
       }
     }
   }
@@ -225,7 +225,7 @@ const users =  await User.where({ name: 'peter' })
 
 const users =  await User.where({
   $or: [
-    { gender: 'female', age: { $gte: 20 } }, 
+    { gender: 'female', age: { $gte: 20 } },
     { gender: 'male', age: { $gte: 22 } }
   ]
 }).fetch()
@@ -374,10 +374,10 @@ class Bill extends Model {
 
   const user = await User.with(['emails', 'phones']).first()
 
-  const user = await User.with({ 
-    emails: { 
-      where: { verified: true }, 
-      sort: '-created_at' 
+  const user = await User.with({
+    emails: {
+      where: { verified: true },
+      sort: '-created_at'
     }
   }).first()
 
@@ -480,7 +480,7 @@ Result:
 ```json
 { "type" : "Point", "coordinates" : [ 2, 1 ] }
 ```
-After get from db it will be retransformed to 
+After get from db it will be retransformed to
 ```js
 {
   latitude: 1,
@@ -497,7 +497,7 @@ After get from db it will be retransformed to
 
   const phone = await db.collection('phones')
     .where({userId: ObjectID('58ccb403f895502b84582c63')}).findOne()
-    
+
   const count = await db.collection('user')
     .where({active: true}).count()
 ```
