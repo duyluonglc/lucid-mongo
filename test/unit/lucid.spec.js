@@ -1941,7 +1941,7 @@ test.group('Lucid | Aggregate', (group) => {
     const users = [{ name: 'vik', score: 10 }, { name: 'vik', score: 30 }, { name: 'nik', score: 30 }, { name: 'nik', score: 40 }]
     await ioc.use('Database').collection('users').insert(users)
     const names = await User.distinct('name')
-    assert.deepEqual(names, ['vik', 'nik'])
+    assert.deepEqual(names.sort(), ['nik', 'vik'])
     const names2 = await User.where({ score: { $lt: 30 } }).distinct('name')
     assert.deepEqual(names2, ['vik'])
   })
