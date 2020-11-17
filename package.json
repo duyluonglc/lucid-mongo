@@ -3,16 +3,7 @@
   "description": "A Mongodb ODM",
   "main": "index.js",
   "version": "4.0.3",
-  "scripts": {
-    "pretest": "npm run test:cleanup && npm run lint",
-    "test:cleanup": "rm -rf test/functional/database && rm -rf test/unit/tmp",
-    "posttest": "npm run test:cleanup && npm run coverage",
-    "test:local": "npm run test:cleanup && FORCE_COLOR=true DB=mongodb node japaFile.js",
-    "test": "npm run test:local",
-    "test:win": "set DB=mongodb&& node japaFile.js",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 1",
-    "commit": "git-cz"
-  },
+  "scripts": {},
   "keywords": [
     "adonis",
     "lucid",
@@ -35,32 +26,17 @@
   ],
   "dependencies": {
     "@adonisjs/generic-exceptions": "^3.0.1",
-    "chance": "^1.1.0",
-    "debug": "^4.1.1",
-    "geo-point": "^1.2.1",
-    "lodash": "^4.17.15",
-    "moment": "^2.24.0",
-    "mongo-uri-builder": "^2.0.0",
-    "mongodb": "^3.3.2",
+    "chance": "^1.1.7",
+    "debug": "^4.2.0",
+    "geo-point": "^1.2.2",
+    "lodash": "^4.17.20",
+    "moment": "^2.29.1",
+    "mongo-uri-builder": "^3.2.2",
+    "mongodb": "^3.6.3",
     "mquery": "^3.2.2",
     "pluralize": "^8.0.0",
     "pretty-hrtime": "^1.0.3",
     "require-all": "^3.0.0"
-  },
-  "devDependencies": {
-    "@adonisjs/ace": "^5.0.8",
-    "@adonisjs/fold": "^4.0.9",
-    "@adonisjs/sink": "^1.0.17",
-    "conventional-changelog-cli": "^2.0.23",
-    "cz-conventional-changelog": "^2.1.0",
-    "fs-extra": "^8.1.0",
-    "japa": "^2.0.10",
-    "japa-cli": "^1.0.1"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   },
   "repository": {
     "type": "git",
