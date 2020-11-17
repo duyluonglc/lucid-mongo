@@ -2,7 +2,7 @@
   "name": "@zakodium/lucid-mongo",
   "description": "A Mongodb ODM",
   "main": "index.js",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "scripts": {},
   "keywords": [
     "adonis",
