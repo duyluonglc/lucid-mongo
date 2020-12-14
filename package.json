@@ -48,7 +48,7 @@
     "mongo-uri-builder": "^2.0.0",
     "mongodb": "^3.2.7",
     "mongodb-url": "^3.0.2",
-    "mquery": "^3.2.1",
+    "mquery": "^3.2.3",
     "pluralize": "^8.0.0",
     "pretty-hrtime": "^1.0.3",
     "require-all": "^3.0.0"
