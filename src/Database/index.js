@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 /**
  * adonis-lucid
@@ -9,27 +9,27 @@
  * file that was distributed with this source code.
  */
 
-const { MongoClient } = require('mongodb');
-const mquery = require('mquery');
-const CE = require('../Exceptions');
-const util = require('../../lib/util');
-const _ = require('lodash');
-const mongoUriBuilder = require('mongo-uri-builder');
+const { MongoClient } = require("mongodb");
+const mquery = require("mquery");
+const CE = require("../Exceptions");
+const util = require("../../lib/util");
+const _ = require("lodash");
+const mongoUriBuilder = require("mongo-uri-builder");
 
 mquery.Promise = global.Promise;
 
 const proxyHandler = {
   get(target, name) {
-    if (typeof name === 'symbol' || name === 'inspect') {
+    if (typeof name === "symbol" || name === "inspect") {
       return target[name];
     }
 
-    if (typeof target[name] !== 'undefined') {
+    if (typeof target[name] !== "undefined") {
       return target[name];
     }
 
     const queryBuilder = target.query();
-    if (typeof queryBuilder[name] !== 'function') {
+    if (typeof queryBuilder[name] !== "function") {
       throw new Error(`Database.${name} is not a function`);
     }
 
@@ -42,7 +42,7 @@ const proxyHandler = {
     }
 
     return queryBuilder[name].bind(queryBuilder);
-  }
+  },
 };
 
 class SchemaBuilder {
@@ -77,7 +77,7 @@ class SchemaBuilder {
       );
     }
     options = options || {};
-    options['name'] = name;
+    options["name"] = name;
     this.createIndexes.push({ keys, options });
   }
 
@@ -110,16 +110,17 @@ class SchemaBuilder {
  */
 class Database {
   constructor(config) {
-    if (config.client !== 'mongodb') {
-      throw new CE.RuntimeException('invalid connection type');
+    if (config.client !== "mongodb") {
+      throw new CE.RuntimeException("invalid connection type");
     }
 
     if (config.connectionString) {
       this.connectionString = config.connectionString;
       const parsedUri = new URL(this.connectionString);
-      this.databaseName = parsedUri.pathname.length > 1 ?
-        parsedUri.pathname.slice(1) :
-        config.connection.database;
+      this.databaseName =
+        parsedUri.pathname.length > 1
+          ? parsedUri.pathname.slice(1)
+          : config.connection.database;
     } else {
       this.connectionString = mongoUriBuilder(config.connection);
       this.databaseName = config.connection.database;
@@ -201,7 +202,8 @@ class Database {
         const db = await this.connect();
         const collection = await db.collection(collectionName);
         const schemaBuilder = new SchemaBuilder(collection);
-        callback(schemaBuilder);
+        if (callback instanceof Promise) await callback(schemaBuilder);
+        else callback(schemaBuilder);
         return schemaBuilder.build();
       },
       createCollection: async (collectionName, callback) => {
@@ -214,11 +216,12 @@ class Database {
             (collection) => collection.name === collectionName
           )
         ) {
-          throw new Error('already exists');
+          throw new Error("already exists");
         }
         const collection = await db.createCollection(collectionName);
         const schemaBuilder = new SchemaBuilder(collection);
-        callback(schemaBuilder);
+        if (callback instanceof Promise) await callback(schemaBuilder);
+        else callback(schemaBuilder);
         return schemaBuilder.build();
       },
       createCollectionIfNotExists: async (collectionName, callback) => {
@@ -233,7 +236,8 @@ class Database {
         ) {
           const collection = await db.createCollection(collectionName);
           const schemaBuilder = new SchemaBuilder(collection);
-          callback(schemaBuilder);
+          if (callback instanceof Promise) await callback(schemaBuilder);
+          else callback(schemaBuilder);
           return schemaBuilder.build();
         }
       },
@@ -267,7 +271,7 @@ class Database {
           collections,
           (collection) => collection.name === collectionName
         );
-      }
+      },
     };
   }
 
@@ -342,8 +346,8 @@ class Database {
    */
   get fn() {
     return {
-      remove: (path) => console.log('remove', path),
-      now: () => new Date()
+      remove: (path) => console.log("remove", path),
+      now: () => new Date(),
     };
   }
 
@@ -464,7 +468,7 @@ class Database {
   async paginate(page, limit) {
     const connection = await this.connect();
     const collection = connection.collection(this.collectionName);
-    const countByQuery = await this.aggregate('count');
+    const countByQuery = await this.aggregate("count");
     const rows = await this.queryBuilder
       .collection(collection)
       .limit(limit)
@@ -496,7 +500,7 @@ class Database {
    * @memberof Database
    */
   count(...args) {
-    return this.aggregate('count', null, ...args);
+    return this.aggregate("count", null, ...args);
   }
 
   /**
@@ -507,7 +511,7 @@ class Database {
    * @memberof Database
    */
   sum(...args) {
-    return this.aggregate('sum', ...args);
+    return this.aggregate("sum", ...args);
   }
 
   /**
@@ -518,7 +522,7 @@ class Database {
    * @memberof Database
    */
   avg(...args) {
-    return this.aggregate('avg', ...args);
+    return this.aggregate("avg", ...args);
   }
 
   /**
@@ -529,7 +533,7 @@ class Database {
    * @memberof Database
    */
   max(...args) {
-    return this.aggregate('max', ...args);
+    return this.aggregate("max", ...args);
   }
 
   /**
@@ -540,7 +544,7 @@ class Database {
    * @memberof Database
    */
   min(...args) {
-    return this.aggregate('min', ...args);
+    return this.aggregate("min", ...args);
   }
 
   /**
@@ -552,22 +556,22 @@ class Database {
    */
   async aggregate(aggregator, key, groupBy) {
     const $match = this.conditions;
-    const $group = { _id: '$' + groupBy };
+    const $group = { _id: "$" + groupBy };
     switch (aggregator) {
-      case 'count':
+      case "count":
         $group[aggregator] = { $sum: 1 };
         break;
-      case 'max':
-        $group[aggregator] = { $max: '$' + key };
+      case "max":
+        $group[aggregator] = { $max: "$" + key };
         break;
-      case 'min':
-        $group[aggregator] = { $min: '$' + key };
+      case "min":
+        $group[aggregator] = { $min: "$" + key };
         break;
-      case 'sum':
-        $group[aggregator] = { $sum: '$' + key };
+      case "sum":
+        $group[aggregator] = { $sum: "$" + key };
         break;
-      case 'avg':
-        $group[aggregator] = { $avg: '$' + key };
+      case "avg":
+        $group[aggregator] = { $avg: "$" + key };
         break;
       default:
         break;
@@ -603,23 +607,23 @@ class Database {
    */
   static get conditionMethods() {
     return [
-      'eq',
-      'ne',
-      'gt',
-      'gte',
-      'lt',
-      'lte',
-      'in',
-      'nin',
-      'all',
-      'near',
-      'maxDistance',
-      'mod',
-      'includes',
-      'polygon',
-      'elemMatch',
-      'geometry',
-      'intersects'
+      "eq",
+      "ne",
+      "gt",
+      "gte",
+      "lt",
+      "lte",
+      "in",
+      "nin",
+      "all",
+      "near",
+      "maxDistance",
+      "mod",
+      "includes",
+      "polygon",
+      "elemMatch",
+      "geometry",
+      "intersects",
     ];
   }
 
@@ -647,22 +651,22 @@ class Database {
   where() {
     if (arguments.length === 3) {
       switch (arguments[1]) {
-        case '=':
+        case "=":
           this.queryBuilder.where(arguments[0]).eq(arguments[2]);
           break;
-        case '>':
+        case ">":
           this.queryBuilder.where(arguments[0]).gt(arguments[2]);
           break;
-        case '>=':
+        case ">=":
           this.queryBuilder.where(arguments[0]).gte(arguments[2]);
           break;
-        case '<':
+        case "<":
           this.queryBuilder.where(arguments[0]).lt(arguments[2]);
           break;
-        case '<=':
+        case "<=":
           this.queryBuilder.where(arguments[0]).lte(arguments[2]);
           break;
-        case '<>':
+        case "<>":
           this.queryBuilder.where(arguments[0]).ne(arguments[2]);
           break;
         default:
