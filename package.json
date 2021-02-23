@@ -43,7 +43,7 @@
     "chance": "^1.0.18",
     "debug": "^4.1.1",
     "geo-point": "^1.2.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "moment": "^2.24.0",
     "mongo-uri-builder": "^2.0.0",
     "mongodb": "^3.2.7",
