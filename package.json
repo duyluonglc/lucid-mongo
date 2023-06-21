@@ -39,7 +39,7 @@
   "author": "LuongND",
   "license": "MIT",
   "dependencies": {
-    "@adonisjs/generic-exceptions": "^2.0.1",
+    "@adonisjs/generic-exceptions": "^3.0.0",
     "chance": "^1.0.18",
     "debug": "^4.1.1",
     "geo-point": "^1.2.0",
