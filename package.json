@@ -41,7 +41,7 @@
   "dependencies": {
     "@adonisjs/generic-exceptions": "^2.0.1",
     "chance": "^1.0.18",
-    "debug": "^4.1.1",
+    "debug": "^4.3.1",
     "geo-point": "^1.2.0",
     "lodash": "^4.17.15",
     "moment": "^2.24.0",
